@@ -36,11 +36,18 @@ client.once('ready', async () => {
         adminCommand.data.toJSON(),
       ];
 
-      console.log(`🔄 [Global Sync] Sincronizando ${commandList.length} comandos Slash globales (/empezar, /game, /atacar, /admin)...`);
+      console.log(`🔄 [Global Sync] Sincronizando ${commandList.length} comandos Slash globales...`);
       await rest.put(Routes.applicationCommands(botClientId), { body: commandList });
-      console.log(`🌐 [Global Sync] ¡Comandos Slash sincronizados globalmente con éxito en todos los servidores!`);
+      console.log(`🌐 [Global Sync] ¡Comandos registrados globalmente!`);
+
+      // Sincronización INSTANTÁNEA en los servidores donde está presente el bot
+      for (const [guildId, guild] of client.guilds.cache) {
+        console.log(`⚡ [Instant Guild Sync] Sincronizando comandos en el servidor: ${guild.name} (${guildId})...`);
+        await rest.put(Routes.applicationGuildCommands(botClientId, guildId), { body: commandList });
+      }
+      console.log(`✅ [Instant Guild Sync] ¡Comandos desplegados al instante!`);
     } catch (error: any) {
-      console.error('❌ Error en la sincronización global de comandos Slash:', error?.message || error);
+      console.error('❌ Error en la sincronización de comandos Slash:', error?.message || error);
     }
   }
 
