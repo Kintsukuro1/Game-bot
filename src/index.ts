@@ -23,8 +23,8 @@ export const client = new Client({
 client.once('ready', async () => {
   console.log(`🤖 Bot iniciado con éxito como: ${client.user?.tag}`);
 
-  // Sincronización Global de Comandos Slash en cada encendido
-  const botClientId = clientId || client.user?.id;
+  // Usar siempre el ID real autenticado de la aplicación del bot
+  const botClientId = client.user?.id || clientId;
 
   if (token && botClientId && botClientId !== 'your_client_id_here') {
     try {
@@ -39,8 +39,8 @@ client.once('ready', async () => {
       console.log(`🔄 [Global Sync] Sincronizando ${commandList.length} comandos Slash globales (/empezar, /game, /atacar, /admin)...`);
       await rest.put(Routes.applicationCommands(botClientId), { body: commandList });
       console.log(`🌐 [Global Sync] ¡Comandos Slash sincronizados globalmente con éxito en todos los servidores!`);
-    } catch (error) {
-      console.error('❌ Error en la sincronización global de comandos Slash:', error);
+    } catch (error: any) {
+      console.error('❌ Error en la sincronización global de comandos Slash:', error?.message || error);
     }
   }
 
