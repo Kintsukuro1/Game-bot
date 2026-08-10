@@ -5,6 +5,7 @@ import { startScheduler } from './services/scheduler.js';
 import { empezarCommand } from './commands/general/empezar.js';
 import { gameCommand } from './commands/general/game.js';
 import { atacarCommand } from './commands/general/atacar.js';
+import { adminCommand } from './commands/general/admin.js';
 
 dotenv.config();
 
@@ -22,25 +23,28 @@ export const client = new Client({
 client.once('ready', async () => {
   console.log(`🤖 Bot iniciado con éxito como: ${client.user?.tag}`);
 
-  // Register Slash Commands globally or per guild
-  if (token && clientId && clientId !== 'your_client_id_here') {
+  // Sincronización Global de Comandos Slash en cada encendido
+  const botClientId = clientId || client.user?.id;
+
+  if (token && botClientId && botClientId !== 'your_client_id_here') {
     try {
       const rest = new REST({ version: '10' }).setToken(token);
       const commandList = [
         empezarCommand.data.toJSON(),
         gameCommand.data.toJSON(),
         atacarCommand.data.toJSON(),
+        adminCommand.data.toJSON(),
       ];
 
-      console.log('🔄 Registrando comandos Slash (/empezar, /game, /atacar) en Discord REST API...');
-      await rest.put(Routes.applicationCommands(clientId), { body: commandList });
-      console.log('✅ Comandos Slash registrados correctamente.');
+      console.log(`🔄 [Global Sync] Sincronizando ${commandList.length} comandos Slash globales (/empezar, /game, /atacar, /admin)...`);
+      await rest.put(Routes.applicationCommands(botClientId), { body: commandList });
+      console.log(`🌐 [Global Sync] ¡Comandos Slash sincronizados globalmente con éxito en todos los servidores!`);
     } catch (error) {
-      console.error('❌ Error registrando comandos Slash:', error);
+      console.error('❌ Error en la sincronización global de comandos Slash:', error);
     }
   }
 
-  // Start background scheduler
+  // Iniciar temporizadores de fondo (Regeneración de energía, etc.)
   startScheduler();
 });
 
