@@ -1,0 +1,174 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Player {
+  id            String          @id @default(uuid())
+  discordId     String          @unique
+  username      String
+  level         Int             @default(1)
+  xp            Int             @default(0)
+  gymTier       Int             @default(1)
+  gymExp        Int             @default(0)
+  hospitalUntil DateTime?
+  jailUntil     DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  wallet        Wallet?
+  stats         Stats?
+  bodyParts     BodyParts?
+  cooldowns     Cooldown[]
+  inventory     InventoryItem[]
+  transactions  Transaction[]
+  auditLogs     AuditLog[]      @relation("TargetPlayer")
+  adminLogs     AuditLog[]      @relation("AdminPlayer")
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  playerId  String   @unique
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  cash      BigInt   @default(100)
+  bank      BigInt   @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model Stats {
+  id           String   @id @default(uuid())
+  playerId     String   @unique
+  player       Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  energy       Int      @default(100)
+  maxEnergy    Int      @default(100)
+  nerve        Int      @default(100)
+  maxNerve     Int      @default(100)
+  happy        Int      @default(100)
+  maxHappy     Int      @default(100)
+  strength     Float    @default(1.0)
+  defense      Float    @default(1.0)
+  speed        Float    @default(1.0)
+  dexterity    Float    @default(1.0)
+  manualLabor  Float    @default(1.0)
+  intelligence Float    @default(1.0)
+  endurance    Float    @default(1.0)
+  crimeSkill   Float    @default(1.0)
+  crimeExp     Int      @default(0)
+  updatedAt    DateTime @updatedAt
+}
+
+model BodyParts {
+  id          String   @id @default(uuid())
+  playerId    String   @unique
+  player      Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  headHp      Int      @default(100)
+  torsoHp     Int      @default(100)
+  leftArmHp   Int      @default(100)
+  rightArmHp  Int      @default(100)
+  leftLegHp   Int      @default(100)
+  rightLegHp  Int      @default(100)
+  updatedAt   DateTime @updatedAt
+}
+
+model Cooldown {
+  id         String   @id @default(uuid())
+  playerId   String
+  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  type       String   // e.g. "CRIME", "ATTACK", "TRAIN"
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([playerId, type])
+}
+
+model Item {
+  id          String          @id @default(uuid())
+  name        String          @unique
+  description String
+  type        String          // WEAPON, MEDICAL, CONSUMABLE, MISC
+  price       Int             @default(0)
+  damage      Int             @default(0)
+  defense     Int             @default(0)
+  accuracy    Float           @default(0)
+  stealth     Float           @default(0)
+  weaponType  String?         // SMG, Rifle, Shotgun, Machine Gun, Heavy Artillery, Pistol, Piercing, Slashing, Clubbing, Mechanical
+  slot        String?         // PRIMARY, SECONDARY, MELEE, TEMPORARY
+  effect      String?         // JSON metadata string for special consumable/utility effects
+  createdAt   DateTime        @default(now())
+
+  inventories InventoryItem[]
+}
+
+model InventoryItem {
+  id         String   @id @default(uuid())
+  playerId   String
+  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  itemId     String
+  item       Item     @relation(fields: [itemId], references: [id])
+  quantity   Int      @default(1)
+  isEquipped Boolean  @default(false)
+  slot       String?  // PRIMARY, SECONDARY, MELEE, TEMPORARY, ARMOR
+
+  @@unique([playerId, itemId, slot])
+}
+
+model Transaction {
+  id            String   @id @default(uuid())
+  playerId      String
+  player        Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  amount        BigInt
+  balanceBefore BigInt
+  balanceAfter  BigInt
+  type          String   // CRIME_REWARD, ITEM_PURCHASE, HOSPITAL_FEE, Mug, TRANSFER
+  source        String   // SYSTEM, SHOP, PLAYER_ID
+  timestamp     DateTime @default(now())
+  metadata      String?
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  adminId        String
+  admin          Player   @relation("AdminPlayer", fields: [adminId], references: [id])
+  targetPlayerId String
+  targetPlayer   Player   @relation("TargetPlayer", fields: [targetPlayerId], references: [id])
+  action         String
+  beforeState    String?
+  afterState     String?
+  reason         String?
+  timestamp      DateTime @default(now())
+}
+
+model Bounty {
+  id             String   @id @default(uuid())
+  placedById     String
+  targetPlayerId String
+  reward         BigInt
+  fee            BigInt
+  status         String   @default("ACTIVE") // ACTIVE, CLAIMED, EXPIRED
+  claimedById    String?
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  @@index([targetPlayerId, status])
+}
+
+model PlayerMission {
+  id          String   @id @default(uuid())
+  playerId    String
+  title       String
+  description String
+  type        String   // ATTACKS, CRIMES, ITEMS, TRAINING
+  requirement Int
+  progress    Int      @default(0)
+  rewardCash  BigInt   @default(0)
+  rewardXp    Int      @default(0)
+  isCompleted Boolean  @default(false)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([playerId, isCompleted])
+}

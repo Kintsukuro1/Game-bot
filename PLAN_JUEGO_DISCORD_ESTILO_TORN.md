@@ -1,0 +1,2764 @@
+# 🎮 Plan de Desarrollo — Juego Estilo Torn para Discord
+
+> Documento maestro de planificación.
+>
+> **Objetivo:** construir un juego de navegador/Discord inspirado en la estructura de Torn, adaptado a Discord, con economía persistente, progresión, combate, crimen, empresas, facciones, mercado y sistemas sociales.
+>
+> **Enfoque:** desarrollar por fases incrementales. Cada fase debe dejar el proyecto en un estado funcional y comprobable antes de avanzar.
+
+---
+
+<details open>
+<summary><b>📌 Tabla de Contenidos / Índice de Navegación</b> (Click para replegar)</summary>
+
+### 📑 Fases del Proyecto
+- [0. Objetivo del proyecto](#0-objetivo-del-proyecto)
+- [1. Alcance general](#1-alcance-general)
+- [2. Niveles de lanzamiento](#2-niveles-de-lanzamiento)
+- [3. FASE 0 — PREPRODUCCIÓN](#3-fase-0--preproducción)
+- [4. FASE 1 — FUNDACIONES TÉCNICAS](#4-fase-1--fundaciones-técnicas)
+- [5. FASE 2 — JUGADOR Y PROGRESIÓN BÁSICA](#5-fase-2--jugador-y-progresión-básica)
+- [6. FASE 3 — INVENTARIO Y ECONOMÍA BÁSICA](#6-fase-3--inventario-y-economía-básica)
+- [7. FASE 4 — GIMNASIO](#7-fase-4--gimnasio)
+- [8. FASE 5 — COMBATE PvP](#8-fase-5--combate-pvp)
+- [9. FASE 6 — CRÍMENES](#9-fase-6--crímenes)
+- [10. FASE 7 — BOUNTIES Y MISIONES BÁSICAS](#10-fase-7--bounties-y-misiones-básicas)
+- [11. FASE 8 — NIVEL MÍNIMAMENTE LISTO](#11-fase-8--nivel-mínimamente-listo)
+- [12. FASE 9 — JOBS Y EDUCACIÓN](#12-fase-9--jobs-y-educación)
+- [13. FASE 10 — FACTIONS](#13-fase-10--factions)
+- [14. FASE 11 — GUERRAS Y CONFLICTOS](#14-fase-11--guerras-y-conflictos)
+- [15. FASE 12 — PROPIEDADES](#15-fase-12--propiedades)
+- [16. FASE 13 — VIAJES](#16-fase-13--viajes)
+- [17. FASE 14 — MERCADO Y TRADING](#17-fase-14--mercado-y-trading)
+- [18. FASE 15 — BANCO E INVERSIONES](#18-fase-15--banco-e-inversiones)
+- [19. FASE 16 — EMPRESAS](#19-fase-16--empresas)
+- [20. FASE 17 — RACING](#20-fase-17--racing)
+- [21. FASE 18 — CASINO](#21-fase-18--casino)
+- [22. FASE 19 — ITEMS AVANZADOS](#22-fase-19--items-avanzados)
+- [23. FASE 20 — PROGRESIÓN AVANZADA](#23-fase-20--progresión-avanzada)
+- [24. FASE 21 — ADMINISTRACIÓN](#24-fase-21--administración)
+- [25. FASE 22 — ANTI-EXPLOIT](#25-fase-22--anti-exploit)
+- [26. FASE 23 — BALANCE](#26-fase-23--balance)
+- [27. FASE 24 — UX DE DISCORD](#27-fase-24--ux-de-discord)
+- [28. FASE 25 — EVENTOS Y CONTENIDO DINÁMICO](#28-fase-25--eventos-y-contenido-dinámico)
+- [29. FASE 26 — ANALYTICS](#29-fase-26--analytics)
+- [30. FASE 27 — TESTING FINAL](#30-fase-27--testing-final)
+- [31. FASE 28 — BETA ABIERTA](#31-fase-28--beta-abierta)
+- [32. FASE 29 — LANZAMIENTO](#32-fase-29--lanzamiento)
+- [33. FASE 30 — POST-LANZAMIENTO](#33-fase-30--post-lanzamiento)
+- [34. ESTRUCTURA PROPUESTA DEL PROYECTO](#34-estructura-propuesta-del-proyecto)
+- [35. ORDEN REAL DE IMPLEMENTACIÓN](#35-orden-real-de-implementación)
+- [36. DEFINICIÓN DE "DONE"](#36-definición-de-done)
+- [37. CHECKPOINTS DEL PROYECTO](#37-checkpoints-del-proyecto)
+- [38. BACKLOG FUTURO](#38-backlog-futuro)
+- [39. ESTADO ACTUAL DEL PROYECTO](#39-estado-actual-del-proyecto)
+- [40. PRÓXIMO PASO](#40-próximo-paso)
+
+### 📖 Anexo A — Decisiones de Diseño y Mecánicas
+  - [A.1 Visión actual](#a1-visión-actual)
+  - [A.2 Mundo](#a2-mundo)
+  - [A.3 Hub de ciudad](#a3-hub-de-ciudad)
+  - [A.4 Filosofía de interfaz](#a4-filosofía-de-interfaz)
+  - [A.5 Progresión y desbloqueos](#a5-progresión-y-desbloqueos)
+  - [A.6 Descubrimiento](#a6-descubrimiento)
+  - [A.7 Primeros 30 minutos](#a7-primeros-30-minutos)
+  - [A.8 Primer combate](#a8-primer-combate)
+  - [A.9 NPCs con personalidad](#a9-npcs-con-personalidad)
+  - [A.10 Tienda inicial de armas](#a10-tienda-inicial-de-armas)
+  - [A.11 Tienda de conveniencia](#a11-tienda-de-conveniencia)
+  - [A.12 Gimnasio inicial](#a12-gimnasio-inicial)
+  - [A.13 Recursos base](#a13-recursos-base)
+  - [A.14 Sistema de vida corporal](#a14-sistema-de-vida-corporal)
+  - [A.15 Estados corporales](#a15-estados-corporales)
+  - [A.16 Efectos de las extremidades](#a16-efectos-de-las-extremidades)
+  - [A.17 Efectos de las piernas](#a17-efectos-de-las-piernas)
+  - [A.18 Torso](#a18-torso)
+  - [A.19 Cabeza](#a19-cabeza)
+  - [A.20 Extremidades a 0 HP](#a20-extremidades-a-0-hp)
+  - [A.21 Torso/cabeza a 0 HP](#a21-torsocabeza-a-0-hp)
+  - [A.22 Estado corporal vs. estado vital](#a22-estado-corporal-vs-estado-vital)
+  - [A.23 Hospital](#a23-hospital)
+  - [A.24 Inventario inicial](#a24-inventario-inicial)
+  - [A.25 Estadísticas iniciales](#a25-estadísticas-iniciales)
+  - [A.26 NPCs y narrativa](#a26-npcs-y-narrativa)
+  - [A.27 Filosofía del tutorial](#a27-filosofía-del-tutorial)
+  - [A.28 Primer objetivo](#a28-primer-objetivo)
+  - [A.29 Nivel 2](#a29-nivel-2)
+  - [A.30 Principios de diseño consolidados](#a30-principios-de-diseño-consolidados)
+
+</details>
+
+
+## 0. Objetivo del proyecto
+
+### 0.1 Visión
+Crear un juego persistente de crimen, combate y economía para Discord en el que cada jugador pueda:
+Crear y desarrollar un personaje.
+Ganar y gastar dinero.
+Entrenar estadísticas.
+Combatir contra otros jugadores.
+Cometer crímenes.
+Comprar y utilizar equipamiento.
+Trabajar y progresar profesionalmente.
+Crear/ingresar en facciones.
+Participar en guerras.
+Crear/gestionar empresas.
+Comprar propiedades.
+Viajar.
+Invertir.
+Participar en carreras.
+Apostar.
+Completar misiones.
+Desarrollar una progresión a largo plazo.
+### 0.2 Principios de diseño
+Persistencia: el progreso del jugador debe guardarse.
+Economía: el dinero debe tener fuentes y sumideros controlados.
+Cooldowns: las acciones importantes deben tener límites temporales.
+Progresión: siempre debe existir un siguiente objetivo.
+Interacción: el juego debe incentivar la interacción entre jugadores.
+Balance: ninguna estrategia debe dominar todo el juego.
+Auditoría: las acciones económicas y administrativas importantes deben quedar registradas.
+Discord-first: la interfaz debe aprovechar slash commands, botones, menús, embeds, roles y canales.
+Modularidad: cada sistema debe poder modificarse sin romper los demás.
+Escalabilidad: primero se construye un MVP pequeño; después se amplía.
+
+---
+
+
+## 1. Alcance general
+
+### 1.1 Sistemas principales
+| Sistema | Prioridad | MVP | Completo |
+| :--- | :--- | :--- | :--- |
+| Cuenta / jugador | Crítica | Sí | Sí |
+| Estadísticas | Crítica | Sí | Sí |
+| Energía / cooldowns | Crítica | Sí | Sí |
+| Dinero / economía | Crítica | Sí | Sí |
+| Inventario | Crítica | Sí | Sí |
+| Tiendas | Alta | Sí | Sí |
+| Equipamiento | Alta | Sí | Sí |
+| Gimnasio | Alta | Sí | Sí |
+| Combate PvP | Alta | Sí | Sí |
+| Crímenes | Alta | Sí | Sí |
+| Cárcel | Media | Sí | Sí |
+| Trabajo | Media | No | Sí |
+| Educación | Media | No | Sí |
+| Facciones | Alta | No | Sí |
+| Guerra | Alta | No | Sí |
+| Propiedades | Media | No | Sí |
+| Empresas | Media | No | Sí |
+| Viajes | Media | No | Sí |
+| Mercado | Media | No | Sí |
+| Banco | Media | No | Sí |
+| Stocks | Baja | No | Sí |
+| Misiones | Media | No | Sí |
+| Carreras | Baja | No | Sí |
+| Casino | Baja | No | Sí |
+| Bounties | Alta | No | Sí |
+| Social | Media | Sí | Sí |
+| Administración | Crítica | Sí | Sí |
+| Logs / auditoría | Crítica | Sí | Sí |
+
+---
+
+
+## 2. Niveles de lanzamiento
+
+El proyecto tendrá tres grandes objetivos.
+### 2.1 Nivel 1 — MÍNIMAMENTE LISTO
+El juego ya se puede jugar.
+- Debe permitir:
+- Registro.
+- Perfil.
+- Dinero.
+- Energía.
+- Vida.
+- Estadísticas.
+- Inventario.
+- Tienda.
+- Comprar objetos.
+- Equipar armas.
+- Gimnasio.
+- Combate PvP básico.
+- Crímenes básicos.
+- Cárcel.
+- Cooldowns.
+- Persistencia.
+- Logs.
+- Administración básica.
+- Criterio
+- Un jugador nuevo debe poder:
+> Registrarse → conseguir dinero → comprar equipo → entrenar → cometer crímenes → combatir → ganar/perder dinero → progresar.
+
+---
+
+### 2.2 Nivel 2 — LISTO CON LO NECESARIO
+El juego ya tiene una economía y progresión suficientemente completas para mantener jugadores.
+- Añade:
+- Facciones.
+- Bounties.
+- Misiones.
+- Jobs.
+- Educación.
+- Propiedades.
+- Viajes.
+- Mercado.
+- Banco.
+- Trading.
+- Sistema económico más completo.
+- Eventos.
+- Rankings.
+- Mejor balance.
+- Anti-abuso.
+- Herramientas administrativas completas.
+- Criterio
+- Un jugador puede desarrollar una estrategia propia:
+- Combatiente.
+- Criminal.
+- Empresario.
+- Inversionista.
+- Líder de faction.
+
+---
+
+### 2.3 Nivel 3 — COMPLETO
+Incluye prácticamente todo el ecosistema:
+Empresas.
+Guerras.
+Racing.
+Stocks.
+Casino.
+Organized Crimes.
+Sistema avanzado de educación.
+Propiedades avanzadas.
+Sistema avanzado de items.
+Eventos.
+Logros.
+Rankings.
+Mercado avanzado.
+Temporadas/eventos especiales.
+Balance avanzado.
+Herramientas de administración.
+Analytics.
+Sistemas anti-bot/anti-exploit.
+Optimización.
+Criterio
+El juego puede considerarse una versión completa y sostenible.
+
+---
+
+
+## 3. FASE 0 — PREPRODUCCIÓN
+
+#### Objetivo
+Definir exactamente qué vamos a construir antes de programar.
+
+---
+
+### Fase 0.1 — Definición del juego
+#### Tareas
+- [x] Definir nombre provisional.
+- [x] Definir temática.
+- [x] Definir tono.
+- [x] Definir si será una adaptación o una obra original inspirada en Torn.
+- [x] Definir qué mecánicas se replican conceptualmente.
+- [x] Definir qué mecánicas serán originales.
+- [x] Definir plataforma principal.
+- [x] Definir si habrá interfaz web complementaria.
+- [x] Definir cantidad inicial de jugadores objetivo.
+#### Resultado
+Documento:
+`01_GAME_DESIGN.md`
+
+---
+
+### Fase 0.2 — Reglas fundamentales
+- Definir:
+- [x] Energía.
+- [x] Nerve.
+- [x] Vida.
+- [x] Happy.
+- [x] Dinero.
+- [x] Experience.
+- [x] Nivel.
+- [x] Battle Stats.
+- [x] Working Stats.
+- [x] Cooldowns.
+- [x] Hospital.
+- [x] Jail.
+- [x] Muerte/permanencia de personaje si existe.
+- [x] Límites diarios.
+- [x] Límites de acciones.
+#### Resultado
+`02_CORE_RULES.md`
+
+---
+
+### Fase 0.3 — Economía
+- Definir:
+#### Fuentes de dinero
+- [x] Crímenes.
+- [x] Combate.
+- [x] Trabajos.
+- [x] Empresas.
+- [x] Misiones.
+- [x] Trading.
+- [x] Stocks.
+- [x] Carreras.
+- [x] Casino.
+#### Sumideros
+- [x] Armas.
+- [x] Medical.
+- [x] Gym.
+- [x] Educación.
+- [x] Propiedades.
+- [x] Viajes.
+- [x] Facciones.
+- [x] Empresas.
+- [x] Reparaciones.
+- [x] Apuestas.
+- [x] Impuestos/comisiones.
+#### Resultado
+`03_ECONOMY.md`
+
+---
+
+### Fase 0.4 — Arquitectura
+- Definir:
+- [x] Lenguaje.
+- [x] Framework de Discord.
+- [x] Base de datos.
+- [x] ORM.
+- [x] Sistema de migraciones.
+- [x] Cache.
+- [x] Jobs scheduler.
+- [x] Sistema de logs.
+- [x] Hosting.
+- [x] CI/CD.
+- [x] Backups.
+- [x] Variables de entorno.
+- [x] Arquitectura de módulos.
+#### Resultado
+`04_ARCHITECTURE.md`
+
+---
+
+
+## 4. FASE 1 — FUNDACIONES TÉCNICAS
+
+#### Objetivo
+Construir la base sobre la que funcionará todo el juego.
+
+---
+
+### Fase 1.1 — Proyecto
+- [x] Crear repositorio.
+- [x] Configurar ramas.
+- [x] Configurar lint.
+- [x] Configurar formatter.
+- [x] Configurar tests.
+- [x] Configurar variables de entorno.
+- [x] Crear configuración de desarrollo.
+- [x] Crear configuración de producción.
+- [x] Crear README.
+- [x] Crear changelog.
+
+---
+
+### Fase 1.2 — Discord
+- [x] Crear bot.
+- [x] Registrar slash commands.
+- [x] Configurar intents.
+- [x] Crear sistema de permisos.
+- [x] Crear manejo de errores.
+- [x] Crear respuestas estándar.
+- [x] Crear embeds estándar.
+- [x] Crear botones.
+- [x] Crear select menus.
+- [x] Crear modals.
+- [x] Crear sistema de paginación.
+
+---
+
+### Fase 1.3 — Base de datos
+#### Entidades iniciales
+```text
+User
+Player
+Wallet
+Cooldown
+Stats
+Inventory
+Item
+Weapon
+Transaction
+AuditLog
+```
+#### Tareas
+- [x] Crear esquema.
+- [x] Crear migraciones.
+- [x] Crear seed inicial.
+- [x] Crear repositories/services.
+- [x] Crear transacciones atómicas.
+- [x] Crear sistema de locking cuando sea necesario.
+
+---
+
+### Fase 1.4 — Scheduler
+#### Necesario para
+regeneración de energía.
+regeneración de nerve.
+recuperación de vida.
+fin de hospital.
+fin de jail.
+viajes.
+trabajos.
+educación.
+inversiones.
+carreras.
+eventos.
+#### Tareas
+- [x] Crear scheduler.
+- [x] Crear tareas recurrentes.
+- [x] Crear tareas diferidas.
+- [x] Crear recuperación después de reinicio.
+- [x] Crear protección contra ejecución duplicada.
+
+---
+
+
+## 5. FASE 2 — JUGADOR Y PROGRESIÓN BÁSICA
+
+#### Objetivo
+Crear el personaje y sus estadísticas.
+
+---
+
+### Fase 2.1 — Registro
+- [x] `/register`
+- [x] Crear personaje.
+- [x] Nombre.
+- [x] Fecha de creación.
+- [x] Nivel inicial.
+- [x] Dinero inicial.
+- [x] Energía inicial.
+- [x] Nerve inicial.
+- [x] Vida inicial.
+- [x] Happy inicial.
+
+---
+
+### Fase 2.2 — Perfil
+- [x] `/profile`
+- [x] `/stats`
+- [x] `/inventory`
+- [x] `/equipment`
+- Mostrar:
+```text
+Nivel
+Experience
+Money
+Energy
+Nerve
+Life
+Happy
+
+Strength
+Defense
+Speed
+Dexterity
+
+Manual Labor
+Intelligence
+Endurance
+```
+
+---
+
+### Fase 2.3 — Regeneración
+- Implementar:
+- [x] Energy regeneration.
+- [x] Nerve regeneration.
+- [x] Life regeneration.
+- [x] Cooldown timers.
+- [x] Maximum values.
+- [x] Boost modifiers.
+
+---
+
+### Fase 2.4 — Nivel
+- [x] Experience.
+- [x] Level up.
+- [x] Recompensas.
+- [x] Desbloqueos.
+- [x] Fórmula de experiencia.
+
+---
+
+
+## 6. FASE 3 — INVENTARIO Y ECONOMÍA BÁSICA
+
+#### Objetivo
+Permitir que el jugador compre, tenga y utilice objetos.
+
+---
+
+### Fase 3.1 — Items (Datos extraídos de Torn Wiki)
+#### Tipos
+- [x] Medical (Small First Aid Kit, First Aid Kit, Morphine, Blood Bag, Empty Blood Bag).
+- [x] Food (Feathery Hotel Coupon, Big Mac, etc.).
+- [x] Candy (Lollipop, Box of Sweet Hearts, Bag of Candy Kisses, Bag of Reindeer Droppings, Bag of Tootsie Rolls, Bag of Bloody Eyeballs).
+- [x] Alcohol (Bottle of Beer, Champagne, Saké, Tequila, Kandy Kane, Pumpkin Brew, Christmas Cocktail, Minty Mayhem, Wicked Witch, Mistletoe Madness, Stinky Swamp Punch, Christmas Spirit, Green Stout, Moonshine).
+- [x] Energy drinks (Can of Goose Juice, Damp Valley, Crocozade, Munster, Santa Shooters, Red Cow, Rockstar Rudolph, Taurine Elite, X-MASS).
+- [x] Drugs (Xanax, Ecstasy, Speed, LSD, Cannabis, Vicodin, Opium, PCP, Ketamine, Shrooms).
+- [x] Weapons (43 Primarias, 39 Secundarias, 69 Melee).
+- [x] Temporary weapons (14 Arrojadizas, 7 Debuffs, 4 Inyecciones/Needles).
+- [x] Miscellaneous (Donator Pack, Lottery Ticket, Six-Pack Supply Packs).
+
+---
+
+### Fase 3.2 — Inventario
+- [x] Añadir item.
+- [x] Quitar item.
+- [x] Stack.
+- [x] Cantidad.
+- [x] Peso/capacidad si aplica.
+- [x] Uso.
+- [x] Equipamiento.
+- [x] Venta.
+
+---
+
+### Fase 3.3 — Dinero
+- [x] Wallet.
+- [x] Cash.
+- [x] Transferencias.
+- [x] Depósitos.
+- [x] Retiros.
+- [x] Historial.
+Toda modificación monetaria debe generar:
+```text
+Transaction
+```
+con:
+```text
+player_id
+amount
+balance_before
+balance_after
+type
+source
+timestamp
+metadata
+```
+
+---
+
+### Fase 3.4 — Tiendas
+- [x] Catálogo.
+- [x] Precio.
+- [x] Stock.
+- [x] Compra.
+- [x] Venta.
+- [x] Límites.
+- [x] Reabastecimiento.
+- [x] Logs.
+
+---
+
+
+## 7. FASE 4 — GIMNASIO
+
+#### Objetivo
+Crear la primera progresión activa.
+
+---
+
+### Fase 4.1 — Battle Stats
+- [x] Strength.
+- [x] Defense.
+- [x] Speed.
+- [x] Dexterity.
+
+---
+
+### Fase 4.2 — Gym
+- [x] Lista de gimnasios.
+- [x] Desbloqueos.
+- [x] Coste de Energy.
+- [x] Gain formula.
+- [x] Happy reduction.
+- [x] Bonuses.
+- [x] Cooldowns si aplica.
+
+---
+
+### Fase 4.3 — Optimización
+- [x] Happy modifiers.
+- [x] Education modifiers.
+- [x] Faction modifiers.
+- [x] Item modifiers.
+- [x] Company modifiers.
+
+---
+
+
+## 8. FASE 5 — COMBATE PvP
+
+#### Objetivo
+Construir el principal sistema de interacción.
+
+---
+
+### Fase 5.1 — Equipamiento
+- Slots:
+```text
+Primary
+Secondary
+Melee
+Temporary
+```
+- [x] Equipar.
+- [x] Desequipar.
+- [x] Cambiar.
+- [x] Validar restricciones.
+
+---
+
+### Fase 5.2 — Sistema de combate
+- Implementar:
+- [x] Selección de objetivo.
+- [x] Coste de Energy.
+- [x] Ataques.
+- [x] Hit/miss.
+- [x] Damage.
+- [x] Defensa.
+- [x] Críticos.
+- [x] Turnos.
+- [x] Rendición.
+- [x] Victoria.
+- [x] Derrota.
+
+---
+
+### Fase 5.3 — Resultado
+#### Acciones posteriores
+- [x] Leave.
+- [x] Mug.
+- [x] Hospitalize.
+
+---
+
+### Fase 5.4 — Protección
+- [x] Anti-self attack.
+- [x] Cooldown.
+- [x] Level restrictions.
+- [x] Newbie protection.
+- [x] Anti-abuse.
+- [x] Logging.
+
+---
+
+
+## 9. FASE 6 — CRÍMENES
+
+#### Objetivo
+Crear una segunda forma de generar dinero y progresión.
+
+---
+
+### Fase 6.1 — Crime Engine
+Crear sistema genérico:
+```text
+Crime
+ ├── cost
+ ├── cooldown
+ ├── success_rate
+ ├── reward
+ ├── failure
+ ├── requirements
+ └── consequences
+```
+
+---
+
+### Fase 6.2 — Crímenes iniciales
+Implementar primero una cantidad pequeña:
+- [x] Search for Cash.
+- [x] Shoplifting.
+- [x] Otros 3–5 crímenes básicos.
+
+---
+
+### Fase 6.3 — Crime Skill
+- [x] XP.
+- [x] Skill.
+- [x] Desbloqueos.
+- [x] Modificadores.
+- [x] Failure scaling.
+
+---
+
+### Fase 6.4 — Jail
+- [x] Jail state.
+- [x] Jail timer.
+- [x] Bust.
+- [x] Bail.
+- [x] Self bust.
+- [x] Restricciones mientras está preso.
+
+---
+
+
+## 10. FASE 7 — BOUNTIES Y MISIONES BÁSICAS
+
+#### Objetivo
+Crear contenido PvP dirigido.
+
+---
+
+### Fase 7.1 — Bounties
+- [x] Crear bounty.
+- [x] Coste.
+- [x] Comisión.
+- [x] Objetivo.
+- [x] Recompensa.
+- [x] Expiración.
+- [x] Reclamar.
+- [x] Historial.
+
+---
+
+### Fase 7.2 — Missions
+Sistema:
+```text
+Mission
+ ├── objective
+ ├── requirements
+ ├── progress
+ ├── reward
+ └── expiration
+```
+- Tipos iniciales:
+- [x] Ataques.
+- [x] Crímenes.
+- [x] Uso de items.
+- [x] Entrenamiento.
+
+---
+
+
+## 11. FASE 8 — NIVEL MÍNIMAMENTE LISTO
+
+#### Objetivo
+Aquí se realiza el primer lanzamiento jugable.
+Debe estar terminado
+- [x] Registro.
+- [x] Perfil.
+- [x] Estadísticas.
+- [x] Money.
+- [x] Energy.
+- [x] Nerve.
+- [x] Life.
+- [x] Happy.
+- [x] Inventory.
+- [x] Shops.
+- [x] Weapons.
+- [x] Gym.
+- [x] PvP.
+- [x] Mug.
+- [x] Hospital.
+- [x] Crimes.
+- [x] Jail.
+- [x] Bust.
+- [x] Bounties.
+- [x] Persistencia.
+- [x] Logs.
+- [x] Administración.
+- [x] Backups.
+
+---
+
+### Fase 8.1 — Testing
+#### Unit tests
+- [x] Economía.
+- [x] Combate.
+- [x] Gym.
+- [x] Crimes.
+- [x] Cooldowns.
+- [x] Inventory.
+#### Integration tests
+- [x] Registro.
+- [x] Compra.
+- [x] Combate.
+- [x] Crime.
+- [x] Jail.
+- [x] Bounty.
+#### Exploit tests
+- [x] Duplicación de items.
+- [x] Duplicación de dinero.
+- [x] Double spending.
+- [x] Race conditions.
+- [x] Reintentos.
+- [x] Manipulación de IDs.
+- [x] Cooldown bypass.
+
+---
+
+### Fase 8.2 — Beta cerrada
+- [x] Crear servidor beta.
+- [x] Invitar testers.
+- [x] Registrar errores.
+- [x] Medir economía.
+- [x] Medir progresión.
+- [x] Ajustar recompensas.
+- [x] Ajustar costes.
+- [x] Ajustar combate.
+
+---
+
+
+## 12. FASE 9 — JOBS Y EDUCACIÓN
+
+#### Objetivo
+Crear progresión no relacionada directamente con combate.
+
+---
+
+### Fase 9.1 — Jobs
+- [ ] Lista de trabajos.
+- [ ] Aplicar.
+- [ ] Working Stats.
+- [ ] Daily pay.
+- [ ] Job Points.
+- [ ] Rangos.
+- [ ] Promociones.
+- [ ] Habilidades de trabajo.
+
+---
+
+### Fase 9.2 — Education
+- [ ] Cursos.
+- [ ] Duración.
+- [ ] Coste.
+- [ ] Requisitos.
+- [ ] Árbol.
+- [ ] Bonuses.
+- [ ] Cursos activos.
+- [ ] Finalización automática.
+
+---
+
+
+## 13. FASE 10 — FACTIONS
+
+#### Objetivo
+Introducir juego grupal.
+
+---
+
+### Fase 10.1 — Faction
+- [ ] Crear.
+- [ ] Nombre.
+- [ ] Descripción.
+- [ ] Líder.
+- [ ] Miembros.
+- [ ] Roles.
+- [ ] Treasury.
+- [ ] Respect.
+
+---
+
+### Fase 10.2 — Gestión
+- [ ] Invitar.
+- [ ] Expulsar.
+- [ ] Promover.
+- [ ] Degradar.
+- [ ] Transferir liderazgo.
+- [ ] Faction permissions.
+
+---
+
+### Fase 10.3 — Armory
+- [ ] Depositar items.
+- [ ] Retirar items.
+- [ ] Permisos.
+- [ ] Logs.
+
+---
+
+### Fase 10.4 — Organized Crimes
+- [ ] Crear OC.
+- [ ] Slots.
+- [ ] Roles.
+- [ ] Requisitos.
+- [ ] Resultado.
+- [ ] Recompensas.
+
+---
+
+
+## 14. FASE 11 — GUERRAS Y CONFLICTOS
+
+#### Objetivo
+Crear contenido PvP colectivo.
+
+---
+
+### Fase 11.1 — Warfare
+- [ ] Declarar guerra.
+- [ ] Aceptar.
+- [ ] Preparación.
+- [ ] Duración.
+- [ ] Objetivo.
+- [ ] Score.
+- [ ] Respect ganado/perdido.
+- [ ] Recompensas.
+
+---
+
+### Fase 11.2 — Faction Events
+- [ ] Guerra.
+- [ ] Competencias.
+- [ ] Rankings.
+- [ ] Eventos especiales.
+
+---
+
+
+## 15. FASE 12 — PROPIEDADES
+
+#### Objetivo
+Crear un sistema de inversión y Happy.
+
+---
+
+### Fase 12.1 — Properties
+- [ ] Comprar.
+- [ ] Rentar.
+- [ ] Precio.
+- [ ] Capacidad.
+- [ ] Happy.
+- [ ] Upgrades.
+
+---
+
+### Fase 12.2 — Staff
+- [ ] Maid.
+- [ ] Butler.
+- [ ] Guard.
+- [ ] Doctor.
+- [ ] Pilot.
+
+---
+
+### Fase 12.3 — Upgrades
+Crear sistema genérico:
+```text
+PropertyUpgrade
+ ├── cost
+ ├── requirements
+ ├── bonus
+ └── maintenance
+```
+
+---
+
+
+## 16. FASE 13 — VIAJES
+
+#### Objetivo
+Añadir economía internacional y contenido.
+
+---
+
+### Fase 13.1 — Travel Engine
+- [ ] Países.
+- [ ] Costes.
+- [ ] Duraciones.
+- [ ] Restricciones.
+- [ ] Estado traveling.
+- [ ] Llegada.
+
+---
+
+### Fase 13.2 — Mercados internacionales
+- [ ] Items exclusivos.
+- [ ] Precios.
+- [ ] Stock.
+- [ ] Compras.
+- [ ] Venta.
+
+---
+
+
+## 17. FASE 14 — MERCADO Y TRADING
+
+#### Objetivo
+Crear una economía entre jugadores.
+
+---
+
+### Fase 14.1 — Player Market
+- [ ] Publicar.
+- [ ] Comprar.
+- [ ] Cancelar.
+- [ ] Expirar.
+- [ ] Fees.
+
+---
+
+### Fase 14.2 — Trading directo
+- [ ] Crear trade.
+- [ ] Añadir dinero.
+- [ ] Añadir items.
+- [ ] Confirmación doble.
+- [ ] Bloqueo al confirmar.
+- [ ] Ejecución atómica.
+
+---
+
+
+## 18. FASE 15 — BANCO E INVERSIONES
+
+#### Objetivo
+Crear mecanismos para almacenar/invertir dinero.
+
+---
+
+### Fase 15.1 — Bank
+- [ ] Depositar.
+- [ ] Retirar.
+- [ ] Duración.
+- [ ] Interés.
+- [ ] Finalización.
+- [ ] Penalizaciones.
+
+---
+
+### Fase 15.2 — Stocks
+- [ ] Empresas cotizadas.
+- [ ] Precio.
+- [ ] Compra.
+- [ ] Venta.
+- [ ] Variación.
+- [ ] Beneficios.
+- [ ] Dividendos si aplica.
+
+---
+
+
+## 19. FASE 16 — EMPRESAS
+
+#### Objetivo
+Crear economía empresarial.
+
+---
+
+### Fase 16.1 — Company
+- [ ] Comprar empresa.
+- [ ] Tipo.
+- [ ] Nivel.
+- [ ] Popularity.
+- [ ] Efficiency.
+- [ ] Environment.
+- [ ] Cash.
+- [ ] Revenue.
+- [ ] Expenses.
+
+---
+
+### Fase 16.2 — Empleados
+- [ ] Contratar.
+- [ ] Despedir.
+- [ ] Salario.
+- [ ] Posiciones.
+- [ ] Promoción.
+- [ ] Productividad.
+
+---
+
+### Fase 16.3 — Gestión
+- [ ] Inventario.
+- [ ] Stock.
+- [ ] Marketing.
+- [ ] Training.
+- [ ] Upgrades.
+- [ ] Reportes diarios.
+
+---
+
+
+## 20. FASE 17 — RACING
+
+#### Objetivo
+Crear un sistema deportivo persistente.
+
+---
+
+### Fase 17.1 — Cars
+- [ ] Comprar.
+- [ ] Vender.
+- [ ] Colección.
+- [ ] Stats.
+- [ ] Equipamiento.
+
+---
+
+### Fase 17.2 — Racing
+- [ ] Racing Skill.
+- [ ] Clases.
+- [ ] Pistas.
+- [ ] Carreras.
+- [ ] Ranking.
+- [ ] Racing Points.
+
+---
+
+### Fase 17.3 — Parts
+- [ ] Motor.
+- [ ] Neumáticos.
+- [ ] Suspensión.
+- [ ] Frenos.
+- [ ] Otros upgrades.
+
+---
+
+
+## 21. FASE 18 — CASINO
+
+#### Objetivo
+Añadir entretenimiento y sink económico.
+
+---
+
+### Fase 18.1 — Juegos
+- [ ] Blackjack.
+- [ ] Poker.
+- [ ] Roulette.
+- [ ] Slots.
+- [ ] Lottery.
+- [ ] Bookie.
+- [ ] Otros juegos.
+
+---
+
+### Fase 18.2 — Seguridad
+El casino debe tener:
+- [ ] Límites de apuesta.
+- [ ] Registro de resultados.
+- [ ] RNG seguro.
+- [ ] Protección contra doble ejecución.
+- [ ] Auditoría.
+- [ ] Límites anti-abuso.
+
+---
+
+
+## 22. FASE 19 — ITEMS AVANZADOS
+
+#### Objetivo
+Ampliar el ecosistema de objetos.
+
+---
+
+#### Categorías
+- [ ] Medical.
+- [ ] Drugs.
+- [ ] Boosters.
+- [ ] Candy.
+- [ ] Alcohol.
+- [ ] Weapons.
+- [ ] Temporary.
+- [ ] Armor.
+- [ ] Attachments.
+- [ ] Racing parts.
+- [ ] Collectibles.
+- [ ] Mission items.
+- [ ] Crime items.
+- [ ] Faction items.
+
+---
+
+
+## 23. FASE 20 — PROGRESIÓN AVANZADA
+
+#### Objetivo
+Dar objetivos de largo plazo.
+
+---
+
+### Fase 20.1 — Achievements
+- [ ] Logros.
+- [ ] Categorías.
+- [ ] Recompensas.
+- [ ] Estadísticas.
+
+---
+
+### Fase 20.2 — Rankings
+- [ ] Level.
+- [ ] Battle Stats.
+- [ ] Wealth.
+- [ ] Crimes.
+- [ ] Factions.
+- [ ] Companies.
+- [ ] Racing.
+- [ ] Casino.
+- [ ] PvP.
+
+---
+
+### Fase 20.3 — Perks
+- [ ] Merits.
+- [ ] Skills.
+- [ ] Passive bonuses.
+- [ ] Unlocks.
+
+---
+
+
+## 24. FASE 21 — ADMINISTRACIÓN
+
+#### Objetivo
+Controlar el juego y resolver problemas.
+
+---
+
+#### Herramientas
+- [ ] Buscar jugador.
+- [ ] Ver historial.
+- [ ] Modificar dinero.
+- [ ] Modificar items.
+- [ ] Modificar stats.
+- [ ] Jail.
+- [ ] Hospital.
+- [ ] Ban.
+- [ ] Mute.
+- [ ] Reset.
+- [ ] Crear items.
+- [ ] Crear eventos.
+- [ ] Modificar precios.
+- [ ] Modificar economía.
+
+---
+
+#### Auditoría
+Toda acción administrativa debe registrar:
+```text
+admin
+target
+action
+before
+after
+reason
+timestamp
+```
+
+---
+
+
+## 25. FASE 22 — ANTI-EXPLOIT
+
+#### Objetivo
+Evitar que la economía sea destruida.
+
+---
+
+#### Controles
+- [ ] Rate limits.
+- [ ] Cooldown server-side.
+- [ ] Atomic transactions.
+- [ ] Idempotency.
+- [ ] Anti-duplication.
+- [ ] Anti-double-spend.
+- [ ] Suspicious transaction detection.
+- [ ] Multi-account detection.
+- [ ] Bot detection.
+- [ ] Economy anomaly detection.
+
+---
+
+
+## 26. FASE 23 — BALANCE
+
+#### Objetivo
+Evitar que una estrategia sea claramente superior.
+
+---
+
+#### Métricas
+- Medir:
+- [ ] Dinero generado por hora.
+- [ ] Dinero gastado por hora.
+- [ ] Energy utilizada.
+- [ ] Nerve utilizada.
+- [ ] Battle Stats promedio.
+- [ ] Tasa de victorias.
+- [ ] Tasa de éxito de crímenes.
+- [ ] Inflación.
+- [ ] Distribución de riqueza.
+- [ ] Valor promedio de inventario.
+- [ ] Participación en factions.
+- [ ] Retención diaria.
+- [ ] Retención semanal.
+
+---
+
+
+## 27. FASE 24 — UX DE DISCORD
+
+#### Objetivo
+Que el juego sea cómodo de utilizar.
+
+---
+
+#### Comandos
+Todos los comandos deberán seguir una estructura consistente.
+Ejemplo:
+```text
+/game profile
+/game stats
+/game gym
+/game attack
+/game crimes
+/game inventory
+/game shop
+/game faction
+/game company
+```
+O, si se prefiere, comandos directos:
+```text
+/profile
+/stats
+/gym
+/attack
+/crimes
+```
+La decisión se toma en preproducción.
+
+---
+
+#### Componentes visuales
+- [ ] Embeds.
+- [ ] Buttons.
+- [ ] Select menus.
+- [ ] Modals.
+- [ ] Progress bars.
+- [ ] Paginación.
+- [ ] Confirmaciones.
+- [ ] Mensajes efímeros.
+- [ ] Estados persistentes.
+
+---
+
+
+## 28. FASE 25 — EVENTOS Y CONTENIDO DINÁMICO
+
+#### Objetivo
+Evitar que el juego se vuelva repetitivo.
+
+---
+
+#### Eventos
+- [ ] Eventos diarios.
+- [ ] Eventos semanales.
+- [ ] Eventos mensuales.
+- [ ] Eventos aleatorios.
+- [ ] Eventos de faction.
+- [ ] Eventos PvP.
+- [ ] Eventos económicos.
+- [ ] Eventos especiales.
+
+---
+
+
+## 29. FASE 26 — ANALYTICS
+
+#### Objetivo
+Saber qué está ocurriendo realmente dentro del juego.
+
+---
+
+#### Métricas técnicas
+- [ ] Usuarios activos.
+- [ ] Comandos por minuto.
+- [ ] Errores.
+- [ ] Latencia.
+- [ ] Queries.
+- [ ] Jobs fallidos.
+- [ ] Uso de CPU/RAM.
+
+---
+
+#### Métricas de juego
+- [ ] Nuevos jugadores.
+- [ ] Retención.
+- [ ] Economía.
+- [ ] PvP.
+- [ ] Crimes.
+- [ ] Factions.
+- [ ] Companies.
+- [ ] Casino.
+- [ ] Racing.
+
+---
+
+
+## 30. FASE 27 — TESTING FINAL
+
+#### Testing funcional
+- [ ] Todos los comandos.
+- [ ] Todos los botones.
+- [ ] Todos los flujos.
+- [ ] Todos los estados.
+#### Testing económico
+- [ ] Crear dinero.
+- [ ] Destruir dinero.
+- [ ] Transferir.
+- [ ] Trading.
+- [ ] Stocks.
+- [ ] Bank.
+- [ ] Casino.
+#### Testing de concurrencia
+Probar:
+```text
+Jugador A compra
+Jugador B compra
+Jugador A vende
+Jugador B vende
+```
+simultáneamente.
+
+---
+
+
+## 31. FASE 28 — BETA ABIERTA
+
+#### Objetivo
+Abrir el juego a una cantidad mayor de jugadores.
+#### Tareas
+- [ ] Preparar servidor.
+- [ ] Preparar documentación.
+- [ ] Preparar reglas.
+- [ ] Preparar soporte.
+- [ ] Preparar reportes.
+- [ ] Monitorizar economía.
+- [ ] Corregir exploits.
+- [ ] Ajustar balance.
+
+---
+
+
+## 32. FASE 29 — LANZAMIENTO
+
+#### Pre-launch
+- [ ] Backup.
+- [ ] Migraciones.
+- [ ] Seed.
+- [ ] Configuración de producción.
+- [ ] Monitorización.
+- [ ] Logs.
+- [ ] Alertas.
+- [ ] Plan de rollback.
+#### Launch
+- [ ] Abrir registro.
+- [ ] Activar sistemas.
+- [ ] Monitorizar primeras horas.
+- [ ] Revisar economía.
+- [ ] Revisar errores.
+- [ ] Revisar exploits.
+#### Post-launch
+- [ ] Hotfix.
+- [ ] Balance.
+- [ ] Feedback.
+- [ ] Roadmap.
+
+---
+
+
+## 33. FASE 30 — POST-LANZAMIENTO
+
+El juego no termina en el lanzamiento.
+Se debe trabajar mediante ciclos:
+```text
+Analizar
+   ↓
+Detectar problema
+   ↓
+Diseñar solución
+   ↓
+Implementar
+   ↓
+Testear
+   ↓
+Deploy
+   ↓
+Medir
+   ↓
+Repetir
+```
+
+---
+
+
+## 34. ESTRUCTURA PROPUESTA DEL PROYECTO
+
+```text
+game/
+├── core/
+│   ├── player/
+│   ├── stats/
+│   ├── wallet/
+│   ├── cooldowns/
+│   └── progression/
+│
+├── combat/
+│   ├── weapons/
+│   ├── battle/
+│   └── hospital/
+│
+├── crimes/
+│   ├── crimes/
+│   ├── skills/
+│   ├── jail/
+│   └── organized/
+│
+├── economy/
+│   ├── shops/
+│   ├── market/
+│   ├── bank/
+│   └── stocks/
+│
+├── factions/
+│   ├── members/
+│   ├── armory/
+│   ├── warfare/
+│   └── organized_crimes/
+│
+├── companies/
+│   ├── employees/
+│   ├── management/
+│   └── production/
+│
+├── properties/
+│   ├── houses/
+│   ├── upgrades/
+│   └── staff/
+│
+├── travel/
+│
+├── missions/
+│
+├── racing/
+│   ├── cars/
+│   ├── parts/
+│   └── races/
+│
+├── casino/
+│
+├── education/
+│
+├── items/
+│
+├── achievements/
+│
+├── events/
+│
+├── admin/
+│
+└── analytics/
+```
+
+---
+
+
+## 35. ORDEN REAL DE IMPLEMENTACIÓN
+
+No debemos implementar todo en el orden de las pantallas de Torn.
+El orden recomendado es:
+```text
+1. Arquitectura
+       ↓
+2. Base de datos
+       ↓
+3. Player
+       ↓
+4. Stats
+       ↓
+5. Wallet
+       ↓
+6. Cooldowns
+       ↓
+7. Inventory
+       ↓
+8. Items
+       ↓
+9. Shops
+       ↓
+10. Gym
+       ↓
+11. Weapons
+       ↓
+12. Combat
+       ↓
+13. Crimes
+       ↓
+14. Jail
+       ↓
+15. Bounties
+       ↓
+16. Missions
+       ↓
+17. BETA MVP
+       ↓
+18. Jobs
+       ↓
+19. Education
+       ↓
+20. Factions
+       ↓
+21. Warfare
+       ↓
+22. Properties
+       ↓
+23. Travel
+       ↓
+24. Market
+       ↓
+25. Bank
+       ↓
+26. Companies
+       ↓
+27. Stocks
+       ↓
+28. Racing
+       ↓
+29. Casino
+       ↓
+30. Advanced progression
+       ↓
+31. Events
+       ↓
+32. Analytics
+       ↓
+33. Launch
+```
+
+---
+
+
+## 36. DEFINICIÓN DE "DONE"
+
+Una fase NO se considera terminada simplemente porque el código funciona.
+- Debe cumplir:
+#### Código
+- [ ] Implementado.
+- [ ] Revisado.
+- [ ] Sin errores conocidos críticos.
+#### Base de datos
+- [ ] Migración.
+- [ ] Índices.
+- [ ] Constraints.
+- [ ] Integridad.
+#### Gameplay
+- [ ] Costes.
+- [ ] Recompensas.
+- [ ] Cooldowns.
+- [ ] Requisitos.
+- [ ] Estados.
+#### Seguridad
+- [ ] Validaciones.
+- [ ] Rate limits.
+- [ ] Anti-exploit.
+#### UX
+- [ ] Comandos.
+- [ ] Mensajes.
+- [ ] Errores.
+- [ ] Confirmaciones.
+#### Testing
+- [ ] Unit.
+- [ ] Integration.
+- [ ] Edge cases.
+#### Documentación
+- [ ] Reglas.
+- [ ] Comandos.
+- [ ] Datos.
+- [ ] Decisiones.
+
+---
+
+
+## 37. CHECKPOINTS DEL PROYECTO
+
+### 🟢 CHECKPOINT A — PROTOTIPO
+Debe poder:
+```text
+Registrar
+ ↓
+Ver perfil
+ ↓
+Entrenar
+ ↓
+Comprar
+ ↓
+Equipar
+ ↓
+Atacar
+ ↓
+Cometer crimen
+```
+
+---
+
+### 🟡 CHECKPOINT B — MVP
+Debe poder:
+```text
+Progresar
+ ↓
+Generar dinero
+ ↓
+Gastar dinero
+ ↓
+Combatir
+ ↓
+Criminalidad
+ ↓
+Bounties
+ ↓
+Misiones
+```
+
+---
+
+### 🟠 CHECKPOINT C — JUEGO COMPLETO BASE
+Debe poder:
+```text
+Combatiente
+Criminal
+Trabajador
+Faction member
+Empresario
+Inversionista
+```
+
+---
+
+### 🔴 CHECKPOINT D — RELEASE
+- Debe tener:
+```text
+Todos los sistemas principales
++
+Balance
++
+Seguridad
++
+Analytics
++
+Administración
++
+Eventos
++
+Documentación
+```
+
+---
+
+
+## 38. BACKLOG FUTURO
+
+Estas funcionalidades se dejan deliberadamente para después:
+- [ ] Sistema de mascotas.
+- [ ] Sistema de colecciones.
+- [ ] Eventos de temporada.
+- [ ] NPCs avanzados.
+- [ ] Mercado negro.
+- [ ] Contratos dinámicos.
+- [ ] Sistema de reputación.
+- [ ] Sistema político.
+- [ ] Territorios.
+- [ ] Nuevas ciudades.
+- [ ] Nuevos países.
+- [ ] Clanes especiales.
+- [ ] Endgame.
+- [ ] Prestige.
+- [ ] Temporadas.
+
+---
+
+
+## 39. ESTADO ACTUAL DEL PROYECTO
+
+| Fase | Estado |
+| :--- | :--- |
+| 0 — Preproducción | ✅ Completado |
+| 1 — Fundaciones | ✅ Completado |
+| 2 — Jugador | ✅ Completado |
+| 3 — Economía básica | ✅ Completado |
+| 4 — Gym | ✅ Completado |
+| 5 — Combate | ✅ Completado |
+| 6 — Crimes | ✅ Completado |
+| 7 — Bounties/Missions | ✅ Completado |
+| 8 — MVP | ✅ Completado |
+| 9 — Jobs/Education | ⬜ Pendiente |
+| 10 — Factions | ⬜ Pendiente |
+| 11 — Warfare | ⬜ Pendiente |
+| 12 — Properties | ⬜ Pendiente |
+| 13 — Travel | ⬜ Pendiente |
+| 14 — Market | ⬜ Pendiente |
+| 15 — Bank/Stocks | ⬜ Pendiente |
+| 16 — Companies | ⬜ Pendiente |
+| 17 — Racing | ⬜ Pendiente |
+| 18 — Casino | ⬜ Pendiente |
+| 19 — Items avanzados | ⬜ Pendiente |
+| 20 — Progresión avanzada | ⬜ Pendiente |
+| 21 — Administración | ⬜ Pendiente |
+| 22 — Anti-exploit | ⬜ Pendiente |
+| 23 — Balance | ⬜ Pendiente |
+| 24 — UX | ⬜ Pendiente |
+| 25 — Eventos | ⬜ Pendiente |
+| 26 — Analytics | ⬜ Pendiente |
+| 27 — Testing final | ⬜ Pendiente |
+| 28 — Beta | ⬜ Pendiente |
+| 29 — Lanzamiento | ⬜ Pendiente |
+| 30 — Post-lanzamiento | ⬜ Pendiente |   
+
+### 📜 Log de Registro de Avances
+
+- **2026-08-10 — Fase 7 (Bounties y Misiones) & Fase 8 (Nivel Mínimamente Listo / MVP):**
+  - ✅ **Bounties PvP (Fase 7.1):** Sistema de colocación de recompensas con 10% de comisión, auditoría monetaria `Transaction`, cobro automático al vencer al objetivo en duelo PvP y expiración en 7 días.
+  - ✅ **Misiones Diarias (Fase 7.2):** Seguimiento atómico de objetivos de juego (`CRIMES`, `ATTACKS`, `TRAINING`, `ITEMS`) con recompensas de dinero y experiencia.
+  - ✅ **MVP Totalmente Jugable (Fase 8):** Verificación completa de todos los módulos del MVP (Registro `/empezar`, Perfil con 6 partes corporales, Cartera con auditoría estricta, Catálogo de 178 Ítems, Gimnasio con fórmula de Torn Wiki, Combate PvP con post-acciones, Crímenes, Prisión/Rescates/Fianzas, Bounties, Misiones, Persistencia en PostgreSQL y Suite de Administración `/admin`).
+
+- **2026-08-10 — Fase 6 (Crímenes, Crime Skill y Prisión / Jail):**
+  - ✅ **Crime Engine (Fase 6.1 & 6.2):** Motor genérico con 5 crímenes iniciales (`Search for Cash`, `Shoplifting`, `Pickpocketing`, `Larceny`, `Armed Robbery`) con costo de Nerve (2🧠 a 10🧠), tasas de éxito, botines monetarios auditados en `Transaction` (`CRIME_REWARD`) e incrementos de Crime XP.
+  - ✅ **Crime Skill & Progresión (Fase 6.3):** Incorporación de `crimeSkill` y `crimeExp` en el modelo `Stats`. A mayor Crime Skill, mayor probabilidad de éxito en todos los crímenes.
+  - ✅ **Sistema de Prisión / Jail (Fase 6.4):** Encarcelamiento por fallar crímenes o fugas. Restricciones de acciones en prisión. Cálculo oficial de Fianza (`Bail = $100 * minutos * nivel`), Rescate de compañeros (`Bust` por 5🧠) y Fuga Propia (`Self Bust` por 50% de Nerve total).
+
+- **2026-08-10 — Fase 5 (Combate PvP y Protecciones):**
+  - ✅ **Comando `/atacar` (Fase 5.2):** Sistema de duelo PvP atómico (consume 25⚡) con desglose por turnos en Embeds de Discord.
+  - ✅ **Motor de Daño Corporal (Fase 5.2):** Cálculo de impacto (`Fuerza vs Defensa`, `Velocidad vs Destreza`), probabilidad de fallar/acertar y golpes críticos (15% probabilidad) direccionados a 6 zonas del cuerpo (`Cabeza`, `Torso`, `Brazos`, `Piernas`).
+  - ✅ **Acciones Post-Combate (Fase 5.3):** Botones interactivos tras ganar un duelo: `🚪 Leave` (+100 XP, 15m hosp), `💸 Mug` (Robo de 5-15% del efectivo de la víctima con auditoría monetaria `Transaction`), `🚑 Hospitalize` (Hospitalización severa de 60m).
+  - ✅ **Protecciones Anti-Abuso (Fase 5.4):** Anti-Self Attack (no puedes atacarte a ti mismo), Protección de Novatos (jugadores Nivel < 2), Verificación de Hospital y Cárcel.
+
+- **2026-08-10 — Fase 4 (Gimnasio y Progresión Activa de Battle Stats):**
+  - ✅ **Fórmula Oficial de Torn Wiki (Fase 4.1 & 4.2):** Implementación de la ecuación real de ganancias `Gains = Modifiers * GymDots * (Energy/5) * [(a*ln(Stat)+b)*(1+c*Happy) + d*Happy + e]` para entrenamiento de **Fuerza (Strength)**, **Defensa (Defense)**, **Velocidad (Speed)** y **Destreza (Dexterity)**.
+  - ✅ **Tiers de Gimnasio (Fase 4.2):** 7 niveles de gimnasios mapeados (`Premier Fitness`, `Average Joe's`, `Woody's Workout`, `Global Gym`, `Gold's Gym`, `Anarchy Fitness`, `The Asylum Heavy Weight`) con costos de membresía, multiplicadores de ganancia y consumo de energía.
+  - ✅ **Consumo de Happy & Experiencia (Fase 4.2 & 4.3):** Entrenar consume `~50%` de la energía gastada como Felicidad (😊) e incrementa la experiencia acumulada del gimnasio (`gymExp`) para desbloquear el siguiente nivel.
+
+- **2026-08-10 — Fase 3 (Inventario, Economía Básica, Transacciones Auditables y Tiendas):**
+  - ✅ **Inventario (Fase 3.2):** Apilamiento de cantidad (Stacking), equipamiento de armas por ranura (`PRIMARY`, `SECONDARY`, `MELEE`, `TEMPORARY`) y consumo de ítems de Torn Wiki (Medical, Drugs, Energy Drinks, Alcohol, Candy) integrados en el Hub interactivo sin flood.
+  - ✅ **Dinero y Auditoría (Fase 3.3):** Sistema de Cartera (Efectivo/Banco), Depósitos, Retiros y Transferencias entre jugadores. **Toda modificación monetaria genera un registro atómico estricto en `Transaction`** con `playerId`, `amount`, `balanceBefore`, `balanceAfter`, `type`, `source`, `timestamp` y `metadata`.
+  - ✅ **Tiendas (Fase 3.4):** Armería y Mercado de Suministros con catálogo de 178 ítems, compra/venta en tiempo real, deducción/acreditación de efectivo y Menú de Selección interactivo (`StringSelectMenu`).
+
+- **2026-08-10 — Fase 3.1 (Ítems Oficiales de Torn Wiki):**
+  - ✅ Catálogo de datos extraído y autenticado desde **Torn Wiki** (`wiki.torn.com`):
+    - 💊 **Medical:** Morphine (-70m hosp, +15% HP), First Aid Kit, Small First Aid Kit, Blood Bag, Empty Blood Bag.
+    - 🧪 **Drugs:** Xanax (+250⚡), Ecstasy (x2 Happy), Speed (+20% Fuerza), LSD (+50⚡,+20🧠,+50😊), Cannabis (+3🧠, +150😊), Vicodin (+25% Stats), Opium (+50% HP), PCP (+500😊), Ketamine, Shrooms.
+    - ⚡ **Energy Drinks:** Can of Goose Juice (+5⚡), Damp Valley (+10⚡), Crocozade (+15⚡), Munster (+20⚡), Santa Shooters (+20⚡), Red Cow (+25⚡), Rockstar Rudolph (+25⚡), Taurine Elite (+30⚡), X-MASS (+30⚡).
+    - 🍺 **Alcohol:** Bottle of Beer (+1🧠), Champagne, Saké, Tequila, Kandy Kane (+2🧠), Pumpkin Brew (+2🧠), Christmas Cocktail (+3🧠), Minty Mayhem (+3🧠), Wicked Witch (+3🧠), Mistletoe Madness (+4🧠), Stinky Swamp Punch (+4🧠), Christmas Spirit (+5🧠), Green Stout (+5🧠), Moonshine (+5🧠).
+    - 🍬 **Candy:** Lollipop (+25😊), Box of Sweet Hearts (+50😊), Bag of Candy Kisses (+75😊), Bag of Reindeer Droppings (+100😊), Bag of Tootsie Rolls (+125😊), Bag of Bloody Eyeballs (+150😊).
+    - 📦 **Misc & Supply Packs:** Donator Pack (31d), Lottery Ticket, Six-Pack Supply Packs.
+
+- **2026-08-10 — Fase 2 (Jugador y Progresión Básica):**
+  - ✅ Implementación del comando Slash único de registro e inicio `/empezar` vinculado al ID de cuenta de Discord.
+  - ✅ Arquitectura de navegación sin flood de chat: Todo interactúa dentro de un único mensaje (Hub central) usando `interaction.update` para refrescar vistas en el mismo lugar.
+  - ✅ Vistas interactivas de Hub implementadas: `Perfil`, `Estadísticas (Battle Stats + Working Stats)`, `Inventario` y `Equipamiento` con botón `🔙 Volver al Hub`.
+  - ✅ Incorporación de Working Stats (`manualLabor`, `intelligence`, `endurance`) al modelo de base de datos `Stats`.
+
+- **2026-08-10 — Fase 0 (Preproducción) & Fase 1 (Fundaciones Técnicas):**
+  - ✅ Arquitectura base inicializada con **Node.js + TypeScript (v5.6)** y **`discord.js` v14**.
+  - ✅ Configuración de motor de base de datos **PostgreSQL** (`provider = "postgresql"`) con **Prisma ORM** e identificadores atómicos de `Player`, `Wallet`, `Stats`, `BodyParts`, `Cooldown`, `InventoryItem`, `Item`, `Transaction` y `AuditLog`, listo para conectarse a VM externa.
+  - ✅ Sembrado de catálogo completo de **178 armas y consumibles de Torn** (`prisma/seed.ts`) clasificadas en Armas Primarias, Secundarias, Melee, Temporales, Debuffs y Buffs.
+  - ✅ Scheduler en segundo plano con `node-cron` para la regeneración de Energía ⚡ y Nerve 🧠 cada 5 minutos.
+  - ✅ Pruebas unitarias de registro atómico e idempotencia aprobadas (`tests/playerService.test.ts`).
+
+---
+
+
+---
+
+
+# ANEXO A — DECISIONES DE DISEÑO: VISIÓN, PROGRESIÓN Y PRIMERA EXPERIENCIA
+
+> Este anexo recoge las decisiones tomadas durante la lluvia de ideas y pasa a formar parte de la especificación de diseño.
+
+## A.1 Visión actual
+
+El juego será un RPG persistente de crimen, combate, economía y conflicto social para Discord.
+La experiencia tendrá cuatro grandes caminos, que no serán excluyentes:
+⚔️ Peleador: entrenamiento, armas, combate PvP, bounties y guerras.
+🕵️ Criminal: crímenes, contrabando, mercado negro y actividades ilegales.
+- 💼 Empresario: trabajos, negocios, empresas, empleados e inversiones.
+- 🏴 Social/Faction: alianzas, facciones, guerras y control de territorios.
+El jugador podrá combinar estos caminos. La especialización será una consecuencia de cómo juega, no una clase elegida obligatoriamente al crear el personaje.
+
+---
+
+
+## A.2 Mundo
+
+#### Escala inicial
+El juego utilizará una ciudad única.
+La ciudad estará dividida en zonas que se irán descubriendo progresivamente.
+El objetivo no es crear cientos de ubicaciones, sino una cantidad suficiente de zonas con funciones claras para que el mundo se sienta grande sin generar bloat en Discord.
+#### Zonas conceptuales iniciales
+Estas zonas son propuestas de diseño y todavía pueden cambiar:
+| Zona | Función principal |
+| :--- | :--- |
+| 🏙️ Centro | Servicios, economía y actividades legales |
+| 🏚️ Barrio Bajo | Crimen, pandillas y mercado negro |
+| 🏭 Distrito Industrial | Trabajo, empresas, fábricas y comercio |
+| ⚓ Puerto | Viajes, contrabando e importación/exportación |
+| 🏥 Distrito Médico/Seguridad | Hospital, policía, cárcel y servicios de emergencia |
+| 🏠 Zona Residencial | Propiedades, casas y vida personal |
+| 🏎️ Periferia | Vehículos, talleres, carreras y piezas |
+| 🎰 Distrito de Ocio | Casino, clubes, apuestas y entretenimiento |
+#### Regla de diseño de zonas
+Cada zona debe responder a:
+> **¿Por qué un jugador tendría que venir aquí?**
+No se añadirá una zona solamente porque exista en otro juego.
+Los lugares individuales podrán agruparse dentro de una misma zona para evitar fragmentación.
+Ejemplo:
+```text
+🏥 Distrito Médico/Seguridad
+
+Hospital
+Policía
+Cárcel
+Farmacia
+Juzgado
+```
+No serán cinco zonas diferentes.
+
+---
+
+
+## A.3 Hub de ciudad
+
+El jugador interactuará principalmente con un Hub.
+El Hub será el punto de entrada a las actividades disponibles.
+Ejemplo:
+```text
+🏙️ LA CIUDAD
+
+⚔️ Actividades
+🛒 Tiendas
+🏋️ Gimnasio
+🏥 Hospital
+👤 Personaje
+
+🔒
+🔒
+🔒
+🔒
+```
+A medida que el jugador progresa:
+```text
+🏙️ LA CIUDAD
+
+🏙️ Centro
+🏚️ Barrio Bajo
+🔒
+🔒
+🔒
+```
+#### Regla de interfaz
+El contenido bloqueado no debe revelar su nombre ni sus requisitos.
+El jugador verá:
+> 🔒
+y nada más.
+Esto aplica a:
+Zonas.
+Negocios.
+Sistemas.
+Actividades.
+Opciones avanzadas.
+Equipamiento.
+Contenido especial.
+La intención es crear descubrimiento, no entregar una lista completa de contenido futuro.
+
+---
+
+
+## A.4 Filosofía de interfaz
+
+#### Regla principal
+> **Profundidad por debajo, simplicidad por encima.**
+El backend puede contener muchos sistemas, pero el jugador debe ver solamente las opciones relevantes para su estado actual.
+No se deben crear decenas de comandos separados cuando un Hub puede agruparlos.
+Ejemplo conceptual:
+```text
+/ciudad
+```
+abre:
+```text
+🏙️ CIUDAD
+
+⚔️ Actividades
+🛒 Tiendas
+🏦 Finanzas
+🏠 Propiedades
+🚓 Servicios
+✈️ Viajar
+🎰 Entretenimiento
+```
+Los submenús aparecen solamente cuando son relevantes/desbloqueados.
+#### Principio de crecimiento
+> **La interfaz crece con el jugador.**
+Un jugador nuevo debe tener pocas opciones.
+Un jugador veterano puede tener muchas más.
+El sistema no debe obligar al jugador nuevo a comprender todo el juego desde el primer día.
+
+---
+
+
+## A.5 Progresión y desbloqueos
+
+- La progresión utilizará una combinación de:
+- XP.
+- Nivel.
+- Requisitos/hitos.
+- Descubrimiento.
+#### Regla
+> **La experiencia determina cuándo el jugador está preparado para intentar subir de nivel; los requisitos determinan si realmente puede hacerlo.**
+Ejemplo:
+```text
+Nivel actual: 4
+
+XP:
+████████████░░░░░░
+12,450 / 15,000
+```
+Al alcanzar el XP requerido:
+```text
+🎉 EXPERIENCIA SUFICIENTE
+
+Requisitos para Nivel 5:
+
+❌ Gana 2 combates
+❌ Completa 1 crimen
+✅ Compra un arma
+✅ Entrena en el gimnasio
+```
+Cuando todos los requisitos estén cumplidos:
+```text
+🎉 NIVEL 5 DESBLOQUEADO
+```
+#### Requisitos persistentes
+Los requisitos deben contar aunque hayan sido realizados antes de alcanzar el XP necesario.
+Ejemplo:
+```text
+Gana 5 combates
+8/5
+```
+Si el jugador ya hizo los 8 combates antes de llegar al nivel requerido, el requisito está cumplido.
+No se debe obligar al jugador a repetir contenido únicamente para desbloquear un nivel.
+#### Tipos de requisitos
+##### Actividad
+- Ganar combates.
+- Completar crímenes.
+- Entrenar.
+- Comprar/utilizar objetos.
+- Completar determinadas actividades.
+##### Economía
+- Tener determinada cantidad de dinero.
+- Gastar determinada cantidad.
+- Realizar una primera compra.
+##### Progresión
+- Completar misiones.
+- Conseguir logros.
+- Completar educación.
+- Descubrir contenido.
+##### Social
+- Unirse a una faction.
+- Participar en actividades grupales.
+- Participar en una guerra.
+##### Descubrimiento
+- Encontrar una zona.
+- Completar una cadena de descubrimiento.
+- Conocer un contacto.
+- Los requisitos pueden combinarse.
+- Ejemplo:
+```text
+Puerto
+
+Nivel 12
++
+$50,000
++
+Completar "Conoce al contrabandista"
+```
+
+---
+
+
+## A.6 Descubrimiento
+
+El jugador no debe conocer necesariamente todo el contenido disponible.
+El descubrimiento será una mecánica.
+Ejemplo:
+```text
+🔒
+```
+Después de cumplir una condición:
+```text
+🚨 NUEVO LUGAR DESCUBIERTO
+
+🕳️ El Callejón del Sapo
+
+No sabes qué es esto.
+
+Probablemente no deberías entrar.
+```
+- Esto permitirá añadir:
+- Easter eggs.
+- Lugares secretos.
+- Contactos.
+- Actividades ocultas.
+- Eventos.
+- Contenido especial.
+- El tono humorístico y caótico debe estar presente también en estos descubrimientos.
+
+---
+
+
+## A.7 Primeros 30 minutos
+
+El jugador nuevo tendrá una experiencia deliberadamente limitada.
+El objetivo no será enseñarle todos los sistemas, sino que descubra los conceptos fundamentales jugando.
+#### Estado inicial
+```text
+Dinero: $100
+Equipamiento: Ninguno
+Stats: 1
+Vida corporal: 100 en cada parte
+Energía: 100
+Nerve: 100
+Happiness: 100
+Casa: Ninguna
+Trabajo: Ninguno
+Inventario: 0/100
+```
+#### El jugador empieza completamente desnudo
+- No tiene:
+- Arma.
+- Armadura.
+- Casa.
+- Trabajo.
+- Equipamiento.
+- Inventario inicial con objetos.
+- Tiene únicamente los recursos iniciales definidos.
+#### Opciones iniciales
+El jugador comienza con pocas actividades:
+⚔️ Combate básico contra NPCs.
+🛒 Tienda de armas básica.
+🛒 Tienda de conveniencia.
+🏋️ Gimnasio de mala muerte.
+- 🏥 Hospital.
+👤 Perfil/personaje.
+- No tendrá acceso inicial a:
+- Factions.
+- Empresas.
+- Bolsa.
+- Casino.
+- Viajes.
+- Mercado avanzado.
+- Propiedades.
+- Sistemas complejos.
+- Estos se desbloquearán progresivamente.
+
+---
+
+
+## A.8 Primer combate
+
+El primer combate deberá enseñar el sistema sin necesidad de un tutorial textual extenso.
+El jugador podrá enfrentarse a NPCs de nivel bajo.
+- El combate deberá enseñar:
+- Vida.
+- Partes del cuerpo.
+- Energy.
+- Armas.
+- Ataque.
+- Defensa.
+- Daño.
+- Victoria.
+- Derrota.
+- Recompensas.
+- El primer NPC puede ser un personaje con personalidad humorística.
+- Ejemplo:
+> **Jimmy el Contador**
+- >
+> "Me dijeron que eres nuevo. Si quieres sobrevivir aquí, aprende a pegar."
+- La personalidad es funcional al tutorial: el NPC enseña una mecánica mediante diálogo breve y acciones.
+
+---
+
+
+## A.9 NPCs con personalidad
+
+Los NPCs serán una herramienta de gameplay y ambientación.
+No es necesario que exista inicialmente una campaña narrativa compleja.
+- Un NPC puede tener:
+- Nombre.
+- Rol.
+- Personalidad.
+- Forma de hablar.
+- Frases.
+- Reacciones.
+- Contexto.
+- Relación con una actividad.
+- Ejemplos:
+- 🔪 Jimmy — vendedor de armas
+> "No pregunto para qué quieres la pistola. Tú tampoco preguntes por qué tengo 37."
+- 🏋️ Tony — dueño del gimnasio
+> "El dolor es temporal. La deuda del gimnasio también, si pagas."
+- 🏥 Dr. Martínez — médico
+> "Buenas noticias: vas a vivir. Malas noticias: la factura también."
+- 🕵️ El Flaco — contacto criminal
+> "Yo no vendo cosas ilegales. Yo vendo cosas que casualmente son ilegales cuando las compras."
+- Estos personajes no requieren una historia compleja para tener valor.
+- Su función puede ser:
+- Presentar sistemas.
+- Dar misiones.
+- Vender objetos.
+- Desbloquear contenido.
+- Dar contexto.
+- Crear humor.
+- Servir como contactos.
+- Actuar como proveedores.
+- Reaccionar a las acciones del jugador.
+- Más adelante podrán evolucionar a personajes narrativos con relaciones y cadenas de misiones si el proyecto lo necesita.
+
+---
+
+
+## A.10 Tienda inicial de armas
+
+La primera tienda tendrá una selección deliberadamente pequeña.
+Ejemplo:
+```text
+🔪 ARMORY DEL BARRIO
+
+🔪 Navaja          $500
+🔨 Bate            $1,200
+🔫 Pistola vieja   $2,500
+```
+No se mostrarán cientos de armas desde el inicio.
+- La tienda debe enseñar:
+- Comprar.
+- Dinero.
+- Inventario.
+- Equipamiento.
+- Categorías de armas.
+- La variedad se ampliará mediante desbloqueos.
+
+---
+
+
+## A.11 Tienda de conveniencia
+
+Será el primer contacto con objetos consumibles.
+Ejemplo:
+```text
+🛒 MINI MARKET
+
+🥤 Energy Drink     $300
+🍫 Chocolate        $150
+🩹 Vendaje          $250
+🍺 Cerveza         $200
+```
+- El jugador aprenderá:
+- Comprar.
+- Guardar.
+- Consumir.
+- Cantidades.
+- Efectos.
+- Inventario.
+
+---
+
+
+## A.12 Gimnasio inicial
+
+El primer gimnasio será deliberadamente malo.
+Nombre conceptual:
+> 🏋️ Gimnasio "El Infierno"
+El humor puede aparecer en sus descripciones.
+El gimnasio permitirá entrenamiento básico y ganancias pequeñas.
+Estadísticas de combate iniciales:
+```text
+Fuerza       1
+Defensa      1
+Velocidad    1
+Destreza     1
+```
+Las estadísticas podrán crecer mediante entrenamiento.
+El límite máximo de estadísticas todavía está pendiente de diseño.
+
+---
+
+
+## A.13 Recursos base
+
+El núcleo inicial tendrá solamente seis recursos.
+| Recurso | Función |
+| :--- | :--- |
+| ❤️ Vida | Supervivencia y estado corporal |
+| ⚡ Energía | Acciones físicas, combate y entrenamiento |
+| 🧠 Nerve | Crímenes y actividades ilegales |
+| 😊 Happiness | Modificador de determinadas actividades |
+| 💰 Dinero | Economía principal |
+| ⭐ XP | Progresión y niveles |
+#### Recursos deliberadamente aplazados
+Los siguientes sistemas no forman parte del núcleo inicial:
+- 🔥 Reputación.
+- 🏴 Respect.
+- 🧪 Adicción.
+- 🚨 Heat / búsqueda policial.
+Podrán añadirse cuando exista una mecánica que realmente necesite cada uno.
+
+---
+
+
+## A.14 Sistema de vida corporal
+
+La vida no será una única barra.
+El jugador tendrá seis partes corporales:
+```text
+                 🧠 CABEZA
+                    100
+                     │
+        ┌────────────┴────────────┐
+        │                         │
+   💪 BRAZO IZQ              💪 BRAZO DER
+       100                        100
+        │                         │
+        └──────────┬──────────────┘
+                   │
+                🫀 TORSO
+                  100
+                   │
+        ┌──────────┴──────────┐
+        │                     │
+   🦵 PIERNA IZQ          🦵 PIERNA DER
+        100                   100
+```
+#### Partes
+- 🧠 Cabeza.
+- 🫀 Torso.
+- 💪 Brazo izquierdo.
+- 💪 Brazo derecho.
+- 🦵 Pierna izquierda.
+- 🦵 Pierna derecha.
+Cada parte tendrá inicialmente:
+```text
+current_hp
+max_hp
+damage_state
+temporary_effects
+permanent_injuries
+```
+
+---
+
+
+## A.15 Estados corporales
+
+El daño se interpretará por porcentaje.
+Propuesta inicial:
+| HP | Estado |
+| :--- | :--- |
+| 76–100% | Normal |
+| 51–75% | Levemente herido |
+| 26–50% | Herido |
+| 1–25% | Gravemente herido |
+| 0% | Inutilizado / condición crítica |
+Los porcentajes son valores iniciales de diseño y podrán modificarse durante el balance.
+
+---
+
+
+## A.16 Efectos de las extremidades
+
+Las partes corporales deben afectar las acciones relacionadas con ellas.
+#### Brazo derecho
+- Puede afectar:
+- Armas utilizadas con la mano derecha.
+- Precisión.
+- Daño.
+- Velocidad de ataque.
+- Acciones que requieren el brazo.
+- Ejemplo:
+```text
+💪 Brazo derecho
+███████░░░ 73%
+
+⚠️ Brazo lesionado
+
+Precisión: -10%
+Velocidad de ataque: -5%
+```
+A menor HP, mayor penalización.
+Si llega a 0:
+> El brazo queda inutilizado.
+El jugador no muere automáticamente.
+Dependiendo del arma, puede:
+No poder utilizarla.
+Utilizarla con una penalización severa.
+Cambiarla a la otra mano si el arma lo permite.
+#### Brazo izquierdo
+Misma lógica, pero aplicada a:
+Armas de la mano izquierda.
+Defensa.
+Uso de determinados objetos.
+Acciones que requieran esa mano.
+
+---
+
+
+## A.17 Efectos de las piernas
+
+- Las piernas pueden afectar:
+- Movilidad.
+- Evasión.
+- Carreras.
+- Viajes.
+- Huir de combate.
+- Actividades físicas.
+- Si una pierna está gravemente herida, el jugador tendrá penalizaciones.
+- Si ambas están muy dañadas:
+> **Movilidad severamente reducida.**
+- Una persona con ambas piernas inutilizadas no debería poder realizar determinadas actividades normalmente.
+
+---
+
+
+## A.18 Torso
+
+El torso representa una zona crítica.
+- Puede afectar:
+- Resistencia.
+- Capacidad de combate.
+- Recuperación.
+- Capacidad física.
+- Posiblemente Energy.
+- El daño crítico del torso tendrá una probabilidad y/o consecuencia de muerte significativamente superior a las extremidades.
+- Debe evitarse que el PvP termine constantemente en muertes instantáneas.
+
+---
+
+
+## A.19 Cabeza
+
+La cabeza será una zona crítica.
+- Puede afectar:
+- Precisión.
+- Percepción.
+- Determinadas acciones.
+- Capacidad de combate.
+- Probabilidad de incapacitación.
+- El daño crítico de cabeza puede provocar muerte.
+- Al igual que con el torso, debe existir balance para evitar muertes excesivamente frecuentes.
+
+---
+
+
+## A.20 Extremidades a 0 HP
+
+Llegar a 0 HP en:
+Brazo izquierdo.
+Brazo derecho.
+Pierna izquierda.
+Pierna derecha.
+- NO provoca muerte automática.
+- Provoca:
+- Estado de lesión grave.
+- Penalizaciones temporales.
+- Posibles lesiones permanentes.
+- Restricciones de uso.
+- Necesidad de tratamiento médico.
+- Las lesiones pueden clasificarse como:
+#### Temporales
+- Se eliminan con:
+- Tiempo.
+- Hospital.
+- Tratamiento.
+#### Persistentes/permanentes
+No desaparecen simplemente esperando.
+- Requieren:
+> 🏥 Tratamiento médico.
+- Ejemplo:
+```text
+💪 Brazo derecho
+
+Lesión:
+Fractura
+
+Efecto temporal:
+-25% uso del brazo
+
+Efecto persistente:
+-5% eficacia hasta recibir tratamiento
+```
+Los valores concretos se definirán durante el diseño del sistema médico.
+
+---
+
+
+## A.21 Torso/cabeza a 0 HP
+
+Si:
+- 🫀 Torso llega a 0.
+- 🧠 Cabeza llega a 0.
+se considera una situación mortal.
+El jugador puede:
+Morir.
+Recibir una consecuencia de muerte.
+Recibir penalizaciones posteriores.
+Ejemplo conceptual:
+```text
+☠️ HAS MUERTO
+
+Causa:
+Traumatismo craneal
+
+Consecuencia:
+Trauma severo
+
+Durante X minutos:
+-20% regeneración de Energy
+-15% efectividad en combate
+-10% entrenamiento
+```
+La implementación exacta de muerte, recuperación y penalizaciones queda pendiente.
+
+---
+
+
+## A.22 Estado corporal vs. estado vital
+
+No existirá necesariamente una séptima barra de "vida general".
+El juego mantendrá el estado de las seis partes:
+```text
+Head
+Torso
+Left Arm
+Right Arm
+Left Leg
+Right Leg
+```
+Y el motor determinará internamente:
+```text
+Vivo
+Herido
+Incapacitado
+Muerto
+```
+según las condiciones corporales.
+Esto evita tener:
+```text
+❤️ Vida general
++
+🧠 Cabeza
++
+🫀 Torso
++
+4 extremidades
+```
+y mantiene el número de recursos visuales bajo control.
+
+---
+
+
+## A.23 Hospital
+
+El hospital estará disponible desde el principio.
+No será una actividad principal durante el tutorial.
+Su propósito inicial será:
+Recuperar partes corporales.
+Tratar lesiones.
+Gestionar estados críticos.
+Recuperar al jugador después de situaciones graves.
+Ejemplo:
+```text
+🏥 HOSPITAL
+
+Estado corporal:
+
+🧠 Cabeza       82%
+🫀 Torso        91%
+💪 Brazo izq.   42% ⚠️
+💪 Brazo der.   13% 🔴
+🦵 Pierna izq.  76%
+🦵 Pierna der.  100%
+
+Tratamientos:
+
+🩹 Curar heridas
+🦴 Tratar fractura
+🧠 Tratar traumatismo
+💉 Recuperación completa
+```
+Más adelante pueden existir:
+Hospital público.
+Hospital privado.
+Clínica ilegal.
+Médico de faction.
+Tratamientos especiales.
+
+---
+
+
+## A.24 Inventario inicial
+
+El jugador tendrá:
+```text
+🎒 Inventario
+
+0 / 100
+```
+Dispondrá de 100 espacios libres desde el comienzo.
+No tendrá objetos iniciales.
+La capacidad puede ampliarse posteriormente mediante:
+Mochilas.
+Contenedores.
+Propiedades.
+Almacenes.
+Sistemas de faction.
+Otros upgrades.
+
+---
+
+
+## A.25 Estadísticas iniciales
+
+El modelo inicial utilizará una filosofía similar a RuneScape:
+```text
+Fuerza       1
+Defensa      1
+Velocidad    1
+Destreza     1
+```
+El jugador comienza con estadísticas mínimas.
+Los límites máximos todavía no están definidos.
+Se diseñará posteriormente una fórmula de crecimiento y límites que evite que el sistema se vuelva infinito o imposible de balancear.
+
+---
+
+
+## A.26 NPCs y narrativa
+
+Inicialmente no se requiere una campaña narrativa completa.
+Los NPCs existirán principalmente para:
+Dar personalidad.
+Introducir mecánicas.
+Vender objetos.
+Ofrecer servicios.
+Entregar misiones.
+Desbloquear sistemas.
+Ser enemigos.
+Servir como contactos.
+Crear humor.
+Reaccionar a determinadas acciones.
+La narrativa puede crecer posteriormente.
+La ciudad debe poder sentirse viva sin exigir una historia lineal.
+
+---
+
+
+## A.27 Filosofía del tutorial
+
+No se utilizará un tutorial largo tradicional.
+La filosofía será:
+> **El mundo enseña jugando.**
+- Ejemplos:
+| Sistema | Cómo se aprende |
+| :--- | :--- |
+| Combate | Peleando contra un NPC |
+| Economía | Comprando el primer objeto |
+| Inventario | Guardando el primer objeto |
+| Equipamiento | Equipando el primer arma |
+| Consumibles | Usando el primer objeto |
+| Energy | Entrenando |
+| Nerve | Cometiendo el primer crimen |
+| Hospital | Recibiendo daño |
+| Misiones | Completando el primer objetivo |
+| Factions | Interactuando con otros jugadores |
+El juego debe explicar solamente lo necesario en el momento adecuado.
+
+---
+
+
+## A.28 Primer objetivo
+
+El primer objetivo exacto todavía está pendiente.
+Debe cumplir tres características:
+Ser sencillo.
+Enseñar una mecánica importante.
+Dar una recompensa visible.
+#### Candidatos
+Ganar el primer combate.
+Comprar el primer arma.
+Entrenar por primera vez.
+Completar el primer crimen.
+Completar una combinación corta de acciones.
+
+---
+
+
+## A.29 Nivel 2
+
+Los requisitos exactos del nivel 2 todavía están pendientes.
+Deberán probar que el jugador entendió las bases.
+Posible estructura:
+```text
+⭐ XP suficiente
+
+Requisitos:
+
+☐ Ganar X combate(s)
+☐ Entrenar X veces
+☐ Comprar X objeto(s)
+☐ Completar X crimen(es)
+```
+Los valores exactos se decidirán después de diseñar el primer ciclo de gameplay.
+
+---
+
+
+## A.30 Principios de diseño consolidados
+
+- Estas reglas deben considerarse parte del núcleo del proyecto:
+- Profundidad por debajo, simplicidad por encima.
+- La interfaz crece con el jugador.
+- El contenido bloqueado se representa únicamente con 🔒.
+- No revelar contenido futuro innecesariamente.
+- XP + requisitos/hitos para subir de nivel.
+- Los requisitos cumplidos previamente cuentan.
+- El jugador aprende mediante acciones, no mediante tutoriales extensos.
+- Los NPCs deben tener personalidad aunque no exista una campaña narrativa.
+- Cada zona debe tener una razón clara para existir.
+- El backend puede ser complejo; la experiencia del jugador no debe serlo.
+- Los recursos iniciales deben mantenerse limitados.
+- La complejidad se desbloquea progresivamente.
+- Las lesiones deben tener consecuencias reales.
+- El hospital debe ser un sistema funcional, no solamente una pantalla de recuperación.
+- El humor y el caos forman parte de la identidad del mundo.
+
+## 40. PRÓXIMO PASO
+
+No empezar todavía a programar.
+- El siguiente trabajo recomendado es completar FASE 0 — PREPRODUCCIÓN, concretamente:
+- Definir la visión exacta del juego.
+- Definir qué mecánicas de Torn queremos conservar.
+- Definir qué mecánicas vamos a modificar.
+- Definir qué sistemas serán completamente originales.
+- Definir las estadísticas base.
+- Definir la economía inicial.
+- Definir las fórmulas principales.
+- Definir la arquitectura técnica.
+- Definir el esquema inicial de base de datos.
+- Convertir este documento en un backlog de tareas programables.
+- Una vez terminada Fase 0, podremos comenzar Fase 1 con una especificación mucho más precisa y evitar rehacer sistemas posteriormente.
