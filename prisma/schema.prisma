@@ -9,7 +9,8 @@ generator client {
 
 model Player {
   id            String          @id @default(uuid())
-  discordId     String          @unique
+  guildId       String          @default("GLOBAL")
+  discordId     String
   username      String
   level         Int             @default(1)
   xp            Int             @default(0)
@@ -28,6 +29,8 @@ model Player {
   transactions  Transaction[]
   auditLogs     AuditLog[]      @relation("TargetPlayer")
   adminLogs     AuditLog[]      @relation("AdminPlayer")
+
+  @@unique([guildId, discordId])
 }
 
 model Wallet {

@@ -13,12 +13,13 @@ export const atacarCommand = {
     const targetUser = interaction.options.getUser('usuario', true);
     const attackerDiscordId = interaction.user.id;
     const defenderDiscordId = targetUser.id;
+    const guildId = interaction.guildId || 'GLOBAL';
 
     try {
       await interaction.deferReply();
 
-      // Ejecutar combate PvP
-      const combatResult = await CombatService.executePvPCombat(attackerDiscordId, defenderDiscordId);
+      // Ejecutar combate PvP aislado por servidor (guildId)
+      const combatResult = await CombatService.executePvPCombat(attackerDiscordId, defenderDiscordId, guildId);
       const embed = createCombatResultEmbed(combatResult);
       const postActionButtons = createPostCombatActionButtons(combatResult.winnerId, combatResult.loserId);
 

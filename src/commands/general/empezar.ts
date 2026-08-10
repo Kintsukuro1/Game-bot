@@ -9,15 +9,16 @@ export const empezarCommand = {
   async execute(interaction: ChatInputCommandInteraction) {
     const discordId = interaction.user.id;
     const username = interaction.user.username;
+    const guildId = interaction.guildId || 'GLOBAL';
 
-    let player = await PlayerService.getPlayerByDiscordId(discordId);
+    let player = await PlayerService.getPlayerByDiscordId(discordId, guildId);
     let messagePrefix = '';
 
     if (!player) {
-      player = await PlayerService.registerPlayer(discordId, username);
-      messagePrefix = `🎉 **¡Registro Completado!** Bienvenido a Sinford, **${username}**. Se han acreditado **$100** de efectivo inicial a tu cuenta.\n\n`;
+      player = await PlayerService.registerPlayer(discordId, username, guildId);
+      messagePrefix = `🎉 **¡Registro Completado!** Bienvenido a Sinford, **${username}**. Se han acreditado **$100** de efectivo inicial a tu cuenta en este servidor.\n\n`;
     } else {
-      messagePrefix = `ℹ️ Ya estás registrado en Sinford Underworld. Cargando tu Hub central...\n\n`;
+      messagePrefix = `ℹ️ Ya estás registrado en este servidor de Sinford Underworld. Cargando tu Hub central...\n\n`;
     }
 
     const embed = createGameHubEmbed(player);

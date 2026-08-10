@@ -1,9 +1,14 @@
 import { prisma } from '../db/prisma.js';
 
 export class PlayerService {
-  static async getPlayerByDiscordId(discordId: string) {
+  static async getPlayerByDiscordId(discordId: string, guildId: string = 'GLOBAL') {
     return prisma.player.findUnique({
-      where: { discordId },
+      where: {
+        guildId_discordId: {
+          guildId,
+          discordId,
+        },
+      },
       include: {
         wallet: true,
         stats: true,
@@ -15,14 +20,15 @@ export class PlayerService {
     });
   }
 
-  static async registerPlayer(discordId: string, username: string) {
-    // Check if player exists
-    const existing = await this.getPlayerByDiscordId(discordId);
+  static async registerPlayer(discordId: string, username: string, guildId: string = 'GLOBAL') {
+    // Check if player exists in this guild
+    const existing = await this.getPlayerByDiscordId(discordId, guildId);
     if (existing) return existing;
 
-    // Create player atomically with Wallet, Stats, and BodyParts
+    // Create player atomically with Wallet, Stats, and BodyParts for this specific Guild
     return prisma.player.create({
       data: {
+        guildId,
         discordId,
         username,
         wallet: {

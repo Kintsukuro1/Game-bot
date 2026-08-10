@@ -86,20 +86,20 @@ export class EconomyService {
     if (amount <= 0n) throw new Error('El monto a transferir debe ser mayor a 0.');
 
     return prisma.$transaction(async (tx) => {
-      const senderWallet = await tx.wallet.findUnique({ where: { playerId: senderId } });
+      const senderWallet = await tx.wallet.findUnique({ where: { playerId: senderId }, include: { player: true } });
       if (!senderWallet) throw new Error('Cartera de remitente no encontrada.');
 
       if (senderWallet.cash < amount) {
         throw new Error(`Efectivo insuficiente. Tienes $${senderWallet.cash.toLocaleString()}.`);
       }
 
-      const receiver = await tx.player.findUnique({
-        where: { discordId: receiverDiscordId },
+      const receiver = await tx.player.findFirst({
+        where: { discordId: receiverDiscordId, guildId: senderWallet.player.guildId },
         include: { wallet: true },
       });
 
       if (!receiver || !receiver.wallet) {
-        throw new Error('El jugador destinatario no existe o no se ha registrado.');
+        throw new Error('El jugador destinatario no existe o no se ha registrado en este servidor.');
       }
 
       if (receiver.id === senderId) {

@@ -1,4 +1,5 @@
 import { prisma } from '../db/prisma.js';
+import { PlayerService } from './playerService.js';
 
 export interface CombatTurn {
   turnNumber: number;
@@ -26,15 +27,12 @@ export class CombatService {
   static NEWBIE_LEVEL_PROTECTION = 2;
 
   // 1. Validaciones previas al combate
-  static async validateCombat(attackerDiscordId: string, defenderDiscordId: string) {
+  static async validateCombat(attackerDiscordId: string, defenderDiscordId: string, guildId: string = 'GLOBAL') {
     if (attackerDiscordId === defenderDiscordId) {
       throw new Error('❌ No puedes atacarte a ti mismo.');
     }
 
-    const attacker = await prisma.player.findUnique({
-      where: { discordId: attackerDiscordId },
-      include: { stats: true, wallet: true, inventory: { include: { item: true } } },
-    });
+    const attacker = await PlayerService.getPlayerByDiscordId(attackerDiscordId, guildId);
 
     if (!attacker || !attacker.stats) {
       throw new Error('❌ Debes estar registrado con `/empezar` para atacar.');
@@ -44,13 +42,10 @@ export class CombatService {
       throw new Error(`⚡ Energía insuficiente para atacar. Requiere **${this.ENERGY_COST}⚡** y tienes **${attacker.stats.energy}⚡**.`);
     }
 
-    const defender = await prisma.player.findUnique({
-      where: { discordId: defenderDiscordId },
-      include: { stats: true, wallet: true, bodyParts: true, inventory: { include: { item: true } } },
-    });
+    const defender = await PlayerService.getPlayerByDiscordId(defenderDiscordId, guildId);
 
     if (!defender || !defender.stats || !defender.bodyParts) {
-      throw new Error('❌ El jugador objetivo no está registrado o no existe.');
+      throw new Error('❌ El jugador objetivo no está registrado o no existe en este servidor.');
     }
 
     // Protección de novatos
@@ -74,8 +69,8 @@ export class CombatService {
   }
 
   // 2. Motor de combate turno por turno (Fórmulas de Torn Wiki)
-  static async executePvPCombat(attackerDiscordId: string, defenderDiscordId: string): Promise<CombatResult> {
-    const { attacker, defender } = await this.validateCombat(attackerDiscordId, defenderDiscordId);
+  static async executePvPCombat(attackerDiscordId: string, defenderDiscordId: string, guildId: string = 'GLOBAL'): Promise<CombatResult> {
+    const { attacker, defender } = await this.validateCombat(attackerDiscordId, defenderDiscordId, guildId);
 
     // Consumir 25⚡ de energía del atacante atómicamente
     await prisma.stats.update({

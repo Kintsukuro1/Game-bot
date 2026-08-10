@@ -11,12 +11,13 @@ export class BountyService {
         include: { wallet: true },
       });
 
-      const target = await tx.player.findUnique({
-        where: { discordId: targetDiscordId },
+      if (!placer || !placer.wallet) throw new Error('Tus datos de jugador no existen.');
+
+      const target = await tx.player.findFirst({
+        where: { discordId: targetDiscordId, guildId: placer.guildId },
       });
 
-      if (!placer || !placer.wallet) throw new Error('Tus datos de jugador no existen.');
-      if (!target) throw new Error('El jugador objetivo no está registrado.');
+      if (!target) throw new Error('El jugador objetivo no está registrado en este servidor.');
 
       if (placer.id === target.id) throw new Error('No puedes colocar una recompensa sobre ti mismo.');
 

@@ -54,13 +54,15 @@ export async function handleInteraction(interaction: Interaction) {
       return;
     }
 
+    const guildId = interaction.guildId || 'GLOBAL';
+
     // 2. Manejador de Select Menus (Crímenes, Tienda e Inventario)
     if (interaction.isStringSelectMenu()) {
       const discordId = interaction.user.id;
-      const player = await PlayerService.getPlayerByDiscordId(discordId);
+      const player = await PlayerService.getPlayerByDiscordId(discordId, guildId);
 
       if (!player) {
-        return interaction.reply({ content: '❌ Necesitas registrarte primero con `/empezar`.', ephemeral: true });
+        return interaction.reply({ content: '❌ Necesitas registrarte primero en este servidor con `/empezar`.', ephemeral: true });
       }
 
       if (interaction.customId === 'select_crime') {
@@ -69,7 +71,7 @@ export async function handleInteraction(interaction: Interaction) {
           const result = await CrimeService.commitCrime(player.id, crimeId);
           await MissionService.progressMission(player.id, 'CRIMES', 1);
 
-          const updated = await PlayerService.getPlayerByDiscordId(discordId);
+          const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
           const embed = createCrimesViewEmbed(updated);
           const selectRow = createCrimeSelectRow();
           const backRow = createBackButtonRow();
@@ -122,11 +124,11 @@ export async function handleInteraction(interaction: Interaction) {
     // 3. Manejador de Botones Interactivos
     if (interaction.isButton()) {
       const discordId = interaction.user.id;
-      const player = await PlayerService.getPlayerByDiscordId(discordId);
+      const player = await PlayerService.getPlayerByDiscordId(discordId, guildId);
 
       if (!player) {
         return interaction.reply({
-          content: '❌ Necesitas registrarte primero usando el comando `/empezar`.',
+          content: '❌ Necesitas registrarte primero en este servidor usando el comando `/empezar`.',
           ephemeral: true,
         });
       }
@@ -291,7 +293,7 @@ export async function handleInteraction(interaction: Interaction) {
           });
         }
         case 'nav_back_hub': {
-          const refreshedPlayer = await PlayerService.getPlayerByDiscordId(discordId);
+          const refreshedPlayer = await PlayerService.getPlayerByDiscordId(discordId, guildId);
           const embed = createGameHubEmbed(refreshedPlayer);
           const buttons = createGameHubButtons();
           return interaction.update({
@@ -318,7 +320,7 @@ export async function handleInteraction(interaction: Interaction) {
             const result = await GymService.trainStat(player.id, statName, 1);
             await MissionService.progressMission(player.id, 'TRAINING', 1);
 
-            const updated = await PlayerService.getPlayerByDiscordId(discordId);
+            const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
             const embed = createGymViewEmbed(updated);
             const gymButtons = createGymButtons();
 
@@ -334,7 +336,7 @@ export async function handleInteraction(interaction: Interaction) {
         case 'gym_upgrade': {
           try {
             const newGym = await GymService.upgradeGym(player.id);
-            const updated = await PlayerService.getPlayerByDiscordId(discordId);
+            const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
             const embed = createGymViewEmbed(updated);
             const gymButtons = createGymButtons();
 
@@ -352,7 +354,7 @@ export async function handleInteraction(interaction: Interaction) {
         case 'bank_dep_100': {
           try {
             await EconomyService.deposit(player.id, 100n);
-            const updated = await PlayerService.getPlayerByDiscordId(discordId);
+            const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
             const embed = createBankViewEmbed(updated);
             return interaction.update({ embeds: [embed] });
           } catch (err: any) {
@@ -363,7 +365,7 @@ export async function handleInteraction(interaction: Interaction) {
           try {
             const cashAmt = player.wallet?.cash || 0n;
             await EconomyService.deposit(player.id, cashAmt);
-            const updated = await PlayerService.getPlayerByDiscordId(discordId);
+            const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
             const embed = createBankViewEmbed(updated);
             return interaction.update({ embeds: [embed] });
           } catch (err: any) {
@@ -373,7 +375,7 @@ export async function handleInteraction(interaction: Interaction) {
         case 'bank_wit_100': {
           try {
             await EconomyService.withdraw(player.id, 100n);
-            const updated = await PlayerService.getPlayerByDiscordId(discordId);
+            const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
             const embed = createBankViewEmbed(updated);
             return interaction.update({ embeds: [embed] });
           } catch (err: any) {
@@ -384,7 +386,7 @@ export async function handleInteraction(interaction: Interaction) {
           try {
             const bankAmt = player.wallet?.bank || 0n;
             await EconomyService.withdraw(player.id, bankAmt);
-            const updated = await PlayerService.getPlayerByDiscordId(discordId);
+            const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
             const embed = createBankViewEmbed(updated);
             return interaction.update({ embeds: [embed] });
           } catch (err: any) {
