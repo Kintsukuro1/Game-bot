@@ -32,9 +32,9 @@ export function createGameHubEmbed(player: any) {
         name: '📌 Desarrollo & Actividades',
         value:
           `• **👤 Perfil & 📊 Stats:** Tu información general, nivel y estadísticas.\n` +
-          `• **⚔️ Guerra & 🏴 Facción:** Guerras entre facciones, tesorería y crímenes organizados.\n` +
           `• **💼 Trabajos & 🎓 Universidad:** Salarios diarios, Working Stats y cursos pasivos.\n` +
-          `• **🏋️ Gimnasio & 🕵️ Crímenes:** Entrena Battle Stats y comete delitos para ganar XP.`,
+          `• **🏋️ Gimnasio & 🕵️ Crímenes:** Entrena Battle Stats y comete delitos para ganar XP.\n` +
+          `• **⚔️ Guerra & 🏴 Facción:** Guerras entre facciones, tesorería y crímenes organizados.`,
         inline: false,
       },
       {
@@ -51,28 +51,32 @@ export function createGameHubEmbed(player: any) {
     .setTimestamp();
 }
 
+// Organización armónica de los botones del Hub agrupados por categorías temáticas y colores
 export function createGameHubButtons() {
+  // Fila 1: 👤 Perfil, Progresión y Desarrollo Personal (Azul)
   const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setCustomId('hub_profile').setLabel('Perfil').setEmoji('👤').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('hub_stats').setLabel('Stats').setEmoji('📊').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('act_war').setLabel('Guerra & Ranking').setEmoji('⚔️').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId('act_jobs').setLabel('Trabajos').setEmoji('💼').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('act_edu').setLabel('Educación').setEmoji('🎓').setStyle(ButtonStyle.Success)
+    new ButtonBuilder().setCustomId('act_jobs').setLabel('Trabajos').setEmoji('💼').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('act_edu').setLabel('Educación').setEmoji('🎓').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('act_missions').setLabel('Misiones').setEmoji('Primary').setStyle(ButtonStyle.Primary)
   );
 
+  // Fila 2: ⚔️ Combate, Acción, Crímenes y Facciones (Verde / Rojo)
   const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId('act_faction').setLabel('Facción').setEmoji('🏴').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('act_gym').setLabel('Gimnasio').setEmoji('🏋️').setStyle(ButtonStyle.Success),
     new ButtonBuilder().setCustomId('act_crime').setLabel('Crímenes').setEmoji('🕵️').setStyle(ButtonStyle.Danger),
     new ButtonBuilder().setCustomId('act_bounties').setLabel('Bounties').setEmoji('🎯').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId('act_missions').setLabel('Misiones').setEmoji('📋').setStyle(ButtonStyle.Primary)
+    new ButtonBuilder().setCustomId('act_faction').setLabel('Facción').setEmoji('🏴').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId('act_war').setLabel('Guerras').setEmoji('⚔️').setStyle(ButtonStyle.Danger)
   );
 
+  // Fila 3: 🏦 Economía, Inventario, Tienda y Prisión (Gris / Verde)
   const row3 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId('act_jail').setLabel('Prisión').setEmoji('🚨').setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId('hub_inventory').setLabel('Inventario').setEmoji('🎒').setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId('act_bank').setLabel('Banco').setEmoji('🏦').setStyle(ButtonStyle.Success),
     new ButtonBuilder().setCustomId('act_shop').setLabel('Tienda').setEmoji('🛒').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('act_jail').setLabel('Prisión').setEmoji('🚨').setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId('act_tx_history').setLabel('Historial').setEmoji('📜').setStyle(ButtonStyle.Secondary)
   );
 
