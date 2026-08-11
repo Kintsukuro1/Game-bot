@@ -4,6 +4,7 @@ import { CombatResult } from '../services/combatService.js';
 import { CRIMES } from '../services/crimeService.js';
 import { JOBS } from '../services/jobService.js';
 import { COURSES } from '../services/educationService.js';
+import { ShopService } from '../services/shopService.js';
 import { renderProgressBar, renderHealthBar } from './visualComponents.js';
 
 // 1. Hub Principal con Progresión Espaciada y Desbloqueo Gradual por Hitos (Niveles 1, 3, 5, 10, 15)
@@ -627,19 +628,21 @@ export function createBankActionButtons() {
   return [row];
 }
 
-// 17. Vista de Tienda de la Ciudad
-export function createShopCatalogEmbed(catalog: any[]) {
+// 17. Vista de Tienda de la Ciudad con Requisitos de Nivel por Potencia
+export function createShopCatalogEmbed(catalog: any[], playerLevel: number = 1) {
   const embed = new EmbedBuilder()
     .setColor(0xff8c00)
     .setTitle('🛒 ARMERÍA Y MERCADO DE SINFORD')
     .setDescription('Selecciona un objeto del catálogo para comprarlo con tu efectivo.');
 
-  const itemList = catalog.slice(0, 15).map((item: any) =>
-    `• **${item.name}** — **$${item.price.toLocaleString()}** (${item.type})`
-  ).join('\n');
+  const itemList = catalog.slice(0, 15).map((item: any) => {
+    const minLevel = ShopService.getItemMinLevel(item);
+    const lockTag = playerLevel >= minLevel ? '`[DESBLOQUEADO]`' : `\`[🔒 Nv. ${minLevel}]\``;
+    return `• **${item.name}** — **$${item.price.toLocaleString()}** (${item.type}) ${lockTag}`;
+  }).join('\n');
 
-  embed.addFields({ name: '📦 Catálogo Disponible', value: itemList });
-  embed.setFooter({ text: 'Sinford Supermarket & Armory' });
+  embed.addFields({ name: '📦 Catálogo Disponible & Requisitos de Nivel', value: itemList });
+  embed.setFooter({ text: `Tu Nivel Actual: ${playerLevel} • Sinford Supermarket & Armory` });
 
   return embed;
 }

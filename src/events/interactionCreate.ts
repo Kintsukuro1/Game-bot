@@ -458,7 +458,7 @@ export async function handleInteraction(interaction: Interaction) {
         }
         case 'act_shop': {
           const catalog = await ShopService.getCatalog();
-          const embed = createShopCatalogEmbed(catalog);
+          const embed = createShopCatalogEmbed(catalog, player.level);
           const selectRow = createShopSelectRow(catalog);
           return interaction.update({
             content: null,

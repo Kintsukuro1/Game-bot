@@ -1,7 +1,15 @@
 import { prisma } from '../db/prisma.js';
-import { InventoryService } from './inventoryService.js';
 
 export class ShopService {
+  // Cálculo de Nivel Mínimo requerido según el precio y la potencia del ítem
+  static getItemMinLevel(item: any): number {
+    if (item.price <= 500) return 1;
+    if (item.price <= 2500) return 3;
+    if (item.price <= 10000) return 5;
+    if (item.price <= 100000) return 10;
+    return 15;
+  }
+
   // Catálogo de la Armería y Mercado de Suministros
   static async getCatalog(category?: string) {
     return prisma.item.findMany({
@@ -10,13 +18,21 @@ export class ShopService {
     });
   }
 
-  // Compra atómica de ítems en la tienda
+  // Compra atómica de ítems en la tienda con verificación estricta de nivel
   static async buyItem(playerId: string, itemId: string, quantity: number = 1) {
     if (quantity <= 0) throw new Error('La cantidad a comprar debe ser al menos 1.');
 
     return prisma.$transaction(async (tx) => {
       const item = await tx.item.findUnique({ where: { id: itemId } });
       if (!item) throw new Error('El objeto no existe en el catálogo.');
+
+      const player = await tx.player.findUnique({ where: { id: playerId } });
+      if (!player) throw new Error('Jugador no encontrado.');
+
+      const minLevel = this.getItemMinLevel(item);
+      if (player.level < minLevel) {
+        throw new Error(`Nivel insuficiente para comprar este objeto. Requieres **Nivel ${minLevel}** (Tu nivel: **${player.level}**).`);
+      }
 
       const totalCost = BigInt(item.price * quantity);
 
