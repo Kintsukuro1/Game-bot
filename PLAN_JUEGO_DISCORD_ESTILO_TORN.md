@@ -1358,15 +1358,15 @@ La decisión se toma en preproducción.
 ---
 
 #### Componentes visuales
-- [ ] Embeds.
-- [ ] Buttons.
-- [ ] Select menus.
-- [ ] Modals.
-- [ ] Progress bars.
-- [ ] Paginación.
-- [ ] Confirmaciones.
-- [ ] Mensajes efímeros.
-- [ ] Estados persistentes.
+- [x] Embeds.
+- [x] Buttons.
+- [x] Select menus.
+- [x] Modals.
+- [x] Progress bars.
+- [x] Paginación.
+- [x] Confirmaciones.
+- [x] Mensajes efímeros.
+- [x] Estados persistentes.
 
 ---
 
@@ -1833,7 +1833,7 @@ Estas funcionalidades se dejan deliberadamente para después:
 | 21 — Administración | ⬜ Pendiente |
 | 22 — Anti-exploit | ⬜ Pendiente |
 | 23 — Balance | ⬜ Pendiente |
-| 24 — UX | ⬜ Pendiente |
+| 24 — UX | ✅ Completado |
 | 25 — Eventos | ⬜ Pendiente |
 | 26 — Analytics | ⬜ Pendiente |
 | 27 — Testing final | ⬜ Pendiente |
@@ -1842,6 +1842,11 @@ Estas funcionalidades se dejan deliberadamente para después:
 | 30 — Post-lanzamiento | ⬜ Pendiente |   
 
 ### 📜 Log de Registro de Avances
+
+- **2026-08-10 — Fase 24 (Componentes Visuales y UX de Discord):**
+  - ✅ **Barras de Progreso Visuales (`visualComponents.ts`):** Renderizado de barras ASCII/Emoji para Energía, Nerve y Happy (`⚡ [██████░░░░] 60%`).
+  - ✅ **Barras de Salud Corporales:** Barras con código de color (🟩🟨🟥) para las 6 extremidades corporales en el menú de Perfil.
+  - ✅ **Paginación & Confirmaciones:** Filas de paginación interactiva (`Página X/Y`) y confirmación doble previa a acciones críticas de alto riesgo.
 
 - **2026-08-10 — Fases 17 a 20 (Racing, Casino, Ítems Avanzados y Progresión Avanzada):**
   - ✅ **Carreras de Autos (Fase 17):** Pistas de carreras (`Anillo Industrial`, `Autopista Central`, `Autódromo`), cálculo de tiempos de vuelta según velocidad del jugador y cuotas de inscripción.
@@ -2981,3 +2986,13 @@ No empezar todavía a programar.
 - **Sistema de Logros (`AchievementService`)**:
   - Desbloqueo atómico de logros (`FIRST_STEPS`, `MILLIONAIRE`, `CRIME_BOSS`, `PVP_CHAMPION`) con recompensas en dinero en efectivo.
 - **Clasificaciones Server-Wide (`Leaderboards`)**: Rankings globales ordenados por Nivel, Riqueza, Battle Stats y Crímenes.
+
+---
+
+### 🎨 B.24 Componentes Visuales y UX de Discord (Fase 24)
+- **Barras de Progreso e Indicadores Vitales (`visualComponents.ts`)**:
+  - Renderizado dinámico de barras ASCII/Emoji para Energía, Nerve y Happy (`⚡ [██████░░░░] 60%`).
+  - Barras con código de color condicional (🟩 Verde > 60%, 🟨 Amarillo > 30%, 🟥 Rojo < 30%) para las 6 extremidades corporales.
+- **Navegación e Interacción:**
+  - Filas de paginación interactiva con indicador `Página X/Y`.
+  - Cuadros de doble confirmación previa a transacciones y operaciones críticas.

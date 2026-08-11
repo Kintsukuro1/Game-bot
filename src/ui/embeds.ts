@@ -4,11 +4,16 @@ import { CombatResult } from '../services/combatService.js';
 import { CRIMES } from '../services/crimeService.js';
 import { JOBS } from '../services/jobService.js';
 import { COURSES } from '../services/educationService.js';
+import { renderProgressBar, renderHealthBar } from './visualComponents.js';
 
-// 1. Hub Principal de la Ciudad
+// 1. Hub Principal de la Ciudad con Barras de Progreso Visuales
 export function createGameHubEmbed(player: any) {
   const stats = player.stats;
   const wallet = player.wallet;
+
+  const energyBar = renderProgressBar(stats.energy, stats.maxEnergy, 8, '⚡', '░');
+  const nerveBar = renderProgressBar(stats.nerve, stats.maxNerve, 8, '🧠', '░');
+  const happyBar = renderProgressBar(stats.happy, stats.maxHappy, 8, '😊', '░');
 
   return new EmbedBuilder()
     .setColor(0x2f3136)
@@ -16,8 +21,10 @@ export function createGameHubEmbed(player: any) {
     .setDescription(
       `Bienvenido a la central de la ciudad, **${player.username}**.\n` +
       `Todo tu progreso e interacciones ocurren desde este Hub interactivo sin saturar el chat.\n\n` +
-      `**Estado Rápido:**\n` +
-      `⚡ Energía: **${stats.energy}/${stats.maxEnergy}** | 🧠 Nerve: **${stats.nerve}/${stats.maxNerve}** | 😊 Happy: **${stats.happy}/${stats.maxHappy}**\n` +
+      `**Estado Rápido & Vitalidad:**\n` +
+      `⚡ Energía: ${energyBar} (**${stats.energy}/${stats.maxEnergy}**)\n` +
+      `🧠 Nerve: ${nerveBar} (**${stats.nerve}/${stats.maxNerve}**)\n` +
+      `😊 Happy: ${happyBar} (**${stats.happy}/${stats.maxHappy}**)\n\n` +
       `💰 Efectivo: **$${wallet.cash.toLocaleString()}** | 🏦 Banco: **$${wallet.bank.toLocaleString()}**`
     )
     .addFields(
@@ -72,7 +79,49 @@ export function createGameHubButtons() {
   return [row1, row2, row3];
 }
 
-// 2. Vista de Guerras y Rankings de Facciones
+// 2. Vista de Perfil General con Barras de Salud Visuales en 6 Partes Corporales
+export function createProfileViewEmbed(player: any) {
+  const wallet = player.wallet;
+  const stats = player.stats;
+  const body = player.bodyParts;
+  const createdDate = new Date(player.createdAt).toLocaleDateString('es-ES');
+
+  return new EmbedBuilder()
+    .setColor(0x8b0000)
+    .setTitle(`👤 Perfil de Jugador — ${player.username}`)
+    .setDescription(`**ID de Discord:** \`${player.discordId}\` | **Miembro desde:** ${createdDate}`)
+    .addFields(
+      {
+        name: '⭐ Progresión Base',
+        value: `Nivel: **${player.level}**\nExperiencia (XP): **${player.xp.toLocaleString()}**`,
+        inline: true,
+      },
+      {
+        name: '💰 Finanzas',
+        value: `Efectivo en Mano: **$${wallet.cash.toLocaleString()}**\nDepositado en Banco: **$${wallet.bank.toLocaleString()}**`,
+        inline: true,
+      },
+      {
+        name: '⚡ Vitalidad y Recursos',
+        value: `Energía: **${stats.energy}/${stats.maxEnergy}** ⚡\nNerve: **${stats.nerve}/${stats.maxNerve}** 🧠\nFelicidad: **${stats.happy}/${stats.maxHappy}** 😊`,
+        inline: true,
+      },
+      {
+        name: '🏥 Salud de Extremidades Corporales (6 Partes)',
+        value:
+          `🧠 **Cabeza:** ${renderHealthBar(body.headHp, 100)}\n` +
+          `🫀 **Torso:** ${renderHealthBar(body.torsoHp, 100)}\n` +
+          `💪 **Brazo Izquierdo:** ${renderHealthBar(body.leftArmHp, 100)}\n` +
+          `💪 **Brazo Derecho:** ${renderHealthBar(body.rightArmHp, 100)}\n` +
+          `🦵 **Pierna Izquierda:** ${renderHealthBar(body.leftLegHp, 100)}\n` +
+          `🦵 **Pierna Derecha:** ${renderHealthBar(body.rightLegHp, 100)}`,
+        inline: false,
+      }
+    )
+    .setFooter({ text: 'Pantalla de Perfil General' });
+}
+
+// 3. Vista de Guerras y Rankings de Facciones
 export function createWarfareViewEmbed(rankings: any[]) {
   const embed = new EmbedBuilder()
     .setColor(0x8b0000)
@@ -92,7 +141,7 @@ export function createWarfareViewEmbed(rankings: any[]) {
   return embed;
 }
 
-// 3. Vista de Trabajos (Jobs)
+// 4. Vista de Trabajos (Jobs)
 export function createJobsViewEmbed(playerJob: any) {
   const embed = new EmbedBuilder()
     .setColor(0x1e90ff)
@@ -131,7 +180,7 @@ export function createJobsButtons() {
   return [row];
 }
 
-// 4. Vista de Educación (Courses)
+// 5. Vista de Educación (Courses)
 export function createEducationViewEmbed(activeCourse: any) {
   const embed = new EmbedBuilder()
     .setColor(0x9370db)
@@ -175,7 +224,7 @@ export function createEducationSelectRow() {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
 }
 
-// 5. Vista de Facción
+// 6. Vista de Facción
 export function createFactionViewEmbed(faction: any) {
   const embed = new EmbedBuilder()
     .setColor(0x800080)
@@ -214,7 +263,7 @@ export function createFactionButtons(hasFaction: boolean) {
   return [row];
 }
 
-// 6. Vista de Bounties
+// 7. Vista de Bounties
 export function createBountiesViewEmbed(bounties: any[]) {
   const embed = new EmbedBuilder()
     .setColor(0xb22222)
@@ -234,7 +283,7 @@ export function createBountiesViewEmbed(bounties: any[]) {
   return embed;
 }
 
-// 7. Vista de Misiones
+// 8. Vista de Misiones
 export function createMissionsViewEmbed(missions: any[]) {
   const embed = new EmbedBuilder()
     .setColor(0x4682b4)
@@ -254,7 +303,7 @@ export function createMissionsViewEmbed(missions: any[]) {
   return embed;
 }
 
-// 8. Vista de Crímenes
+// 9. Vista de Crímenes
 export function createCrimesViewEmbed(player: any) {
   const stats = player.stats;
 
@@ -292,7 +341,7 @@ export function createCrimeSelectRow() {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
 }
 
-// 9. Vista de Prisión (Jail)
+// 10. Vista de Prisión (Jail)
 export function createJailViewEmbed(jailedPlayers: any[]) {
   const embed = new EmbedBuilder()
     .setColor(0x4b0082)
@@ -323,45 +372,6 @@ export function createJailActionButtons() {
   );
 
   return [row];
-}
-
-// 10. Vista de Perfil General
-export function createProfileViewEmbed(player: any) {
-  const wallet = player.wallet;
-  const stats = player.stats;
-  const body = player.bodyParts;
-  const createdDate = new Date(player.createdAt).toLocaleDateString('es-ES');
-
-  return new EmbedBuilder()
-    .setColor(0x8b0000)
-    .setTitle(`👤 Perfil de Jugador — ${player.username}`)
-    .setDescription(`**ID de Discord:** \`${player.discordId}\` | **Miembro desde:** ${createdDate}`)
-    .addFields(
-      {
-        name: '⭐ Progresión Base',
-        value: `Nivel: **${player.level}**\nExperiencia (XP): **${player.xp.toLocaleString()}**`,
-        inline: true,
-      },
-      {
-        name: '💰 Finanzas',
-        value: `Efectivo en Mano: **$${wallet.cash.toLocaleString()}**\nDepositado en Banco: **$${wallet.bank.toLocaleString()}**`,
-        inline: true,
-      },
-      {
-        name: '⚡ Vitalidad y Recursos',
-        value: `Energía: **${stats.energy}/${stats.maxEnergy}** ⚡\nNerve: **${stats.nerve}/${stats.maxNerve}** 🧠\nFelicidad: **${stats.happy}/${stats.maxHappy}** 😊`,
-        inline: true,
-      },
-      {
-        name: '🏥 Salud de Extremidades Corporales (6 Partes)',
-        value:
-          `🧠 Cabeza: **${body.headHp}/100** | 🫀 Torso: **${body.torsoHp}/100**\n` +
-          `💪 Brazo Izquierdo: **${body.leftArmHp}/100** | 💪 Brazo Derecho: **${body.rightArmHp}/100**\n` +
-          `🦵 Pierna Izquierda: **${body.leftLegHp}/100** | 🦵 Pierna Derecha: **${body.rightLegHp}/100**`,
-        inline: false,
-      }
-    )
-    .setFooter({ text: 'Pantalla de Perfil General' });
 }
 
 // 11. Vista de Estadísticas (Battle Stats & Working Stats)
