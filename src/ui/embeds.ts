@@ -121,7 +121,7 @@ export function createGameHubButtons(playerLevel: number = 1) {
 
 // Vista del Lugar Secreto Descubierto: El Callejón del Sapo (Nivel 15+)
 export function createSecretAlleyViewEmbed(player: any) {
-  const quote = NPCService.getRandomQuote('corleone');
+  const quote = NPCService.getRandomQuote('corleone', player?.level || 15);
   return new EmbedBuilder()
     .setColor(0x006400)
     .setTitle('🚨 NUEVO LUGAR DESCUBIERTO — 🕳️ El Callejón del Sapo')
@@ -199,8 +199,8 @@ export function createWarfareViewEmbed(rankings: any[]) {
 }
 
 // 4. Vista de Trabajos (Jobs)
-export function createJobsViewEmbed(playerJob: any) {
-  const quote = NPCService.getRandomQuote('marta');
+export function createJobsViewEmbed(playerJob: any, playerLevel: number = 1) {
+  const quote = NPCService.getRandomQuote('marta', playerLevel);
   const embed = new EmbedBuilder()
     .setColor(0x1e90ff)
     .setTitle('💼 EMPLEOS Y CENTRO LABORAL DE SINFORD')
@@ -239,8 +239,8 @@ export function createJobsButtons() {
 }
 
 // 5. Vista de Educación (Courses)
-export function createEducationViewEmbed(activeCourse: any) {
-  const quote = NPCService.getRandomQuote('prof_albert');
+export function createEducationViewEmbed(activeCourse: any, playerLevel: number = 1) {
+  const quote = NPCService.getRandomQuote('prof_albert', playerLevel);
   const embed = new EmbedBuilder()
     .setColor(0x9370db)
     .setTitle('🎓 UNIVERSIDAD DE SINFORD — CURSOS Y EDUCACIÓN')
@@ -323,8 +323,8 @@ export function createFactionButtons(hasFaction: boolean) {
 }
 
 // 7. Vista de Bounties
-export function createBountiesViewEmbed(bounties: any[]) {
-  const quote = NPCService.getRandomQuote('callahan');
+export function createBountiesViewEmbed(bounties: any[], playerLevel: number = 1) {
+  const quote = NPCService.getRandomQuote('callahan', playerLevel);
   const embed = new EmbedBuilder()
     .setColor(0xb22222)
     .setTitle('🎯 RECOMPENSAS PvP — BOUNTIES')
@@ -366,7 +366,7 @@ export function createMissionsViewEmbed(missions: any[]) {
 // 9. Vista de Crímenes
 export function createCrimesViewEmbed(player: any) {
   const stats = player.stats;
-  const quote = NPCService.getRandomQuote('charly');
+  const quote = NPCService.getRandomQuote('charly', player?.level || 1);
 
   const embed = new EmbedBuilder()
     .setColor(0x800000)
@@ -470,7 +470,7 @@ export function createGymViewEmbed(player: any) {
   const stats = player.stats;
   const currentGym = GymService.getGymByTier(player.gymTier);
   const nextGym = GYMS.find((g) => g.tier === player.gymTier + 1);
-  const quote = NPCService.getRandomQuote('tony');
+  const quote = NPCService.getRandomQuote('tony', player?.level || 1);
 
   return new EmbedBuilder()
     .setColor(0x32cd32)
@@ -618,7 +618,7 @@ export function createEquipmentViewEmbed(player: any) {
 // 16. Vista de Banco y Finanzas
 export function createBankViewEmbed(player: any) {
   const wallet = player.wallet;
-  const quote = NPCService.getRandomQuote('salieri');
+  const quote = NPCService.getRandomQuote('salieri', player?.level || 1);
 
   return new EmbedBuilder()
     .setColor(0x2e8b57)
