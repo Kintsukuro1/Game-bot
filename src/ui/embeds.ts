@@ -2,6 +2,8 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelec
 import { GYMS, GymService } from '../services/gymService.js';
 import { CombatResult } from '../services/combatService.js';
 import { CRIMES } from '../services/crimeService.js';
+import { JOBS } from '../services/jobService.js';
+import { COURSES } from '../services/educationService.js';
 
 // 1. Hub Principal de la Ciudad
 export function createGameHubEmbed(player: any) {
@@ -23,6 +25,9 @@ export function createGameHubEmbed(player: any) {
       value:
         `• **👤 Perfil:** Tu información general, nivel y estado corporal (6 partes).\n` +
         `• **📊 Stats:** Estadísticas de combate y laborales.\n` +
+        `• **💼 Trabajos:** Empleos de la ciudad, salarios diarios y Working Stats.\n` +
+        `• **🎓 Universidad:** Cursos educativos con bonuses permanentes.\n` +
+        `• **🏴 Facción:** Juego en equipo, tesorería y crímenes organizados.\n` +
         `• **🏋️ Gimnasio:** Entrena Fuerza, Defensa, Velocidad y Destreza.\n` +
         `• **🕵️ Crímenes:** Ejecuta actividades ilícitas para ganar dinero y Crime XP.\n` +
         `• **🎯 Bounties:** Recompensas PvP por la cabeza de jugadores objetivos.\n` +
@@ -31,8 +36,7 @@ export function createGameHubEmbed(player: any) {
         `• **⚔️ Combate:** Ataca a otros jugadores en duelo PvP (25⚡).\n` +
         `• **🎒 Inventario:** Usar consumibles, equipar armas o vender ítems.\n` +
         `• **🏦 Banco & Finanzas:** Depósitos, retiros y transferencias a jugadores.\n` +
-        `• **🛒 Tienda:** Armería y mercado de suministros médicos, drogas y bebidas.\n` +
-        `• **📜 Historial:** Registro auditable de todas tus transacciones.`,
+        `• **🛒 Tienda:** Armería y mercado de suministros médicos, drogas y bebidas.`,
       inline: false,
     })
     .setFooter({ text: 'Sinford Underworld • Pulsa los botones para navegar' })
@@ -43,23 +47,152 @@ export function createGameHubButtons() {
   const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setCustomId('hub_profile').setLabel('Perfil').setEmoji('👤').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('hub_stats').setLabel('Stats').setEmoji('📊').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('act_gym').setLabel('Gimnasio').setEmoji('🏋️').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('act_crime').setLabel('Crímenes').setEmoji('🕵️').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId('act_bounties').setLabel('Bounties').setEmoji('🎯').setStyle(ButtonStyle.Danger)
+    new ButtonBuilder().setCustomId('act_jobs').setLabel('Trabajos').setEmoji('💼').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('act_edu').setLabel('Educación').setEmoji('🎓').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('act_faction').setLabel('Facción').setEmoji('🏴').setStyle(ButtonStyle.Primary)
   );
 
   const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId('act_gym').setLabel('Gimnasio').setEmoji('🏋️').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('act_crime').setLabel('Crímenes').setEmoji('🕵️').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId('act_bounties').setLabel('Bounties').setEmoji('🎯').setStyle(ButtonStyle.Danger),
     new ButtonBuilder().setCustomId('act_missions').setLabel('Misiones').setEmoji('📋').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('act_jail').setLabel('Prisión').setEmoji('🚨').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('hub_inventory').setLabel('Inventario').setEmoji('🎒').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('act_bank').setLabel('Banco').setEmoji('🏦').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('act_shop').setLabel('Tienda').setEmoji('🛒').setStyle(ButtonStyle.Success)
+    new ButtonBuilder().setCustomId('act_jail').setLabel('Prisión').setEmoji('🚨').setStyle(ButtonStyle.Secondary)
   );
 
-  return [row1, row2];
+  const row3 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId('hub_inventory').setLabel('Inventario').setEmoji('🎒').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('act_bank').setLabel('Banco').setEmoji('🏦').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('act_shop').setLabel('Tienda').setEmoji('🛒').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('act_tx_history').setLabel('Historial').setEmoji('📜').setStyle(ButtonStyle.Secondary)
+  );
+
+  return [row1, row2, row3];
 }
 
-// 2. Vista de Bounties
+// 2. Vista de Trabajos (Jobs)
+export function createJobsViewEmbed(playerJob: any) {
+  const embed = new EmbedBuilder()
+    .setColor(0x1e90ff)
+    .setTitle('💼 EMPLEOS Y CENTRO LABORAL DE SINFORD')
+    .setDescription('Trabaja diariamente para ganar salarios en efectivo, Job Points y aumentar tus Working Stats.');
+
+  if (playerJob) {
+    const jobDef = JOBS.find((j) => j.id === playerJob.jobId);
+    embed.addFields({
+      name: '👔 Empleo Actual',
+      value: `• Trabajo: **${jobDef?.name || playerJob.jobId}**\n• Rango: **Rango ${playerJob.rank}**\n• Salario Diario: **$${((jobDef?.baseSalary || 100) * playerJob.rank).toLocaleString()}**\n• Job Points: **${playerJob.jobPoints} Puntos**`,
+    });
+  } else {
+    embed.addFields({ name: '👔 Empleo Actual', value: 'No tienes un trabajo activo. Elige uno del catálogo abajo.' });
+  }
+
+  const jobList = JOBS.map((j) =>
+    `• **${j.name}** — Salario Base: **$${j.baseSalary.toLocaleString()}** (Req: Labor ${j.reqLabor}, Intel ${j.reqIntel}, End ${j.reqEndurance})`
+  ).join('\n');
+
+  embed.addFields({ name: '📋 Trabajos Disponibles', value: jobList });
+  embed.setFooter({ text: 'Selecciona una acción laboral abajo' });
+
+  return embed;
+}
+
+export function createJobsButtons() {
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId('job_collect_salary').setLabel('Cobrar Salario Diario').setEmoji('💵').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('job_apply_grocer').setLabel('Abarrotes').setEmoji('🛒').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('job_apply_casino').setLabel('Casino').setEmoji('🎰').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('job_apply_medical').setLabel('Hospital').setEmoji('🏥').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('nav_back_hub').setLabel('Volver al Hub').setEmoji('🔙').setStyle(ButtonStyle.Secondary)
+  );
+
+  return [row];
+}
+
+// 3. Vista de Educación (Courses)
+export function createEducationViewEmbed(activeCourse: any) {
+  const embed = new EmbedBuilder()
+    .setColor(0x9370db)
+    .setTitle('🎓 UNIVERSIDAD DE SINFORD — CURSOS Y EDUCACIÓN')
+    .setDescription('Inscríbete en cursos para obtener habilidades pasivas permanentes y bonificaciones.');
+
+  if (activeCourse) {
+    const courseDef = COURSES.find((c) => c.id === activeCourse.courseId);
+    const dateStr = new Date(activeCourse.completesAt).toLocaleTimeString('es-ES');
+    embed.addFields({
+      name: '📖 Curso Activo',
+      value: `• Curso: **${courseDef?.name || activeCourse.courseId}**\n• Finaliza a las: **${dateStr}** ${activeCourse.isCompleted ? '`[¡COMPLETADO!]`' : '`[EN PROGRESO]`'}`,
+    });
+  } else {
+    embed.addFields({ name: '📖 Curso Activo', value: 'No estás inscrito en ningún curso actualmente.' });
+  }
+
+  const courseList = COURSES.map((c) =>
+    `• **${c.name}** — Costo: **$${c.cost.toLocaleString()}** (${c.durationHours}h) ➔ ${c.bonusDescription}`
+  ).join('\n');
+
+  embed.addFields({ name: '📚 Catálogo de Cursos', value: courseList });
+  embed.setFooter({ text: 'Inscríbete seleccionando un curso abajo' });
+
+  return embed;
+}
+
+export function createEducationSelectRow() {
+  const select = new StringSelectMenuBuilder()
+    .setCustomId('select_edu_course')
+    .setPlaceholder('Selecciona un curso para matricularte...');
+
+  const options = COURSES.map((c) =>
+    new StringSelectMenuOptionBuilder()
+      .setLabel(`${c.name} ($${c.cost})`)
+      .setValue(c.id)
+      .setDescription(`Duración: ${c.durationHours}h — ${c.bonusDescription.substring(0, 45)}`)
+  );
+
+  select.addOptions(options);
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
+}
+
+// 4. Vista de Facción
+export function createFactionViewEmbed(faction: any) {
+  const embed = new EmbedBuilder()
+    .setColor(0x800080)
+    .setTitle(`🏴 FACCIÓN — ${faction ? faction.name : 'Sin Facción'}`);
+
+  if (!faction) {
+    embed.setDescription('No perteneces a ninguna facción actualmente. Crea una por **$50,000** o únete a una existente.');
+  } else {
+    embed.setDescription(
+      `**Descripción:** ${faction.description || 'Sin descripción'}\n\n` +
+      `👑 Líder ID: \`${faction.leaderId}\` | 👥 Miembros: **${faction.members?.length || 1}/20**\n` +
+      `⭐ Respeto: **${faction.respect.toLocaleString()} Puntos** | 🏦 Tesorería: **$${BigInt(faction.treasury).toLocaleString()}**`
+    );
+  }
+
+  embed.setFooter({ text: 'Juego en equipo y Crímenes Organizados' });
+  return embed;
+}
+
+export function createFactionButtons(hasFaction: boolean) {
+  const row = new ActionRowBuilder<ButtonBuilder>();
+
+  if (!hasFaction) {
+    row.addComponents(
+      new ButtonBuilder().setCustomId('faction_create').setLabel('Crear Facción ($50k)').setEmoji('➕').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId('nav_back_hub').setLabel('Volver al Hub').setEmoji('🔙').setStyle(ButtonStyle.Secondary)
+    );
+  } else {
+    row.addComponents(
+      new ButtonBuilder().setCustomId('faction_dep_10k').setLabel('Depositar $10,000').setEmoji('💵').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId('faction_execute_oc').setLabel('Iniciar Crimen Organizado').setEmoji('🔥').setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId('nav_back_hub').setLabel('Volver al Hub').setEmoji('🔙').setStyle(ButtonStyle.Secondary)
+    );
+  }
+
+  return [row];
+}
+
+// 5. Vista de Bounties
 export function createBountiesViewEmbed(bounties: any[]) {
   const embed = new EmbedBuilder()
     .setColor(0xb22222)
@@ -79,7 +212,7 @@ export function createBountiesViewEmbed(bounties: any[]) {
   return embed;
 }
 
-// 3. Vista de Misiones
+// 6. Vista de Misiones
 export function createMissionsViewEmbed(missions: any[]) {
   const embed = new EmbedBuilder()
     .setColor(0x4682b4)
@@ -99,7 +232,7 @@ export function createMissionsViewEmbed(missions: any[]) {
   return embed;
 }
 
-// 4. Vista de Crímenes
+// 7. Vista de Crímenes
 export function createCrimesViewEmbed(player: any) {
   const stats = player.stats;
 
@@ -137,7 +270,7 @@ export function createCrimeSelectRow() {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
 }
 
-// 5. Vista de Prisión (Jail)
+// 8. Vista de Prisión (Jail)
 export function createJailViewEmbed(jailedPlayers: any[]) {
   const embed = new EmbedBuilder()
     .setColor(0x4b0082)
@@ -170,7 +303,7 @@ export function createJailActionButtons() {
   return [row];
 }
 
-// 6. Vista de Perfil General
+// 9. Vista de Perfil General
 export function createProfileViewEmbed(player: any) {
   const wallet = player.wallet;
   const stats = player.stats;
@@ -209,7 +342,7 @@ export function createProfileViewEmbed(player: any) {
     .setFooter({ text: 'Pantalla de Perfil General' });
 }
 
-// 7. Vista de Estadísticas (Battle Stats & Working Stats)
+// 10. Vista de Estadísticas (Battle Stats & Working Stats)
 export function createStatsViewEmbed(player: any) {
   const stats = player.stats;
 
@@ -238,7 +371,7 @@ export function createStatsViewEmbed(player: any) {
     .setFooter({ text: 'Utiliza el Gimnasio y Trabajos para aumentar tus stats' });
 }
 
-// 8. Vista de Gimnasio
+// 11. Vista de Gimnasio
 export function createGymViewEmbed(player: any) {
   const stats = player.stats;
   const currentGym = GymService.getGymByTier(player.gymTier);
@@ -292,7 +425,7 @@ export function createGymButtons() {
   return [row1, row2];
 }
 
-// 9. Vista y Resultados de Combate PvP
+// 12. Vista y Resultados de Combate PvP
 export function createCombatResultEmbed(result: CombatResult) {
   const embed = new EmbedBuilder()
     .setColor(0xdc143c)
@@ -323,7 +456,7 @@ export function createPostCombatActionButtons(winnerId: string, loserId: string)
   return [row];
 }
 
-// 10. Vista de Inventario
+// 13. Vista de Inventario
 export function createInventoryViewEmbed(player: any) {
   const items = player.inventory || [];
 
@@ -362,7 +495,7 @@ export function createInventoryItemSelectRow(inventory: any[]) {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
 }
 
-// 11. Vista de Equipamiento
+// 14. Vista de Equipamiento
 export function createEquipmentViewEmbed(player: any) {
   const inventory = player.inventory || [];
   const primary = inventory.find((i: any) => i.isEquipped && i.slot === 'PRIMARY')?.item?.name || 'Ninguna (Puños)';
@@ -382,7 +515,7 @@ export function createEquipmentViewEmbed(player: any) {
     .setFooter({ text: 'Equipa armas desde tu inventario' });
 }
 
-// 12. Vista de Banco y Finanzas
+// 15. Vista de Banco y Finanzas
 export function createBankViewEmbed(player: any) {
   const wallet = player.wallet;
 
@@ -409,7 +542,7 @@ export function createBankActionButtons() {
   return [row];
 }
 
-// 13. Vista de Tienda de la Ciudad
+// 16. Vista de Tienda de la Ciudad
 export function createShopCatalogEmbed(catalog: any[]) {
   const embed = new EmbedBuilder()
     .setColor(0xff8c00)
@@ -442,7 +575,7 @@ export function createShopSelectRow(catalog: any[]) {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
 }
 
-// 14. Vista de Historial de Transacciones
+// 17. Vista de Historial de Transacciones
 export function createTxHistoryEmbed(player: any, txs: any[]) {
   const embed = new EmbedBuilder()
     .setColor(0x708090)

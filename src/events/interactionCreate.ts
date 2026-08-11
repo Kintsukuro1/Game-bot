@@ -8,6 +8,10 @@ import { CombatService } from '../services/combatService.js';
 import { CrimeService } from '../services/crimeService.js';
 import { BountyService } from '../services/bountyService.js';
 import { MissionService } from '../services/missionService.js';
+import { JobService } from '../services/jobService.js';
+import { EducationService } from '../services/educationService.js';
+import { FactionService } from '../services/factionService.js';
+import { prisma } from '../db/prisma.js';
 import {
   createGameHubEmbed,
   createGameHubButtons,
@@ -21,6 +25,12 @@ import {
   createJailActionButtons,
   createBountiesViewEmbed,
   createMissionsViewEmbed,
+  createJobsViewEmbed,
+  createJobsButtons,
+  createEducationViewEmbed,
+  createEducationSelectRow,
+  createFactionViewEmbed,
+  createFactionButtons,
   createInventoryViewEmbed,
   createInventoryItemSelectRow,
   createEquipmentViewEmbed,
@@ -56,13 +66,32 @@ export async function handleInteraction(interaction: Interaction) {
 
     const guildId = interaction.guildId || 'GLOBAL';
 
-    // 2. Manejador de Select Menus (Crímenes, Tienda e Inventario)
+    // 2. Manejador de Select Menus (Crímenes, Cursos, Tienda e Inventario)
     if (interaction.isStringSelectMenu()) {
       const discordId = interaction.user.id;
       const player = await PlayerService.getPlayerByDiscordId(discordId, guildId);
 
       if (!player) {
         return interaction.reply({ content: '❌ Necesitas registrarte primero en este servidor con `/empezar`.', ephemeral: true });
+      }
+
+      if (interaction.customId === 'select_edu_course') {
+        const courseId = interaction.values[0];
+        try {
+          const res = await EducationService.enrollCourse(player.id, courseId);
+          const activeCourse = await EducationService.getActiveCourse(player.id);
+          const embed = createEducationViewEmbed(activeCourse);
+          const selectRow = createEducationSelectRow();
+          const backRow = createBackButtonRow();
+
+          return interaction.update({
+            content: `🎓 **¡Matrícula Exitosa!** Te inscribiste en **${res.courseName}**. Duración: **${res.durationHours} horas**.`,
+            embeds: [embed],
+            components: [selectRow as any, backRow as any],
+          });
+        } catch (err: any) {
+          return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
+        }
       }
 
       if (interaction.customId === 'select_crime') {
@@ -155,7 +184,6 @@ export async function handleInteraction(interaction: Interaction) {
         const res = await CombatService.resolvePostCombatAction(winnerId, loserId, actionEnum);
         await MissionService.progressMission(winnerId, 'ATTACKS', 1);
 
-        // Reclamar Bounty si existe
         const claimedBounty = await BountyService.checkAndClaimBounty(winnerId, loserId);
         let bountyBonusStr = '';
         if (claimedBounty) {
@@ -169,6 +197,129 @@ export async function handleInteraction(interaction: Interaction) {
       }
 
       switch (interaction.customId) {
+        case 'act_jobs': {
+          const playerJob = await prisma.playerJob.findUnique({ where: { playerId: player.id } });
+          const embed = createJobsViewEmbed(playerJob);
+          const jobBtns = createJobsButtons();
+          return interaction.update({
+            content: null,
+            embeds: [embed],
+            components: jobBtns as any,
+          });
+        }
+        case 'job_collect_salary': {
+          try {
+            const res = await JobService.collectSalary(player.id);
+            const playerJob = await prisma.playerJob.findUnique({ where: { playerId: player.id } });
+            const embed = createJobsViewEmbed(playerJob);
+            const jobBtns = createJobsButtons();
+            return interaction.update({
+              content: `💵 **¡Salario Cobrado!** Recibiste **+$${res.salary.toLocaleString()}** de tu trabajo en **${res.jobName}** y +5 Job Points.`,
+              embeds: [embed],
+              components: jobBtns as any,
+            });
+          } catch (err: any) {
+            return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
+          }
+        }
+        case 'job_apply_grocer':
+        case 'job_apply_casino':
+        case 'job_apply_medical': {
+          const map: Record<string, string> = {
+            job_apply_grocer: 'GROCER',
+            job_apply_casino: 'CASINO',
+            job_apply_medical: 'MEDICAL',
+          };
+          try {
+            const jobId = map[interaction.customId];
+            const res = await JobService.applyJob(player.id, jobId);
+            const playerJob = await prisma.playerJob.findUnique({ where: { playerId: player.id } });
+            const embed = createJobsViewEmbed(playerJob);
+            const jobBtns = createJobsButtons();
+            return interaction.update({
+              content: `🎉 **¡Contratado!** Ahora trabajas en **${res.jobName}** (Salario Base: $${res.salary}/día).`,
+              embeds: [embed],
+              components: jobBtns as any,
+            });
+          } catch (err: any) {
+            return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
+          }
+        }
+        case 'act_edu': {
+          const activeCourse = await EducationService.getActiveCourse(player.id);
+          const embed = createEducationViewEmbed(activeCourse);
+          const selectRow = createEducationSelectRow();
+          return interaction.update({
+            content: null,
+            embeds: [embed],
+            components: [selectRow as any, backRow as any],
+          });
+        }
+        case 'act_faction': {
+          const member = await prisma.factionMember.findUnique({
+            where: { playerId: player.id },
+            include: { faction: { include: { members: true } } },
+          });
+          const faction = member ? member.faction : null;
+          const embed = createFactionViewEmbed(faction);
+          const factionBtns = createFactionButtons(!!faction);
+          return interaction.update({
+            content: null,
+            embeds: [embed],
+            components: factionBtns as any,
+          });
+        }
+        case 'faction_create': {
+          try {
+            const factionName = `Facción de ${player.username}`;
+            const faction = await FactionService.createFaction(player.id, factionName, 'Facción creada desde el Hub', guildId);
+            const embed = createFactionViewEmbed(faction);
+            const factionBtns = createFactionButtons(true);
+            return interaction.update({
+              content: `🎉 **¡Facción Creada!** Fundaste la facción **${faction.name}**.`,
+              embeds: [embed],
+              components: factionBtns as any,
+            });
+          } catch (err: any) {
+            return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
+          }
+        }
+        case 'faction_dep_10k': {
+          try {
+            await FactionService.depositTreasury(player.id, 10000n);
+            const member = await prisma.factionMember.findUnique({
+              where: { playerId: player.id },
+              include: { faction: { include: { members: true } } },
+            });
+            const embed = createFactionViewEmbed(member?.faction);
+            const factionBtns = createFactionButtons(true);
+            return interaction.update({
+              content: '💰 **¡Depósito Exitoso!** Acreditaste **+$10,000** a la tesorería de tu facción.',
+              embeds: [embed],
+              components: factionBtns as any,
+            });
+          } catch (err: any) {
+            return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
+          }
+        }
+        case 'faction_execute_oc': {
+          try {
+            const res = await FactionService.executeOrganizedCrime(player.id, 'Asalto al Banco Central');
+            const member = await prisma.factionMember.findUnique({
+              where: { playerId: player.id },
+              include: { faction: { include: { members: true } } },
+            });
+            const embed = createFactionViewEmbed(member?.faction);
+            const factionBtns = createFactionButtons(true);
+            return interaction.update({
+              content: `🔥 **¡Crimen Organizado Exitoso!** Tu facción ejecutó el golpe y obtuvo **+$${res.rewardCash.toLocaleString()}** en la tesorería y **+${res.respectGained} Puntos de Respeto**.`,
+              embeds: [embed],
+              components: factionBtns as any,
+            });
+          } catch (err: any) {
+            return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
+          }
+        }
         case 'hub_profile': {
           const embed = createProfileViewEmbed(player);
           return interaction.update({

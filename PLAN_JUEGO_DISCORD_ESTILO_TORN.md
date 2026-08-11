@@ -826,26 +826,26 @@ Crear progresión no relacionada directamente con combate.
 ---
 
 ### Fase 9.1 — Jobs
-- [ ] Lista de trabajos.
-- [ ] Aplicar.
-- [ ] Working Stats.
-- [ ] Daily pay.
-- [ ] Job Points.
-- [ ] Rangos.
-- [ ] Promociones.
-- [ ] Habilidades de trabajo.
+- [x] Lista de trabajos.
+- [x] Aplicar.
+- [x] Working Stats.
+- [x] Daily pay.
+- [x] Job Points.
+- [x] Rangos.
+- [x] Promociones.
+- [x] Habilidades de trabajo.
 
 ---
 
 ### Fase 9.2 — Education
-- [ ] Cursos.
-- [ ] Duración.
-- [ ] Coste.
-- [ ] Requisitos.
-- [ ] Árbol.
-- [ ] Bonuses.
-- [ ] Cursos activos.
-- [ ] Finalización automática.
+- [x] Cursos.
+- [x] Duración.
+- [x] Coste.
+- [x] Requisitos.
+- [x] Árbol.
+- [x] Bonuses.
+- [x] Cursos activos.
+- [x] Finalización automática.
 
 ---
 
@@ -858,42 +858,42 @@ Introducir juego grupal.
 ---
 
 ### Fase 10.1 — Faction
-- [ ] Crear.
-- [ ] Nombre.
-- [ ] Descripción.
-- [ ] Líder.
-- [ ] Miembros.
-- [ ] Roles.
-- [ ] Treasury.
-- [ ] Respect.
+- [x] Crear.
+- [x] Nombre.
+- [x] Descripción.
+- [x] Líder.
+- [x] Miembros.
+- [x] Roles.
+- [x] Treasury.
+- [x] Respect.
 
 ---
 
 ### Fase 10.2 — Gestión
-- [ ] Invitar.
-- [ ] Expulsar.
-- [ ] Promover.
-- [ ] Degradar.
-- [ ] Transferir liderazgo.
-- [ ] Faction permissions.
+- [x] Invitar.
+- [x] Expulsar.
+- [x] Promover.
+- [x] Degradar.
+- [x] Transferir liderazgo.
+- [x] Faction permissions.
 
 ---
 
 ### Fase 10.3 — Armory
-- [ ] Depositar items.
-- [ ] Retirar items.
-- [ ] Permisos.
-- [ ] Logs.
+- [x] Depositar items.
+- [x] Retirar items.
+- [x] Permisos.
+- [x] Logs.
 
 ---
 
 ### Fase 10.4 — Organized Crimes
-- [ ] Crear OC.
-- [ ] Slots.
-- [ ] Roles.
-- [ ] Requisitos.
-- [ ] Resultado.
-- [ ] Recompensas.
+- [x] Crear OC.
+- [x] Slots.
+- [x] Roles.
+- [x] Requisitos.
+- [x] Resultado.
+- [x] Recompensas.
 
 ---
 
@@ -1800,8 +1800,8 @@ Estas funcionalidades se dejan deliberadamente para después:
 | 6 — Crimes | ✅ Completado |
 | 7 — Bounties/Missions | ✅ Completado |
 | 8 — MVP | ✅ Completado |
-| 9 — Jobs/Education | ⬜ Pendiente |
-| 10 — Factions | ⬜ Pendiente |
+| 9 — Jobs/Education | ✅ Completado |
+| 10 — Factions | ✅ Completado |
 | 11 — Warfare | ⬜ Pendiente |
 | 12 — Properties | ⬜ Pendiente |
 | 13 — Travel | ⬜ Pendiente |
@@ -1824,6 +1824,11 @@ Estas funcionalidades se dejan deliberadamente para después:
 | 30 — Post-lanzamiento | ⬜ Pendiente |   
 
 ### 📜 Log de Registro de Avances
+
+- **2026-08-10 — Fase 9 (Jobs y Educación) & Fase 10 (Facciones, Armería y Crímenes Organizados):**
+  - ✅ **Empleos & Working Stats (Fase 9.1):** Mapeo de empleos iniciales (`Grocer`, `Casino`, `Medical`), verificación de requisitos de Working Stats (`manualLabor`, `intelligence`, `endurance`), salarios diarios auditados en `Transaction` (`JOB_SALARY`) y acumulación de Job Points.
+  - ✅ **Universidad y Cursos (Fase 9.2):** Catálogo educativo (`BIO101`, `LAW101`, `BUS101`, `COMBAT101`) con matrículas en efectivo, temporizadores en tiempo real y бонуses pasivos permanentes.
+  - ✅ **Facciones & Juego Grupal (Fase 10.1 - 10.4):** Fundación de facciones ($50,000 de costo), gestión de miembros y roles (`LEADER`, `CO_LEADER`, `MEMBER`), Tesorería de facción (`treasury`), Puntos de Respeto (`respect`) y ejecución de Crímenes Organizados (`OrganizedCrime`).
 
 - **2026-08-10 — Fase 7 (Bounties y Misiones) & Fase 8 (Nivel Mínimamente Listo / MVP):**
   - ✅ **Bounties PvP (Fase 7.1):** Sistema de colocación de recompensas con 10% de comisión, auditoría monetaria `Transaction`, cobro automático al vencer al objetivo en duelo PvP y expiración en 7 días.

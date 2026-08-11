@@ -103,7 +103,8 @@ model Item {
   effect      String?         // JSON metadata string for special consumable/utility effects
   createdAt   DateTime        @default(now())
 
-  inventories InventoryItem[]
+  inventories   InventoryItem[]
+  factionArmory FactionArmoryItem[]
 }
 
 model InventoryItem {
@@ -174,4 +175,73 @@ model PlayerMission {
   createdAt   DateTime @default(now())
 
   @@index([playerId, isCompleted])
+}
+
+model PlayerJob {
+  id          String   @id @default(uuid())
+  playerId    String   @unique
+  jobId       String   // GROCER, CASINO, MEDICAL
+  rank        Int      @default(1)
+  jobPoints   Int      @default(0)
+  lastPaidAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
+
+model PlayerEducation {
+  id          String   @id @default(uuid())
+  playerId    String
+  courseId    String   // BIO101, LAW101, BUS101, COMBAT101
+  isCompleted Boolean  @default(false)
+  completesAt DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([playerId, isCompleted])
+}
+
+model Faction {
+  id          String              @id @default(uuid())
+  guildId     String              @default("GLOBAL")
+  name        String
+  description String              @default("")
+  leaderId    String
+  respect     Int                 @default(0)
+  treasury    BigInt              @default(0)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  members     FactionMember[]
+  armory      FactionArmoryItem[]
+  ocs         OrganizedCrime[]
+
+  @@unique([guildId, name])
+}
+
+model FactionMember {
+  id        String   @id @default(uuid())
+  factionId String
+  faction   Faction  @relation(fields: [factionId], references: [id], onDelete: Cascade)
+  playerId  String   @unique
+  role      String   @default("MEMBER") // LEADER, CO_LEADER, MEMBER
+  joinedAt  DateTime @default(now())
+}
+
+model FactionArmoryItem {
+  id        String   @id @default(uuid())
+  factionId String
+  faction   Faction  @relation(fields: [factionId], references: [id], onDelete: Cascade)
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id])
+  quantity  Int      @default(1)
+}
+
+model OrganizedCrime {
+  id        String   @id @default(uuid())
+  factionId String
+  faction   Faction  @relation(fields: [factionId], references: [id], onDelete: Cascade)
+  name      String
+  status    String   @default("PREPARING") // PREPARING, READY, EXECUTED
+  minLevel  Int      @default(1)
+  reward    BigInt   @default(50000)
+  respect   Int      @default(100)
+  createdAt DateTime @default(now())
 }
