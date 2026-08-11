@@ -20,30 +20,24 @@ export function createGameHubEmbed(player: any) {
   const unlockedList = [];
   unlockedList.push('• **👤 Perfil & 📊 Stats:** Tu información general y nivel.');
   unlockedList.push('• **🏋️ Gimnasio & 🕵️ Crímenes:** Entrenar stats y robar en las calles.');
-  unlockedList.push('• **🛒 Tienda & 🚨 Prisión:** Tienda de conveniencia y hospital/prisión.');
+  unlockedList.push('• **🛒 Tienda de Conveniencia & 🚨 Prisión:** Compras básicas y hospital/prisión.');
 
   if (level >= 3) {
-    unlockedList.push('• **💼 Trabajos & 📋 Misiones:** `[DESBLOQUEADO NV. 3]` Salarios diarios y misiones.');
-  } else {
-    unlockedList.push('• **🔒 Trabajos & Misiones:** `[BLOQUEADO - Alcanzar Nivel 3]`');
+    unlockedList.push('• **💼 Trabajos & 📋 Misiones:** Salarios diarios y misiones diarias.');
+    unlockedList.push('• **🏥 Farmacia Hospitalaria:** Insumos médicos profesionales.');
   }
 
   if (level >= 5) {
-    unlockedList.push('• **🎓 Universidad & 🏦 Banco:** `[DESBLOQUEADO NV. 5]` Cursos pasivos y gestión bancaria.');
-  } else {
-    unlockedList.push('• **🔒 Universidad & Banco:** `[BLOQUEADO - Alcanzar Nivel 5]`');
+    unlockedList.push('• **🎓 Universidad & 🏦 Banco:** Cursos pasivos e interés bancario.');
+    unlockedList.push('• **🎒 Inventario & ⚔️ Armería:** Equipamiento y armas de fuego balísticas.');
   }
 
   if (level >= 10) {
-    unlockedList.push('• **🏴 Facción & ⚔️ Guerras:** `[DESBLOQUEADO NV. 10]` Duelos de pandilla y bounties.');
-  } else {
-    unlockedList.push('• **🔒 Facciones & Guerras:** `[BLOQUEADO - Alcanzar Nivel 10]`');
+    unlockedList.push('• **🏴 Facción, ⚔️ Guerras & 🎯 Bounties:** Duelos de pandilla y recompensas PvP.');
   }
 
   if (level >= 15) {
-    unlockedList.push('• **🕳️ El Callejón del Sapo:** `[LUGAR SECRETO NV. 15]` Mercado negro y atracos de elite.');
-  } else {
-    unlockedList.push('• **🔒 Lugar Desconocido:** `[??? - Alcanzar Nivel 15]`');
+    unlockedList.push('• **🕳️ El Callejón del Sapo:** Mercado negro subterráneo y atracos de elite.');
   }
 
   return new EmbedBuilder()

@@ -5,62 +5,100 @@ export interface ShopCategoryInfo {
   name: string;
   emoji: string;
   description: string;
+  minLevel: number;
 }
 
 export const SHOP_CATEGORIES: ShopCategoryInfo[] = [
   {
     id: 'general',
-    name: 'General & Alimentos',
-    emoji: '🍎',
-    description: 'Comida rápida, dulces, loterías y paquetes de suministros generales.',
+    name: 'Tienda de Conveniencia',
+    emoji: '🛒',
+    description: 'Comida rápida, golosinas y suministros básicos de gente común (Nivel 1+).',
+    minLevel: 1,
   },
   {
     id: 'medical',
-    name: 'Medicina & Salud',
+    name: 'Farmacia & Suministros Médicos',
     emoji: '🏥',
-    description: 'Botiquines de primeros auxilios, transfusiones y bolsas de sangre.',
+    description: 'Botiquines profesionales, transfusiones y bolsas de sangre (Nivel 3+).',
+    minLevel: 3,
   },
   {
     id: 'boosters',
     name: 'Drogas, Alcohol & Energéticas',
     emoji: '💊',
-    description: 'Bebidas energéticas, licores, esteroides y drogas para boostear stats.',
+    description: 'Bebidas energéticas, licores, esteroides y drogas de combate (Nivel 5+).',
+    minLevel: 5,
   },
   {
     id: 'weapons',
-    name: 'Armería & Armamentos',
+    name: 'Armería Balística & Armamento',
     emoji: '⚔️',
-    description: 'Pistolas, rifles de asalto, subfusiles, katanas y granadas pesadas.',
+    description: 'Pistolas, rifles de asalto, subfusiles, katanas y explosivos (Nivel 5+).',
+    minLevel: 5,
   },
 ];
 
 export class ShopService {
-  // Cálculo de Nivel Mínimo requerido según el precio y la potencia del ítem
+  // Cálculo de Nivel Mínimo requerido según la categoría y potencia del ítem
   static getItemMinLevel(item: any): number {
-    if (item.price <= 500) return 1;
+    // 1. Ítems de tienda de conveniencia básica de Nivel 1
+    const level1CommonItems = [
+      'Big Mac',
+      'Lollipop',
+      'Box of Sweet Hearts',
+      'Bag of Candy Kisses',
+      'Small First Aid Kit',
+      'Slingshot',
+      'Bug Swatter',
+      'Pillow',
+      'Plastic Sword',
+      'Snowball',
+      'Book',
+      'Brick',
+      'Wrench',
+      'Hammer',
+      'Pen Knife',
+      'Frying Pan',
+      'Kitchen Knife',
+      'Bottle of Beer',
+      'Bottle of Saké',
+    ];
+
+    if (level1CommonItems.includes(item.name)) {
+      return 1;
+    }
+
+    // 2. Insumos médicos profesionales (Farmacia Hospitalaria)
+    if (item.type === 'MEDICAL') {
+      return 3;
+    }
+
+    // 3. Armamento balístico y drogas según precio/potencia
     if (item.price <= 2500) return 3;
     if (item.price <= 10000) return 5;
     if (item.price <= 100000) return 10;
     return 15;
   }
 
-  // Obtener catálogo filtrado por la categoría activa (0: General, 1: Medicina, 2: Drogas, 3: Armería)
+  // Obtener catálogo filtrado por la categoría activa (0: Conveniencia, 1: Farmacia, 2: Drogas, 3: Armería)
   static async getCatalogByCategory(catIndex: number) {
     const validIndex = ((catIndex % SHOP_CATEGORIES.length) + SHOP_CATEGORIES.length) % SHOP_CATEGORIES.length;
 
     switch (validIndex) {
-      case 0: // General & Alimentos
+      case 0: // Tienda de Conveniencia (Común)
         return prisma.item.findMany({
           where: {
             OR: [
               { type: 'MISC' },
               { type: 'CONSUMABLE', weaponType: { in: ['Food', 'Candy', 'SupplyPack', 'Ticket'] } },
+              { price: { lte: 300 } },
             ],
           },
           orderBy: { price: 'asc' },
         });
 
-      case 1: // Medicina & Salud
+      case 1: // Farmacia & Suministros Médicos
         return prisma.item.findMany({
           where: { type: 'MEDICAL' },
           orderBy: { price: 'asc' },
@@ -78,7 +116,7 @@ export class ShopService {
           orderBy: { price: 'asc' },
         });
 
-      case 3: // Armería & Armamentos
+      case 3: // Armería & Armamentos Balísticos
         return prisma.item.findMany({
           where: { type: 'WEAPON' },
           orderBy: { price: 'asc' },
