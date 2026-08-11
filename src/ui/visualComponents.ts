@@ -181,3 +181,27 @@ export function translateTxType(txType: string): string {
 
   return map[txType] || txType;
 }
+
+// 7. Administrador de Historial de Acciones Recientes (Desplaza y mantiene máximo 5 líneas)
+export function appendActionLog(
+  existingContent: string | null | undefined,
+  newLines: string | string[],
+  maxLines: number = 5
+): string {
+  const incoming = Array.isArray(newLines) ? newLines : [newLines];
+
+  // Separar líneas previas filtrando cadenas vacías
+  const previousLines = existingContent
+    ? existingContent
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0)
+    : [];
+
+  const combined = [...previousLines, ...incoming];
+
+  // Conservar únicamente las últimas `maxLines` líneas para evitar flood
+  const trimmed = combined.slice(-maxLines);
+
+  return trimmed.join('\n');
+}

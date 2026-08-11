@@ -46,6 +46,7 @@ import {
   createBackButtonRow,
   createSecretAlleyViewEmbed,
 } from '../ui/embeds.js';
+import { appendActionLog } from '../ui/visualComponents.js';
 import { empezarCommand } from '../commands/general/empezar.js';
 import { gameCommand } from '../commands/general/game.js';
 import { atacarCommand } from '../commands/general/atacar.js';
@@ -87,12 +88,14 @@ export async function handleInteraction(interaction: Interaction) {
         try {
           const res = await EducationService.enrollCourse(player.id, courseId);
           const activeCourse = await EducationService.getActiveCourse(player.id);
-          const embed = createEducationViewEmbed(activeCourse);
+          const embed = createEducationViewEmbed(activeCourse, player.level);
           const selectRow = createEducationSelectRow();
           const backRow = createBackButtonRow();
+          const msg = `🎓 **¡Matrícula Exitosa!** Te inscribiste en **${res.courseName}**. Duración: **${res.durationHours} horas**.`;
+          const newContent = appendActionLog(interaction.message?.content, [msg], 5);
 
           return interaction.update({
-            content: `🎓 **¡Matrícula Exitosa!** Te inscribiste en **${res.courseName}**. Duración: **${res.durationHours} horas**.`,
+            content: newContent,
             embeds: [embed],
             components: [selectRow as any, backRow as any],
           });
@@ -116,8 +119,10 @@ export async function handleInteraction(interaction: Interaction) {
             ? NPCService.getReaction('charly', 'success')
             : NPCService.getReaction('charly', 'failure');
 
+          const newContent = appendActionLog(interaction.message?.content, [result.message, reaction], 5);
+
           return interaction.update({
-            content: `${result.message}\n${reaction}`,
+            content: newContent,
             embeds: [embed],
             components: [selectRow as any, backRow as any],
           });
@@ -199,9 +204,9 @@ export async function handleInteraction(interaction: Interaction) {
         let warBonusStr = '';
         if (warRes) {
           if (warRes.warFinished) {
-            warBonusStr = `\n⚔️ **¡GUERRA GANADA!** Tu facción alcanzó el objetivo de puntos y ganó **+$100,000** en la tesorería y +500 Puntos de Respeto.`;
+            warBonusStr = `\n⚔️ **¡GUERRA GANADA!** Tu facción alcanzó el objetivo de puntos y ganó **+$100,000** en la tesorería.`;
           } else {
-            warBonusStr = `\n⚔️ **¡Golpe de Guerra!** +${warRes.pointsGained} pts de guerra y +15 Puntos de Respeto para tu facción (Marcador: ${warRes.currentScore}/${warRes.targetScore}).`;
+            warBonusStr = `\n⚔️ **¡Golpe de Guerra!** +${warRes.pointsGained} pts de guerra (Marcador: ${warRes.currentScore}/${warRes.targetScore}).`;
           }
         }
 
@@ -211,8 +216,11 @@ export async function handleInteraction(interaction: Interaction) {
           bountyBonusStr = `\n🎯 **¡BOUNTY RECLAMADO!** Cobraste una recompensa de **+$${claimedBounty.reward.toLocaleString()}**.`;
         }
 
+        const fullMsg = `🎯 **Acción completada:** ${res.resultMessage}${warBonusStr}${bountyBonusStr}`;
+        const newContent = appendActionLog(interaction.message?.content, fullMsg.split('\n'), 5);
+
         return interaction.update({
-          content: `🎯 **Acción completada:** ${res.resultMessage}${warBonusStr}${bountyBonusStr}`,
+          content: newContent,
           components: [backRow as any],
         });
       }
@@ -249,7 +257,7 @@ export async function handleInteraction(interaction: Interaction) {
         }
         case 'act_jobs': {
           const playerJob = await prisma.playerJob.findUnique({ where: { playerId: player.id } });
-          const embed = createJobsViewEmbed(playerJob);
+          const embed = createJobsViewEmbed(playerJob, player.level);
           const jobBtns = createJobsButtons();
           return interaction.update({
             content: null,
@@ -261,10 +269,13 @@ export async function handleInteraction(interaction: Interaction) {
           try {
             const res = await JobService.collectSalary(player.id);
             const playerJob = await prisma.playerJob.findUnique({ where: { playerId: player.id } });
-            const embed = createJobsViewEmbed(playerJob);
+            const embed = createJobsViewEmbed(playerJob, player.level);
             const jobBtns = createJobsButtons();
+            const msg = `💵 **¡Salario Cobrado!** Recibiste **+$${res.salary.toLocaleString()}** de tu trabajo en **${res.jobName}** y +5 Job Points.`;
+            const newContent = appendActionLog(interaction.message?.content, [msg], 5);
+
             return interaction.update({
-              content: `💵 **¡Salario Cobrado!** Recibiste **+$${res.salary.toLocaleString()}** de tu trabajo en **${res.jobName}** y +5 Job Points.`,
+              content: newContent,
               embeds: [embed],
               components: jobBtns as any,
             });
@@ -284,10 +295,13 @@ export async function handleInteraction(interaction: Interaction) {
             const jobId = map[interaction.customId];
             const res = await JobService.applyJob(player.id, jobId);
             const playerJob = await prisma.playerJob.findUnique({ where: { playerId: player.id } });
-            const embed = createJobsViewEmbed(playerJob);
+            const embed = createJobsViewEmbed(playerJob, player.level);
             const jobBtns = createJobsButtons();
+            const msg = `🎉 **¡Contratado!** Ahora trabajas en **${res.jobName}** (Salario Base: $${res.salary}/día).`;
+            const newContent = appendActionLog(interaction.message?.content, [msg], 5);
+
             return interaction.update({
-              content: `🎉 **¡Contratado!** Ahora trabajas en **${res.jobName}** (Salario Base: $${res.salary}/día).`,
+              content: newContent,
               embeds: [embed],
               components: jobBtns as any,
             });
@@ -297,7 +311,7 @@ export async function handleInteraction(interaction: Interaction) {
         }
         case 'act_edu': {
           const activeCourse = await EducationService.getActiveCourse(player.id);
-          const embed = createEducationViewEmbed(activeCourse);
+          const embed = createEducationViewEmbed(activeCourse, player.level);
           const selectRow = createEducationSelectRow();
           return interaction.update({
             content: null,
@@ -325,8 +339,11 @@ export async function handleInteraction(interaction: Interaction) {
             const faction = await FactionService.createFaction(player.id, factionName, 'Facción creada desde el Hub', guildId);
             const embed = createFactionViewEmbed(faction);
             const factionBtns = createFactionButtons(true);
+            const msg = `🎉 **¡Facción Creada!** Fundaste la facción **${faction.name}**.`;
+            const newContent = appendActionLog(interaction.message?.content, [msg], 5);
+
             return interaction.update({
-              content: `🎉 **¡Facción Creada!** Fundaste la facción **${faction.name}**.`,
+              content: newContent,
               embeds: [embed],
               components: factionBtns as any,
             });
@@ -343,8 +360,11 @@ export async function handleInteraction(interaction: Interaction) {
             });
             const embed = createFactionViewEmbed(member?.faction);
             const factionBtns = createFactionButtons(true);
+            const msg = '💰 **¡Depósito Exitoso!** Acreditaste **+$10,000** a la tesorería de tu facción.';
+            const newContent = appendActionLog(interaction.message?.content, [msg], 5);
+
             return interaction.update({
-              content: '💰 **¡Depósito Exitoso!** Acreditaste **+$10,000** a la tesorería de tu facción.',
+              content: newContent,
               embeds: [embed],
               components: factionBtns as any,
             });
@@ -361,8 +381,11 @@ export async function handleInteraction(interaction: Interaction) {
             });
             const embed = createFactionViewEmbed(member?.faction);
             const factionBtns = createFactionButtons(true);
+            const msg = `🔥 **¡Crimen Organizado Exitoso!** Tu facción ejecutó el golpe y obtuvo **+$${res.rewardCash.toLocaleString()}** en la tesorería y **+${res.respectGained} Puntos de Respeto**.`;
+            const newContent = appendActionLog(interaction.message?.content, [msg], 5);
+
             return interaction.update({
-              content: `🔥 **¡Crimen Organizado Exitoso!** Tu facción ejecutó el golpe y obtuvo **+$${res.rewardCash.toLocaleString()}** en la tesorería y **+${res.respectGained} Puntos de Respeto**.`,
+              content: newContent,
               embeds: [embed],
               components: factionBtns as any,
             });
@@ -406,7 +429,7 @@ export async function handleInteraction(interaction: Interaction) {
         }
         case 'act_bounties': {
           const bounties = await BountyService.getActiveBounties();
-          const embed = createBountiesViewEmbed(bounties);
+          const embed = createBountiesViewEmbed(bounties, player.level);
           return interaction.update({
             content: null,
             embeds: [embed],
@@ -438,8 +461,10 @@ export async function handleInteraction(interaction: Interaction) {
             const jailedPlayers = await CrimeService.getJailedPlayers();
             const embed = createJailViewEmbed(jailedPlayers);
             const jailButtons = createJailActionButtons();
+            const newContent = appendActionLog(interaction.message?.content, [res.message], 5);
+
             return interaction.update({
-              content: res.message,
+              content: newContent,
               embeds: [embed],
               components: jailButtons as any,
             });
@@ -538,8 +563,11 @@ export async function handleInteraction(interaction: Interaction) {
             const gymButtons = createGymButtons();
             const reaction = NPCService.getReaction('tony', 'success');
 
+            const msg = `🏋️ **¡Entrenamiento exitoso en ${result.gymName}!** Aumentaste **+${result.gain.toFixed(3)}** de **${result.statName.toUpperCase()}**.`;
+            const newContent = appendActionLog(interaction.message?.content, [msg, reaction], 5);
+
             return interaction.update({
-              content: `🏋️ **¡Entrenamiento exitoso en ${result.gymName}!** Aumentaste **+${result.gain.toFixed(3)}** de **${result.statName.toUpperCase()}**.\n${reaction}`,
+              content: newContent,
               embeds: [embed],
               components: gymButtons as any,
             });
@@ -553,9 +581,11 @@ export async function handleInteraction(interaction: Interaction) {
             const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
             const embed = createGymViewEmbed(updated);
             const gymButtons = createGymButtons();
+            const msg = `🎉 **¡Membresía Mejorada!** Bienvenido a **${newGym.name}** (Tier ${newGym.tier}).`;
+            const newContent = appendActionLog(interaction.message?.content, [msg], 5);
 
             return interaction.update({
-              content: `🎉 **¡Membresía Mejorada!** Bienvenido a **${newGym.name}** (Tier ${newGym.tier}).`,
+              content: newContent,
               embeds: [embed],
               components: gymButtons as any,
             });
@@ -570,7 +600,10 @@ export async function handleInteraction(interaction: Interaction) {
             await EconomyService.deposit(player.id, 100n);
             const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
             const embed = createBankViewEmbed(updated);
-            return interaction.update({ embeds: [embed] });
+            const msg = '💰 **¡Depósito Exitoso!** Depositaste **+$100** en tu cuenta bancaria.';
+            const newContent = appendActionLog(interaction.message?.content, [msg], 5);
+
+            return interaction.update({ content: newContent, embeds: [embed] });
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
@@ -581,7 +614,10 @@ export async function handleInteraction(interaction: Interaction) {
             await EconomyService.deposit(player.id, cashAmt);
             const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
             const embed = createBankViewEmbed(updated);
-            return interaction.update({ embeds: [embed] });
+            const msg = `💰 **¡Depósito Exitoso!** Depositaste todo tu efectivo (**+$${cashAmt.toLocaleString()}**) en el banco.`;
+            const newContent = appendActionLog(interaction.message?.content, [msg], 5);
+
+            return interaction.update({ content: newContent, embeds: [embed] });
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
@@ -591,7 +627,10 @@ export async function handleInteraction(interaction: Interaction) {
             await EconomyService.withdraw(player.id, 100n);
             const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
             const embed = createBankViewEmbed(updated);
-            return interaction.update({ embeds: [embed] });
+            const msg = '💵 **¡Retiro Exitoso!** Retiraste **-$100** de tu cuenta bancaria.';
+            const newContent = appendActionLog(interaction.message?.content, [msg], 5);
+
+            return interaction.update({ content: newContent, embeds: [embed] });
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
@@ -602,7 +641,10 @@ export async function handleInteraction(interaction: Interaction) {
             await EconomyService.withdraw(player.id, bankAmt);
             const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
             const embed = createBankViewEmbed(updated);
-            return interaction.update({ embeds: [embed] });
+            const msg = `💵 **¡Retiro Exitoso!** Retiraste todo tu saldo bancario (**-$${bankAmt.toLocaleString()}**).`;
+            const newContent = appendActionLog(interaction.message?.content, [msg], 5);
+
+            return interaction.update({ content: newContent, embeds: [embed] });
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
