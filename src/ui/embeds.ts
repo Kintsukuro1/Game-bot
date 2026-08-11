@@ -637,11 +637,11 @@ export function createShopCatalogEmbed(catalog: any[], playerLevel: number = 1) 
 
   const itemList = catalog.slice(0, 15).map((item: any) => {
     const minLevel = ShopService.getItemMinLevel(item);
-    const lockTag = playerLevel >= minLevel ? '`[DESBLOQUEADO]`' : `\`[🔒 Nv. ${minLevel}]\``;
-    return `• **${item.name}** — **$${item.price.toLocaleString()}** (${item.type}) ${lockTag}`;
+    const lockTag = playerLevel >= minLevel ? '' : ` \`[🔒 Nv. ${minLevel}]\``;
+    return `• **${item.name}** — **$${item.price.toLocaleString()}** (${item.type})${lockTag}`;
   }).join('\n');
 
-  embed.addFields({ name: '📦 Catálogo Disponible & Requisitos de Nivel', value: itemList });
+  embed.addFields({ name: '📦 Catálogo Disponible', value: itemList });
   embed.setFooter({ text: `Tu Nivel Actual: ${playerLevel} • Sinford Supermarket & Armory` });
 
   return embed;
