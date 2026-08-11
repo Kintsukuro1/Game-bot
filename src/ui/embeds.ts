@@ -5,7 +5,14 @@ import { CRIMES } from '../services/crimeService.js';
 import { JOBS } from '../services/jobService.js';
 import { COURSES } from '../services/educationService.js';
 import { ShopService, SHOP_CATEGORIES } from '../services/shopService.js';
-import { renderProgressBar, renderHealthBar } from './visualComponents.js';
+import {
+  renderProgressBar,
+  renderHealthBar,
+  translateItemType,
+  translateWeaponType,
+  translateSlot,
+  translateTxType,
+} from './visualComponents.js';
 
 // 1. Hub Principal con Progresión Espaciada y Desbloqueo Gradual por Hitos (Niveles 1, 3, 5, 10, 15)
 export function createGameHubEmbed(player: any) {
@@ -53,7 +60,7 @@ export function createGameHubEmbed(player: any) {
       `💰 Efectivo: **$${wallet.cash.toLocaleString()}** | 🏦 Banco: **$${wallet.bank.toLocaleString()}**`
     )
     .addFields({
-      name: '🔍 Distritos & Mecánicas Descubiertas',
+      name: '🔍 Distritos & Mecánicas Desbloqueadas',
       value: unlockedList.join('\n'),
       inline: false,
     })
@@ -548,7 +555,10 @@ export function createInventoryViewEmbed(player: any) {
     embed.setDescription('Tu inventario está vacío. Compra objetos en la **🛒 Tienda** o completa crímenes.');
   } else {
     const itemList = items
-      .map((inv: any) => `• **${inv.item.name}** x${inv.quantity} (${inv.item.type}) ${inv.isEquipped ? '`[EQUIPADO]`' : ''}`)
+      .map((inv: any) => {
+        const typeTranslated = translateWeaponType(inv.item.weaponType) || translateItemType(inv.item.type);
+        return `• **${inv.item.name}** x${inv.quantity} (${typeTranslated}) ${inv.isEquipped ? '`[EQUIPADO]`' : ''}`;
+      })
       .join('\n');
     embed.setDescription(itemList);
   }
@@ -564,12 +574,13 @@ export function createInventoryItemSelectRow(inventory: any[]) {
     .setCustomId('select_inv_item')
     .setPlaceholder('Selecciona un objeto del inventario para interactuar...');
 
-  const options = inventory.slice(0, 25).map((inv: any) =>
-    new StringSelectMenuOptionBuilder()
+  const options = inventory.slice(0, 25).map((inv: any) => {
+    const typeTranslated = translateWeaponType(inv.item.weaponType) || translateItemType(inv.item.type);
+    return new StringSelectMenuOptionBuilder()
       .setLabel(`${inv.item.name} (x${inv.quantity})`)
       .setValue(inv.id)
-      .setDescription(`${inv.item.type} — ${inv.isEquipped ? 'Equipado' : 'Sin equipar'}`)
-  );
+      .setDescription(`${typeTranslated} — ${inv.isEquipped ? 'Equipado' : 'Sin equipar'}`);
+  });
 
   select.addOptions(options);
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
@@ -587,10 +598,10 @@ export function createEquipmentViewEmbed(player: any) {
     .setColor(0x4b0082)
     .setTitle(`⚔️ Equipamiento de Combate — ${player.username}`)
     .addFields(
-      { name: '🔫 Arma Principal (Primary)', value: `**${primary}**`, inline: true },
-      { name: '🔫 Arma Secundaria (Secondary)', value: `**${secondary}**`, inline: true },
-      { name: '🔪 Arma Cuerpo a Cuerpo (Melee)', value: `**${melee}**`, inline: true },
-      { name: '💣 Arma Temporal (Temporary)', value: `**${temporary}**`, inline: true }
+      { name: '🔫 Arma Principal', value: `**${primary}**`, inline: true },
+      { name: '🔫 Arma Secundaria', value: `**${secondary}**`, inline: true },
+      { name: '🔪 Arma Cuerpo a Cuerpo', value: `**${melee}**`, inline: true },
+      { name: '💣 Arma Temporal', value: `**${temporary}**`, inline: true }
     )
     .setFooter({ text: 'Equipa armas desde tu inventario' });
 }
@@ -640,8 +651,8 @@ export function createShopCatalogEmbed(catalog: any[], playerLevel: number = 1, 
     const itemList = catalog.slice(0, 15).map((item: any) => {
       const minLevel = ShopService.getItemMinLevel(item);
       const lockTag = playerLevel >= minLevel ? '' : ` \`[🔒 Nv. ${minLevel}]\``;
-      const typeTag = item.weaponType ? ` (${item.weaponType})` : ` (${item.type})`;
-      return `• **${item.name}** — **$${item.price.toLocaleString()}**${typeTag}${lockTag}`;
+      const typeTranslated = translateWeaponType(item.weaponType) || translateItemType(item.type);
+      return `• **${item.name}** — **$${item.price.toLocaleString()}** (${typeTranslated})${lockTag}`;
     }).join('\n');
 
     embed.addFields({ name: `📦 Productos de ${category.name}`, value: itemList });
@@ -698,7 +709,8 @@ export function createTxHistoryEmbed(player: any, txs: any[]) {
     const list = txs.map((tx: any) => {
       const dateStr = new Date(tx.timestamp).toLocaleTimeString('es-ES');
       const sign = tx.amount >= 0n ? '+' : '';
-      return `\`[${dateStr}]\` **${tx.type}**: ${sign}$${tx.amount.toLocaleString()} (Antes: $${tx.balanceBefore.toLocaleString()} ➔ Después: $${tx.balanceAfter.toLocaleString()})`;
+      const typeTranslated = translateTxType(tx.type);
+      return `\`[${dateStr}]\` **${typeTranslated}**: ${sign}$${tx.amount.toLocaleString()} (Antes: $${tx.balanceBefore.toLocaleString()} ➔ Después: $${tx.balanceAfter.toLocaleString()})`;
     }).join('\n');
 
     embed.setDescription(list);

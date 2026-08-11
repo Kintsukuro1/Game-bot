@@ -112,3 +112,72 @@ export function createConfirmationRow(actionId: string, confirmLabel: string = '
       .setStyle(ButtonStyle.Secondary)
   );
 }
+
+// 6. Traductores de Etiquetas Técnicas en Inglés al Español para el Usuario
+export function translateItemType(type: string): string {
+  const map: Record<string, string> = {
+    MEDICAL: 'Médico',
+    WEAPON: 'Arma',
+    ARMOR: 'Armadura',
+    CONSUMABLE: 'Consumible',
+    MISC: 'Varios',
+  };
+  return map[type] || type;
+}
+
+export function translateWeaponType(weaponType: string | null | undefined): string {
+  if (!weaponType) return '';
+
+  const map: Record<string, string> = {
+    'Heavy Artillery': 'Artillería Pesada',
+    'Clubbing': 'Contundente',
+    'Slashing': 'Corte / Filo',
+    'Piercing': 'Punzante',
+    'Mechanical': 'Mecánica',
+    'SMG': 'Subfusil',
+    'Rifle': 'Rifle de Asalto',
+    'Shotgun': 'Escopeta',
+    'Machine Gun': 'Ametralladora',
+    'Pistol': 'Pistola',
+    'Debuff': 'Táctico',
+    'Buff': 'Potenciador',
+    'Drug': 'Droga',
+    'EnergyDrink': 'Energética',
+    'Alcohol': 'Licor',
+    'Candy': 'Dulce',
+    'Food': 'Alimento',
+    'Booster': 'Booster',
+    'SupplyPack': 'Suministros',
+    'Ticket': 'Boleto',
+  };
+
+  return map[weaponType] || weaponType;
+}
+
+export function translateSlot(slot: string | null | undefined): string {
+  if (!slot) return '';
+
+  const map: Record<string, string> = {
+    PRIMARY: 'Principal',
+    SECONDARY: 'Secundario',
+    MELEE: 'Cuerpo a Cuerpo',
+    TEMPORARY: 'Temporal',
+  };
+
+  return map[slot] || slot;
+}
+
+export function translateTxType(txType: string): string {
+  const map: Record<string, string> = {
+    ITEM_PURCHASE: 'Compra de Objeto',
+    ITEM_SELL: 'Venta de Objeto',
+    BANK_DEPOSIT: 'Depósito Bancario',
+    BANK_WITHDRAW: 'Retiro Bancario',
+    SALARY: 'Salario Laboral',
+    PVP_LOOT: 'Botín PvP',
+    FACTION_DEPOSIT: 'Depósito a Facción',
+    ORGANIZED_CRIME: 'Crimen Organizado',
+  };
+
+  return map[txType] || txType;
+}
