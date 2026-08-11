@@ -25,7 +25,7 @@ export class GymService {
     return GYMS.find((g) => g.tier === tier) || GYMS[0];
   }
 
-  // Fórmula oficial de entrenamiento de Torn Wiki
+  // Fórmula oficial de entrenamiento de Torn Wiki (Stat Growth Curve)
   static calculateStatGain(
     currentStat: number,
     happy: number,
@@ -33,17 +33,28 @@ export class GymService {
     gymMultiplier: number,
     modifierBonus: number = 1.0
   ): number {
-    const a = 3.480061091e-7;
-    const b = 250;
-    const c = 3.091619094e-6;
-    const d = 6.82775184551527e-5;
-    const e = -0.0301431777;
+    let baseGain: number;
 
-    const statLog = Math.log(Math.max(currentStat, 1));
-    const baseGain = (a * statLog + b) * (1 + c * happy) + d * happy + e;
+    if (currentStat < 50000) {
+      // 1. Curva progresiva inicial para stats de nivel bajo/medio (< 50,000)
+      const happyFactor = (happy / 250) + 0.05;
+      const statFactor = Math.sqrt(1 + (currentStat / 1000));
+      baseGain = happyFactor * statFactor;
+    } else {
+      // 2. Curva avanzada logarítmica para stats altas (>= 50,000)
+      const a = 3.480061091e-7;
+      const b = 2.5; // Constante oficial corregida de Torn Wiki
+      const c = 3.091619094e-6;
+      const d = 6.82775184551527e-5;
+      const e = -0.0301431777;
 
-    const gain = modifierBonus * gymMultiplier * (energySpent / 5) * baseGain;
-    return Math.max(gain, 0.1);
+      const statLog = Math.log(Math.max(currentStat, 1));
+      baseGain = (a * statLog + b) * (1 + c * happy) + d * happy + e;
+    }
+
+    const energyFactor = energySpent / 5;
+    const gain = modifierBonus * (gymMultiplier / 2.0) * energyFactor * baseGain;
+    return Math.max(gain, 0.05);
   }
 
   // Entrenar una estadística de combate (Strength, Defense, Speed, Dexterity)
