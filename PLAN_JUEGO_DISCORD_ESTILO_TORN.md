@@ -934,21 +934,21 @@ Crear un sistema de inversión y Happy.
 ---
 
 ### Fase 12.1 — Properties
-- [ ] Comprar.
-- [ ] Rentar.
-- [ ] Precio.
-- [ ] Capacidad.
-- [ ] Happy.
-- [ ] Upgrades.
+- [x] Comprar.
+- [x] Rentar.
+- [x] Precio.
+- [x] Capacidad.
+- [x] Happy.
+- [x] Upgrades.
 
 ---
 
 ### Fase 12.2 — Staff
-- [ ] Maid.
-- [ ] Butler.
-- [ ] Guard.
-- [ ] Doctor.
-- [ ] Pilot.
+- [x] Maid.
+- [x] Butler.
+- [x] Guard.
+- [x] Doctor.
+- [x] Pilot.
 
 ---
 
@@ -973,21 +973,21 @@ Añadir economía internacional y contenido.
 ---
 
 ### Fase 13.1 — Travel Engine
-- [ ] Países.
-- [ ] Costes.
-- [ ] Duraciones.
-- [ ] Restricciones.
-- [ ] Estado traveling.
-- [ ] Llegada.
+- [x] Países.
+- [x] Costes.
+- [x] Duraciones.
+- [x] Restricciones.
+- [x] Estado traveling.
+- [x] Llegada.
 
 ---
 
 ### Fase 13.2 — Mercados internacionales
-- [ ] Items exclusivos.
-- [ ] Precios.
-- [ ] Stock.
-- [ ] Compras.
-- [ ] Venta.
+- [x] Items exclusivos.
+- [x] Precios.
+- [x] Stock.
+- [x] Compras.
+- [x] Venta.
 
 ---
 
@@ -1000,21 +1000,21 @@ Crear una economía entre jugadores.
 ---
 
 ### Fase 14.1 — Player Market
-- [ ] Publicar.
-- [ ] Comprar.
-- [ ] Cancelar.
-- [ ] Expirar.
-- [ ] Fees.
+- [x] Publicar.
+- [x] Comprar.
+- [x] Cancelar.
+- [x] Expirar.
+- [x] Fees.
 
 ---
 
 ### Fase 14.2 — Trading directo
-- [ ] Crear trade.
-- [ ] Añadir dinero.
-- [ ] Añadir items.
-- [ ] Confirmación doble.
-- [ ] Bloqueo al confirmar.
-- [ ] Ejecución atómica.
+- [x] Crear trade.
+- [x] Añadir dinero.
+- [x] Añadir items.
+- [x] Confirmación doble.
+- [x] Bloqueo al confirmar.
+- [x] Ejecución atómica.
 
 ---
 
@@ -1027,23 +1027,23 @@ Crear mecanismos para almacenar/invertir dinero.
 ---
 
 ### Fase 15.1 — Bank
-- [ ] Depositar.
-- [ ] Retirar.
-- [ ] Duración.
-- [ ] Interés.
-- [ ] Finalización.
-- [ ] Penalizaciones.
+- [x] Depositar.
+- [x] Retirar.
+- [x] Duración.
+- [x] Interés.
+- [x] Finalización.
+- [x] Penalizaciones.
 
 ---
 
 ### Fase 15.2 — Stocks
-- [ ] Empresas cotizadas.
-- [ ] Precio.
-- [ ] Compra.
-- [ ] Venta.
-- [ ] Variación.
-- [ ] Beneficios.
-- [ ] Dividendos si aplica.
+- [x] Empresas cotizadas.
+- [x] Precio.
+- [x] Compra.
+- [x] Venta.
+- [x] Variación.
+- [x] Beneficios.
+- [x] Dividendos si aplica.
 
 ---
 
@@ -1056,35 +1056,35 @@ Crear economía empresarial.
 ---
 
 ### Fase 16.1 — Company
-- [ ] Comprar empresa.
-- [ ] Tipo.
-- [ ] Nivel.
-- [ ] Popularity.
-- [ ] Efficiency.
-- [ ] Environment.
-- [ ] Cash.
-- [ ] Revenue.
-- [ ] Expenses.
+- [x] Comprar empresa.
+- [x] Tipo.
+- [x] Nivel.
+- [x] Popularity.
+- [x] Efficiency.
+- [x] Environment.
+- [x] Cash.
+- [x] Revenue.
+- [x] Expenses.
 
 ---
 
 ### Fase 16.2 — Empleados
-- [ ] Contratar.
-- [ ] Despedir.
-- [ ] Salario.
-- [ ] Posiciones.
-- [ ] Promoción.
-- [ ] Productividad.
+- [x] Contratar.
+- [x] Despedir.
+- [x] Salario.
+- [x] Posiciones.
+- [x] Promoción.
+- [x] Productividad.
 
 ---
 
 ### Fase 16.3 — Gestión
-- [ ] Inventario.
-- [ ] Stock.
-- [ ] Marketing.
-- [ ] Training.
-- [ ] Upgrades.
-- [ ] Reportes diarios.
+- [x] Inventario.
+- [x] Stock.
+- [x] Marketing.
+- [x] Training.
+- [x] Upgrades.
+- [x] Reportes diarios.
 
 ---
 
@@ -1803,11 +1803,11 @@ Estas funcionalidades se dejan deliberadamente para después:
 | 9 — Jobs/Education | ✅ Completado |
 | 10 — Factions | ✅ Completado |
 | 11 — Warfare | ✅ Completado |
-| 12 — Properties | ⬜ Pendiente |
-| 13 — Travel | ⬜ Pendiente |
-| 14 — Market | ⬜ Pendiente |
-| 15 — Bank/Stocks | ⬜ Pendiente |
-| 16 — Companies | ⬜ Pendiente |
+| 12 — Properties | ✅ Completado |
+| 13 — Travel | ✅ Completado |
+| 14 — Market | ✅ Completado |
+| 15 — Bank/Stocks | ✅ Completado |
+| 16 — Companies | ✅ Completado |
 | 17 — Racing | ⬜ Pendiente |
 | 18 — Casino | ⬜ Pendiente |
 | 19 — Items avanzados | ⬜ Pendiente |
@@ -1824,6 +1824,13 @@ Estas funcionalidades se dejan deliberadamente para después:
 | 30 — Post-lanzamiento | ⬜ Pendiente |   
 
 ### 📜 Log de Registro de Avances
+
+- **2026-08-10 — Fases 12 a 16 (Propiedades, Viajes, Mercado/Trading, Banco/Bolsa y Empresas):**
+  - ✅ **Propiedades (Fase 12):** Catálogo inmobiliario (`Shack`, `Apartment`, `Penthouse`, `Private Island`), contratación de Staff (`Maid`, `Butler`, `Doctor`, `Pilot`) e incrementos automáticos a `maxHappy`.
+  - ✅ **Motor de Viajes (Fase 13):** Destinos internacionales (`México`, `Reino Unido`, `Japón`, `Suiza`) con billetes aéreos, temporizadores de vuelo y catálogo de mercado exclusivo.
+  - ✅ **Mercado y Trading (Fase 14):** Publicación de objetos en el mercado entre jugadores (`MarketItem`) y sistema de comercio directo (`Trade`) con confirmación doble atómica.
+  - ✅ **Banco e Inversiones (Fase 15):** Depósitos bancarios a plazo fijo (1 a 4 semanas) con tasa de interés hasta del 30% y Bolsa de Valores (`Stock`) con acciones (`TNC`, `SYS`, `MED`, `OIL`).
+  - ✅ **Empresas y Gestión (Fase 16):** Fundación de empresas (`Sweet Shop`, `Gun Shop`, `Logistics Firm`), contratación de empleados y recaudación de ganancias acumuladas.
 
 - **2026-08-10 — Fase 11 (Guerras entre Facciones y Rankings):**
   - ✅ **Faction Warfare (Fase 11.1):** Declaración de guerra entre facciones enemigas (`targetScore` de 100 puntos, 24 horas de duración). Cada duelo PvP ganado por un miembro suma +10 pts de guerra y +15 Puntos de Respeto.

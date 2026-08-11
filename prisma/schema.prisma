@@ -263,3 +263,105 @@ model FactionWar {
   @@index([challengerId, status])
   @@index([defenderId, status])
 }
+
+model PlayerProperty {
+  id           String   @id @default(uuid())
+  playerId     String   @unique
+  propertyType String   @default("Shack") // Shack, Apartment, Penthouse, Private Island
+  maxHappy     Int      @default(100)
+  hasStaff     Boolean  @default(false)
+  staffType    String?  // Maid, Butler, Guard, Doctor, Pilot
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model TravelState {
+  id           String   @id @default(uuid())
+  playerId     String   @unique
+  destination  String   @default("Home") // Home, Mexico, United Kingdom, Japan, Switzerland
+  isTraveling  Boolean  @default(false)
+  arrivesAt    DateTime @default(now())
+  createdAt    DateTime @default(now())
+}
+
+model MarketItem {
+  id        String   @id @default(uuid())
+  sellerId  String
+  itemId    String
+  price     BigInt
+  quantity  Int      @default(1)
+  status    String   @default("ACTIVE") // ACTIVE, SOLD, CANCELLED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([itemId, status])
+}
+
+model Trade {
+  id                String   @id @default(uuid())
+  senderId          String
+  receiverId        String
+  senderCash        BigInt   @default(0)
+  receiverCash      BigInt   @default(0)
+  senderConfirmed   Boolean  @default(false)
+  receiverConfirmed Boolean  @default(false)
+  status            String   @default("PENDING") // PENDING, COMPLETED, CANCELLED
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model BankInvestment {
+  id            String   @id @default(uuid())
+  playerId      String
+  amount        BigInt
+  interestRate  Float    @default(0.12)
+  payout        BigInt
+  maturesAt     DateTime
+  isClaimed     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([playerId, isClaimed])
+}
+
+model Stock {
+  id        String   @id @default(uuid())
+  symbol    String   @unique
+  name      String
+  price     BigInt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlayerStock {
+  id        String   @id @default(uuid())
+  playerId  String
+  symbol    String
+  shares    Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([playerId, symbol])
+}
+
+model Company {
+  id        String            @id @default(uuid())
+  guildId   String            @default("GLOBAL")
+  ownerId   String            @unique
+  name      String
+  type      String            // Sweet Shop, Gun Shop, Logistics Firm
+  level     Int               @default(1)
+  revenue   BigInt            @default(0)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  employees CompanyEmployee[]
+}
+
+model CompanyEmployee {
+  id        String   @id @default(uuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  playerId  String   @unique
+  salary    BigInt   @default(500)
+  joinedAt  DateTime @default(now())
+}
