@@ -1,13 +1,13 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
 import { GYMS, GymService } from '../services/gymService.js';
 import { CombatResult } from '../services/combatService.js';
 import { CRIMES } from '../services/crimeService.js';
 import { JOBS } from '../services/jobService.js';
 import { COURSES } from '../services/educationService.js';
-import { renderProgressBar, renderHealthBar, createV2Container, createV2TextDisplay, createV2Separator } from './visualComponents.js';
+import { renderProgressBar, renderHealthBar } from './visualComponents.js';
 
-// 1. Hub Principal de la Ciudad (Components V2 Container)
-export function createGameHubEmbed(player: any, interactiveRows: any[] = []) {
+// 1. Hub Principal de la Ciudad (Embed de Alta Estética con Barras de Progreso)
+export function createGameHubEmbed(player: any) {
   const stats = player.stats;
   const wallet = player.wallet;
 
@@ -15,39 +15,40 @@ export function createGameHubEmbed(player: any, interactiveRows: any[] = []) {
   const nerveBar = renderProgressBar(stats.nerve, stats.maxNerve, 8, '🧠', '░');
   const happyBar = renderProgressBar(stats.happy, stats.maxHappy, 8, '😊', '░');
 
-  return createV2Container(0x2f3136, [
-    createV2TextDisplay(
-      `## 🏙️ LA CIUDAD DE SINFORD\n` +
+  return new EmbedBuilder()
+    .setColor(0x2f3136)
+    .setTitle('🏙️ LA CIUDAD DE SINFORD')
+    .setDescription(
       `Bienvenido a la central de la ciudad, **${player.username}**.\n` +
-      `Todo tu progreso e interacciones ocurren desde este Hub interactivo sin saturar el chat.`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(
-      `### ⚡ Estado Rápido & Vitalidad\n` +
-      `⚡ **Energía:** ${energyBar} (**${stats.energy}/${stats.maxEnergy}**)\n` +
-      `🧠 **Nerve:** ${nerveBar} (**${stats.nerve}/${stats.maxNerve}**)\n` +
-      `😊 **Happy:** ${happyBar} (**${stats.happy}/${stats.maxHappy}**)\n\n` +
-      `💰 **Efectivo:** $${wallet.cash.toLocaleString()} | 🏦 **Banco:** $${wallet.bank.toLocaleString()}`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(
-      `### 📌 Desarrollo & Actividades\n` +
-      `• **👤 Perfil & 📊 Stats:** Tu información general, nivel y estadísticas.\n` +
-      `• **💼 Trabajos & 🎓 Universidad:** Salarios diarios, Working Stats y cursos pasivos.\n` +
-      `• **🏋️ Gimnasio & 🕵️ Crímenes:** Entrena Battle Stats y comete delitos para ganar XP.\n` +
-      `• **⚔️ Guerra & 🏴 Facción:** Guerras entre facciones, tesorería y crímenes organizados.`
-    ),
-    createV2TextDisplay(
-      `### 🎒 Economía & Servicios\n` +
-      `• **🎯 Bounties & 📋 Misiones:** Cazarecompensas PvP y objetivos diarios.\n` +
-      `• **🎒 Inventario & 🛒 Tienda:** Armas equipables, consumibles y armería.\n` +
-      `• **🏦 Banco & Finanzas:** Depósitos, retiros y registro atómico auditado.\n` +
-      `• **🚨 Prisión:** Fugas propias y rescate de compañeros encarcelados.`
-    ),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Sinford Underworld • Components V2 Navigation`),
-    ...interactiveRows,
-  ]);
+      `Todo tu progreso e interacciones ocurren desde este Hub interactivo sin saturar el chat.\n\n` +
+      `**Estado Rápido & Vitalidad:**\n` +
+      `⚡ Energía: ${energyBar} (**${stats.energy}/${stats.maxEnergy}**)\n` +
+      `🧠 Nerve: ${nerveBar} (**${stats.nerve}/${stats.maxNerve}**)\n` +
+      `😊 Happy: ${happyBar} (**${stats.happy}/${stats.maxHappy}**)\n\n` +
+      `💰 Efectivo: **$${wallet.cash.toLocaleString()}** | 🏦 Banco: **$${wallet.bank.toLocaleString()}**`
+    )
+    .addFields(
+      {
+        name: '📌 Desarrollo & Actividades',
+        value:
+          `• **👤 Perfil & 📊 Stats:** Tu información general, nivel y estadísticas.\n` +
+          `• **💼 Trabajos & 🎓 Universidad:** Salarios diarios, Working Stats y cursos pasivos.\n` +
+          `• **🏋️ Gimnasio & 🕵️ Crímenes:** Entrena Battle Stats y comete delitos para ganar XP.\n` +
+          `• **⚔️ Guerra & 🏴 Facción:** Guerras entre facciones, tesorería y crímenes organizados.`,
+        inline: false,
+      },
+      {
+        name: '🎒 Economía & Servicios',
+        value:
+          `• **🎯 Bounties & 📋 Misiones:** Cazarecompensas PvP y objetivos diarios.\n` +
+          `• **🎒 Inventario & 🛒 Tienda:** Armas equipables, consumibles y armería.\n` +
+          `• **🏦 Banco & Finanzas:** Depósitos, retiros y registro atómico auditado.\n` +
+          `• **🚨 Prisión:** Fugas propias y rescate de compañeros encarcelados.`,
+        inline: false,
+      }
+    )
+    .setFooter({ text: 'Sinford Underworld • Pulsa los botones para navegar' })
+    .setTimestamp();
 }
 
 // Organización armónica de los botones del Hub agrupados por categorías temáticas y colores
@@ -79,92 +80,93 @@ export function createGameHubButtons() {
   return [row1, row2, row3];
 }
 
-// 2. Vista de Perfil General (Components V2 Container)
-export function createProfileViewEmbed(player: any, interactiveRows: any[] = []) {
+// 2. Vista de Perfil General con Barras de Salud Visuales en 6 Partes Corporales
+export function createProfileViewEmbed(player: any) {
   const wallet = player.wallet;
   const stats = player.stats;
   const body = player.bodyParts;
   const createdDate = new Date(player.createdAt).toLocaleDateString('es-ES');
 
-  return createV2Container(0x8b0000, [
-    createV2TextDisplay(
-      `## 👤 Perfil de Jugador — ${player.username}\n` +
-      `**ID de Discord:** \`${player.discordId}\` | **Miembro desde:** ${createdDate}`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(
-      `### ⭐ Progresión Base & Finanzas\n` +
-      `• Nivel: **${player.level}** | Experiencia (XP): **${player.xp.toLocaleString()}**\n` +
-      `• Efectivo en Mano: **$${wallet.cash.toLocaleString()}** | Banco: **$${wallet.bank.toLocaleString()}**`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(
-      `### ⚡ Vitalidad y Recursos\n` +
-      `⚡ Energía: **${stats.energy}/${stats.maxEnergy}** | 🧠 Nerve: **${stats.nerve}/${stats.maxNerve}** | 😊 Felicidad: **${stats.happy}/${stats.maxHappy}**`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(
-      `### 🏥 Salud de Extremidades Corporales (6 Partes)\n` +
-      `🧠 **Cabeza:** ${renderHealthBar(body.headHp, 100)}\n` +
-      `🫀 **Torso:** ${renderHealthBar(body.torsoHp, 100)}\n` +
-      `💪 **Brazo Izquierdo:** ${renderHealthBar(body.leftArmHp, 100)}\n` +
-      `💪 **Brazo Derecho:** ${renderHealthBar(body.rightArmHp, 100)}\n` +
-      `🦵 **Pierna Izquierda:** ${renderHealthBar(body.leftLegHp, 100)}\n` +
-      `🦵 **Pierna Derecha:** ${renderHealthBar(body.rightLegHp, 100)}`
-    ),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Pantalla de Perfil General • Components V2`),
-    ...interactiveRows,
-  ]);
+  return new EmbedBuilder()
+    .setColor(0x8b0000)
+    .setTitle(`👤 Perfil de Jugador — ${player.username}`)
+    .setDescription(`**ID de Discord:** \`${player.discordId}\` | **Miembro desde:** ${createdDate}`)
+    .addFields(
+      {
+        name: '⭐ Progresión Base',
+        value: `Nivel: **${player.level}**\nExperiencia (XP): **${player.xp.toLocaleString()}**`,
+        inline: true,
+      },
+      {
+        name: '💰 Finanzas',
+        value: `Efectivo en Mano: **$${wallet.cash.toLocaleString()}**\nDepositado en Banco: **$${wallet.bank.toLocaleString()}**`,
+        inline: true,
+      },
+      {
+        name: '⚡ Vitalidad y Recursos',
+        value: `Energía: **${stats.energy}/${stats.maxEnergy}** ⚡\nNerve: **${stats.nerve}/${stats.maxNerve}** 🧠\nFelicidad: **${stats.happy}/${stats.maxHappy}** 😊`,
+        inline: true,
+      },
+      {
+        name: '🏥 Salud de Extremidades Corporales (6 Partes)',
+        value:
+          `🧠 **Cabeza:** ${renderHealthBar(body.headHp, 100)}\n` +
+          `🫀 **Torso:** ${renderHealthBar(body.torsoHp, 100)}\n` +
+          `💪 **Brazo Izquierdo:** ${renderHealthBar(body.leftArmHp, 100)}\n` +
+          `💪 **Brazo Derecho:** ${renderHealthBar(body.rightArmHp, 100)}\n` +
+          `🦵 **Pierna Izquierda:** ${renderHealthBar(body.leftLegHp, 100)}\n` +
+          `🦵 **Pierna Derecha:** ${renderHealthBar(body.rightLegHp, 100)}`,
+        inline: false,
+      }
+    )
+    .setFooter({ text: 'Pantalla de Perfil General' });
 }
 
-// 3. Vista de Guerras y Rankings de Facciones (Components V2 Container)
-export function createWarfareViewEmbed(rankings: any[], interactiveRows: any[] = []) {
-  let listStr = 'Aún no se han fundado facciones en este servidor.';
-  if (rankings.length > 0) {
-    listStr = rankings.map((f, i) =>
+// 3. Vista de Guerras y Rankings de Facciones
+export function createWarfareViewEmbed(rankings: any[]) {
+  const embed = new EmbedBuilder()
+    .setColor(0x8b0000)
+    .setTitle('⚔️ GUERRAS Y RANKING DE FACCIONES')
+    .setDescription('Compite contra otras facciones por la supremacía de la ciudad y el control del respeto.');
+
+  if (rankings.length === 0) {
+    embed.addFields({ name: '🏆 Ranking de Facciones', value: 'Aún no se han fundado facciones en este servidor.' });
+  } else {
+    const list = rankings.map((f, i) =>
       `\`#${i + 1}\` **${f.name}** — ⭐ **${f.respect.toLocaleString()} Respeto** | 👥 **${f.members?.length || 1} Miembros** | 🏦 **$${BigInt(f.treasury).toLocaleString()}**`
     ).join('\n');
+    embed.addFields({ name: '🏆 Top Facciones de la Ciudad', value: list });
   }
 
-  return createV2Container(0x8b0000, [
-    createV2TextDisplay(
-      `## ⚔️ GUERRAS Y RANKING DE FACCIONES\n` +
-      `Compite contra otras facciones por la supremacía de la ciudad y el control del respeto.`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(`### 🏆 Top Facciones de la Ciudad\n${listStr}`),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Los duelos de combate durante la guerra aportan +10 pts de guerra y +15 Respeto`),
-    ...interactiveRows,
-  ]);
+  embed.setFooter({ text: 'Los duelos de combate durante la guerra aportan +10 pts de guerra y +15 Respeto' });
+  return embed;
 }
 
 // 4. Vista de Trabajos (Jobs)
-export function createJobsViewEmbed(playerJob: any, interactiveRows: any[] = []) {
-  let jobText = 'No tienes un trabajo activo. Elige uno del catálogo abajo.';
+export function createJobsViewEmbed(playerJob: any) {
+  const embed = new EmbedBuilder()
+    .setColor(0x1e90ff)
+    .setTitle('💼 EMPLEOS Y CENTRO LABORAL DE SINFORD')
+    .setDescription('Trabaja diariamente para ganar salarios en efectivo, Job Points y aumentar tus Working Stats.');
+
   if (playerJob) {
     const jobDef = JOBS.find((j) => j.id === playerJob.jobId);
-    jobText = `• Trabajo: **${jobDef?.name || playerJob.jobId}**\n• Rango: **Rango ${playerJob.rank}**\n• Salario Diario: **$${((jobDef?.baseSalary || 100) * playerJob.rank).toLocaleString()}**\n• Job Points: **${playerJob.jobPoints} Puntos**`;
+    embed.addFields({
+      name: '👔 Empleo Actual',
+      value: `• Trabajo: **${jobDef?.name || playerJob.jobId}**\n• Rango: **Rango ${playerJob.rank}**\n• Salario Diario: **$${((jobDef?.baseSalary || 100) * playerJob.rank).toLocaleString()}**\n• Job Points: **${playerJob.jobPoints} Puntos**`,
+    });
+  } else {
+    embed.addFields({ name: '👔 Empleo Actual', value: 'No tienes un trabajo activo. Elige uno del catálogo abajo.' });
   }
 
   const jobList = JOBS.map((j) =>
     `• **${j.name}** — Salario Base: **$${j.baseSalary.toLocaleString()}** (Req: Labor ${j.reqLabor}, Intel ${j.reqIntel}, End ${j.reqEndurance})`
   ).join('\n');
 
-  return createV2Container(0x1e90ff, [
-    createV2TextDisplay(
-      `## 💼 EMPLEOS Y CENTRO LABORAL DE SINFORD\n` +
-      `Trabaja diariamente para ganar salarios en efectivo, Job Points y aumentar tus Working Stats.`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(`### 👔 Empleo Actual\n${jobText}`),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(`### 📋 Trabajos Disponibles\n${jobList}`),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Selecciona una acción laboral abajo`),
-    ...interactiveRows,
-  ]);
+  embed.addFields({ name: '📋 Trabajos Disponibles', value: jobList });
+  embed.setFooter({ text: 'Selecciona una acción laboral abajo' });
+
+  return embed;
 }
 
 export function createJobsButtons() {
@@ -180,31 +182,31 @@ export function createJobsButtons() {
 }
 
 // 5. Vista de Educación (Courses)
-export function createEducationViewEmbed(activeCourse: any, interactiveRows: any[] = []) {
-  let courseText = 'No estás inscrito en ningún curso actualmente.';
+export function createEducationViewEmbed(activeCourse: any) {
+  const embed = new EmbedBuilder()
+    .setColor(0x9370db)
+    .setTitle('🎓 UNIVERSIDAD DE SINFORD — CURSOS Y EDUCACIÓN')
+    .setDescription('Inscríbete en cursos para obtener habilidades pasivas permanentes y bonificaciones.');
+
   if (activeCourse) {
     const courseDef = COURSES.find((c) => c.id === activeCourse.courseId);
     const dateStr = new Date(activeCourse.completesAt).toLocaleTimeString('es-ES');
-    courseText = `• Curso: **${courseDef?.name || activeCourse.courseId}**\n• Finaliza a las: **${dateStr}** ${activeCourse.isCompleted ? '`[¡COMPLETADO!]`' : '`[EN PROGRESO]`'}`;
+    embed.addFields({
+      name: '📖 Curso Activo',
+      value: `• Curso: **${courseDef?.name || activeCourse.courseId}**\n• Finaliza a las: **${dateStr}** ${activeCourse.isCompleted ? '`[¡COMPLETADO!]`' : '`[EN PROGRESO]`'}`,
+    });
+  } else {
+    embed.addFields({ name: '📖 Curso Activo', value: 'No estás inscrito en ningún curso actualmente.' });
   }
 
   const courseList = COURSES.map((c) =>
     `• **${c.name}** — Costo: **$${c.cost.toLocaleString()}** (${c.durationHours}h) ➔ ${c.bonusDescription}`
   ).join('\n');
 
-  return createV2Container(0x9370db, [
-    createV2TextDisplay(
-      `## 🎓 UNIVERSIDAD DE SINFORD — CURSOS Y EDUCACIÓN\n` +
-      `Inscríbete en cursos para obtener habilidades pasivas permanentes y bonificaciones.`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(`### 📖 Curso Activo\n${courseText}`),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(`### 📚 Catálogo de Cursos\n${courseList}`),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Inscríbete seleccionando un curso abajo`),
-    ...interactiveRows,
-  ]);
+  embed.addFields({ name: '📚 Catálogo de Cursos', value: courseList });
+  embed.setFooter({ text: 'Inscríbete seleccionando un curso abajo' });
+
+  return embed;
 }
 
 export function createEducationSelectRow() {
@@ -224,21 +226,23 @@ export function createEducationSelectRow() {
 }
 
 // 6. Vista de Facción
-export function createFactionViewEmbed(faction: any, interactiveRows: any[] = []) {
-  let factionText = 'No perteneces a ninguna facción actualmente. Crea una por **$50,000** o únete a una existente.';
-  if (faction) {
-    factionText =
+export function createFactionViewEmbed(faction: any) {
+  const embed = new EmbedBuilder()
+    .setColor(0x800080)
+    .setTitle(`🏴 FACCIÓN — ${faction ? faction.name : 'Sin Facción'}`);
+
+  if (!faction) {
+    embed.setDescription('No perteneces a ninguna facción actualmente. Crea una por **$50,000** o únete a una existente.');
+  } else {
+    embed.setDescription(
       `**Descripción:** ${faction.description || 'Sin descripción'}\n\n` +
       `👑 Líder ID: \`${faction.leaderId}\` | 👥 Miembros: **${faction.members?.length || 1}/20**\n` +
-      `⭐ Respeto: **${faction.respect.toLocaleString()} Puntos** | 🏦 Tesorería: **$${BigInt(faction.treasury).toLocaleString()}**`;
+      `⭐ Respeto: **${faction.respect.toLocaleString()} Puntos** | 🏦 Tesorería: **$${BigInt(faction.treasury).toLocaleString()}**`
+    );
   }
 
-  return createV2Container(0x800080, [
-    createV2TextDisplay(`## 🏴 FACCIÓN — ${faction ? faction.name : 'Sin Facción'}\n${factionText}`),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Juego en equipo y Crímenes Organizados`),
-    ...interactiveRows,
-  ]);
+  embed.setFooter({ text: 'Juego en equipo y Crímenes Organizados' });
+  return embed;
 }
 
 export function createFactionButtons(hasFaction: boolean) {
@@ -261,69 +265,65 @@ export function createFactionButtons(hasFaction: boolean) {
 }
 
 // 7. Vista de Bounties
-export function createBountiesViewEmbed(bounties: any[], interactiveRows: any[] = []) {
-  let listStr = 'No hay recompensas activas en este momento.';
-  if (bounties.length > 0) {
-    listStr = bounties.map((b) =>
+export function createBountiesViewEmbed(bounties: any[]) {
+  const embed = new EmbedBuilder()
+    .setColor(0xb22222)
+    .setTitle('🎯 RECOMPENSAS PvP — BOUNTIES')
+    .setDescription('Derrota en combate a un jugador objetivo para reclamar la recompensa en efectivo.');
+
+  if (bounties.length === 0) {
+    embed.addFields({ name: '📋 Bounties Activos', value: 'No hay recompensas activas en este momento.' });
+  } else {
+    const list = bounties.map((b) =>
       `• **Recompensa:** **$${b.reward.toLocaleString()}** (ID Objetivo: \`${b.targetPlayerId}\`) — Expira en 7 días`
     ).join('\n');
+    embed.addFields({ name: '📋 Bounties Activos', value: list });
   }
 
-  return createV2Container(0xb22222, [
-    createV2TextDisplay(
-      `## 🎯 RECOMPENSAS PvP — BOUNTIES\n` +
-      `Derrota en combate a un jugador objetivo para reclamar la recompensa en efectivo.`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(`### 📋 Bounties Activos\n${listStr}`),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Recompensas PvP con 10% de comisión`),
-    ...interactiveRows,
-  ]);
+  embed.setFooter({ text: 'Recompensas PvP con 10% de comisión' });
+  return embed;
 }
 
 // 8. Vista de Misiones
-export function createMissionsViewEmbed(missions: any[], interactiveRows: any[] = []) {
-  let listStr = '¡Has completado todas tus misiones diarias!';
-  if (missions.length > 0) {
-    listStr = missions.map((m) =>
+export function createMissionsViewEmbed(missions: any[]) {
+  const embed = new EmbedBuilder()
+    .setColor(0x4682b4)
+    .setTitle('📋 MISIONES DIARIAS')
+    .setDescription('Completa objetivos diarios para ganar efectivo y experiencia extra.');
+
+  if (missions.length === 0) {
+    embed.addFields({ name: '🎯 Misiones Activas', value: '¡Has completado todas tus misiones diarias!' });
+  } else {
+    const list = missions.map((m) =>
       `• **${m.title}**: ${m.description} (${m.progress}/${m.requirement}) — Recompensa: **+$${m.rewardCash.toLocaleString()}** | **+${m.rewardXp} XP** ${m.isCompleted ? '`[COMPLETADA]`' : ''}`
     ).join('\n');
+    embed.addFields({ name: '🎯 Misiones Activas', value: list });
   }
 
-  return createV2Container(0x4682b4, [
-    createV2TextDisplay(
-      `## 📋 MISIONES DIARIAS\n` +
-      `Completa objetivos diarios para ganar efectivo y experiencia extra.`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(`### 🎯 Misiones Activas\n${listStr}`),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Se reinician cada 24 horas`),
-    ...interactiveRows,
-  ]);
+  embed.setFooter({ text: 'Se reinician cada 24 horas' });
+  return embed;
 }
 
 // 9. Vista de Crímenes
-export function createCrimesViewEmbed(player: any, interactiveRows: any[] = []) {
+export function createCrimesViewEmbed(player: any) {
   const stats = player.stats;
+
+  const embed = new EmbedBuilder()
+    .setColor(0x800000)
+    .setTitle(`🕵️ ACTIVIDADES ILÍCITAS Y CRÍMENES`)
+    .setDescription(
+      `Comete crímenes para obtener dinero rápido y aumentar tu **Crime Skill**.\n\n` +
+      `🧠 Nerve Disponible: **${stats.nerve}/${stats.maxNerve}** | 📈 Crime Skill: **${stats.crimeSkill.toFixed(2)}** | ⭐ Crime XP: **${stats.crimeExp.toLocaleString()}**`
+    );
 
   const crimeList = CRIMES.map(
     (c) => `• **${c.name}** — Costo: **${c.nerveCost}🧠** | Requisito: **Nivel ${c.minLevel}** | Botín: **$${c.minReward.toLocaleString()} - $${c.maxReward.toLocaleString()}**`
   ).join('\n');
 
-  return createV2Container(0x800000, [
-    createV2TextDisplay(
-      `## 🕵️ ACTIVIDADES ILÍCITAS Y CRÍMENES\n` +
-      `Comete crímenes para obtener dinero rápido y aumentar tu **Crime Skill**.\n\n` +
-      `🧠 Nerve Disponible: **${stats.nerve}/${stats.maxNerve}** | 📈 Crime Skill: **${stats.crimeSkill.toFixed(2)}** | ⭐ Crime XP: **${stats.crimeExp.toLocaleString()}**`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(`### 📋 Lista de Crímenes\n${crimeList}`),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Selecciona un crimen abajo para cometerlo`),
-    ...interactiveRows,
-  ]);
+  embed.addFields({ name: '📋 Lista de Crímenes', value: crimeList });
+  embed.setFooter({ text: 'Selecciona un crimen abajo para cometerlo' });
+
+  return embed;
 }
 
 export function createCrimeSelectRow() {
@@ -343,28 +343,27 @@ export function createCrimeSelectRow() {
 }
 
 // 10. Vista de Prisión (Jail)
-export function createJailViewEmbed(jailedPlayers: any[], interactiveRows: any[] = []) {
-  let listStr = 'No hay prisioneros actualmente encarcelados.';
-  if (jailedPlayers.length > 0) {
+export function createJailViewEmbed(jailedPlayers: any[]) {
+  const embed = new EmbedBuilder()
+    .setColor(0x4b0082)
+    .setTitle('🚨 PRISIÓN DE LA CIUDAD DE SINFORD')
+    .setDescription('Revisa la lista de prisioneros encarcelados. Puedes sacarlos mediante rescate o fianza.');
+
+  if (jailedPlayers.length === 0) {
+    embed.addFields({ name: '🔓 Estado de Celda', value: 'No hay prisioneros actualmente encarcelados.' });
+  } else {
     const now = new Date();
-    listStr = jailedPlayers.map((p) => {
+    const list = jailedPlayers.map((p) => {
       const remainingMin = Math.ceil((new Date(p.jailUntil).getTime() - now.getTime()) / 60000);
       const bailCost = 100 * remainingMin * p.level;
       return `• **${p.username}** (Nivel ${p.level}) — Restante: **${remainingMin} min** | Fianza: **$${bailCost.toLocaleString()}**`;
     }).join('\n');
+
+    embed.addFields({ name: '🔒 Prisioneros Encarcelados', value: list });
   }
 
-  return createV2Container(0x4b0082, [
-    createV2TextDisplay(
-      `## 🚨 PRISIÓN DE LA CIUDAD DE SINFORD\n` +
-      `Revisa la lista de prisioneros encarcelados. Puedes sacarlos mediante rescate o fianza.`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(`### 🔒 Prisioneros Encarcelados\n${listStr}`),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Pulsa los botones para interactuar con la prisión`),
-    ...interactiveRows,
-  ]);
+  embed.setFooter({ text: 'Pulsa los botones para interactuar con la prisión' });
+  return embed;
 }
 
 export function createJailActionButtons() {
@@ -377,62 +376,70 @@ export function createJailActionButtons() {
 }
 
 // 11. Vista de Estadísticas (Battle Stats & Working Stats)
-export function createStatsViewEmbed(player: any, interactiveRows: any[] = []) {
+export function createStatsViewEmbed(player: any) {
   const stats = player.stats;
 
-  return createV2Container(0x1e90ff, [
-    createV2TextDisplay(`## 📊 Estadísticas de ${player.username}`),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(
-      `### ⚔️ Battle Stats (Estadísticas de Combate)\n` +
-      `💪 **Fuerza (Strength):** ${stats.strength.toFixed(2)}\n` +
-      `🛡️ **Defensa (Defense):** ${stats.defense.toFixed(2)}\n` +
-      `⚡ **Velocidad (Speed):** ${stats.speed.toFixed(2)}\n` +
-      `🎯 **Destreza (Dexterity):** ${stats.dexterity.toFixed(2)}`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(
-      `### 💼 Working Stats (Estadísticas Laborales)\n` +
-      `🔨 **Fuerza Manual (Manual Labor):** ${stats.manualLabor.toFixed(2)}\n` +
-      `🧠 **Inteligencia (Intelligence):** ${stats.intelligence.toFixed(2)}\n` +
-      `🏋️ **Resistencia (Endurance):** ${stats.endurance.toFixed(2)}`
-    ),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Utiliza el Gimnasio y Trabajos para aumentar tus stats`),
-    ...interactiveRows,
-  ]);
+  return new EmbedBuilder()
+    .setColor(0x1e90ff)
+    .setTitle(`📊 Estadísticas de ${player.username}`)
+    .addFields(
+      {
+        name: '⚔️ Battle Stats (Estadísticas de Combate)',
+        value:
+          `💪 **Fuerza (Strength):** ${stats.strength.toFixed(2)}\n` +
+          `🛡️ **Defensa (Defense):** ${stats.defense.toFixed(2)}\n` +
+          `⚡ **Velocidad (Speed):** ${stats.speed.toFixed(2)}\n` +
+          `🎯 **Destreza (Dexterity):** ${stats.dexterity.toFixed(2)}`,
+        inline: true,
+      },
+      {
+        name: '💼 Working Stats (Estadísticas Laborales)',
+        value:
+          `🔨 **Fuerza Manual (Manual Labor):** ${stats.manualLabor.toFixed(2)}\n` +
+          `🧠 **Inteligencia (Intelligence):** ${stats.intelligence.toFixed(2)}\n` +
+          `🏋️ **Resistencia (Endurance):** ${stats.endurance.toFixed(2)}`,
+        inline: true,
+      }
+    )
+    .setFooter({ text: 'Utiliza el Gimnasio y Trabajos para aumentar tus stats' });
 }
 
 // 12. Vista de Gimnasio
-export function createGymViewEmbed(player: any, interactiveRows: any[] = []) {
+export function createGymViewEmbed(player: any) {
   const stats = player.stats;
   const currentGym = GymService.getGymByTier(player.gymTier);
   const nextGym = GYMS.find((g) => g.tier === player.gymTier + 1);
 
-  return createV2Container(0x32cd32, [
-    createV2TextDisplay(
-      `## 🏋️ GIMNASIO — ${currentGym.name}\n` +
-      `Entrena tus **Battle Stats** para dominar en combate. Cada sesión consume **${currentGym.energyPerTrain}⚡ de Energía**.\n\n` +
-      `⚡ Energía: **${stats.energy}/${stats.maxEnergy}** | 😊 Happy: **${stats.happy}/${stats.maxHappy}** | ⭐ Gym Exp: **${player.gymExp.toLocaleString()} Exp**`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(
-      `### ⚔️ Battle Stats Actuales\n` +
-      `💪 Fuerza: **${stats.strength.toFixed(2)}** | 🛡️ Defensa: **${stats.defense.toFixed(2)}**\n` +
-      `⚡ Velocidad: **${stats.speed.toFixed(2)}** | 🎯 Destreza: **${stats.dexterity.toFixed(2)}**`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(
-      `### 🏆 Membresía de Gimnasio\n` +
-      `Nivel de Gimnasio: **Tier ${currentGym.tier}** (${currentGym.multiplier}x multiplicador)\n` +
-      (nextGym
-        ? `Siguiente Gimnasio: **${nextGym.name}**\nCosto: **$${nextGym.cost.toLocaleString()}** | Requisito: **${nextGym.requiredExp} Exp**`
-        : '¡Has alcanzado el gimnasio de máximo nivel!')
-    ),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Fórmula de ganancia inspirada en Torn Wiki`),
-    ...interactiveRows,
-  ]);
+  return new EmbedBuilder()
+    .setColor(0x32cd32)
+    .setTitle(`🏋️ GIMNASIO — ${currentGym.name}`)
+    .setDescription(
+      `Entrena tus **Battle Stats** para dominar en combate. Cada sesión de entrenamiento consume **${currentGym.energyPerTrain}⚡ de Energía**.\n\n` +
+      `**Recursos Actuales:**\n` +
+      `⚡ Energía: **${stats.energy}/${stats.maxEnergy}** | 😊 Happy: **${stats.happy}/${stats.maxHappy}**\n` +
+      `⭐ Exp de Gimnasio: **${player.gymExp.toLocaleString()} Exp**`
+    )
+    .addFields(
+      {
+        name: '⚔️ Battle Stats Actuales',
+        value:
+          `💪 Fuerza: **${stats.strength.toFixed(2)}**\n` +
+          `🛡️ Defensa: **${stats.defense.toFixed(2)}**\n` +
+          `⚡ Velocidad: **${stats.speed.toFixed(2)}**\n` +
+          `🎯 Destreza: **${stats.dexterity.toFixed(2)}**`,
+        inline: true,
+      },
+      {
+        name: '🏆 Membresía de Gimnasio',
+        value:
+          `Nivel de Gimnasio: **Tier ${currentGym.tier}** (${currentGym.multiplier}x multiplicador)\n` +
+          (nextGym
+            ? `Siguiente Gimnasio: **${nextGym.name}**\nCosto: **$${nextGym.cost.toLocaleString()}** | Requisito: **${nextGym.requiredExp} Exp**`
+            : '¡Has alcanzado el gimnasio de máximo nivel!'),
+        inline: true,
+      }
+    )
+    .setFooter({ text: 'Fórmula de ganancia inspirada en Torn Wiki' });
 }
 
 export function createGymButtons() {
@@ -452,7 +459,12 @@ export function createGymButtons() {
 }
 
 // 13. Vista y Resultados de Combate PvP
-export function createCombatResultEmbed(result: CombatResult, interactiveRows: any[] = []) {
+export function createCombatResultEmbed(result: CombatResult) {
+  const embed = new EmbedBuilder()
+    .setColor(0xdc143c)
+    .setTitle(`⚔️ COMBATE PvP — GANADOR: ${result.winnerUsername}`)
+    .setDescription(`**Daño total infligido:** ${result.totalDamageDealt} HP\n\n**Desglose del combate por turnos:**`);
+
   const turnLog = result.turns.map((t) => {
     if (!t.isHit) {
       return `\`[Turno ${t.turnNumber}]\` **${t.attackerName}** usó **${t.weaponName}** y ❌ **FALLÓ** el disparo.`;
@@ -461,17 +473,10 @@ export function createCombatResultEmbed(result: CombatResult, interactiveRows: a
     return `\`[Turno ${t.turnNumber}]\` **${t.attackerName}** atacó con **${t.weaponName}** en la zona **${t.bodyPart}** causando **-${t.damage} HP**${critTag}.`;
   }).join('\n');
 
-  return createV2Container(0xdc143c, [
-    createV2TextDisplay(
-      `## ⚔️ COMBATE PvP — GANADOR: ${result.winnerUsername}\n` +
-      `**Daño total infligido:** ${result.totalDamageDealt} HP`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(`### 📜 Registro de Ataques por Turnos\n${turnLog.substring(0, 1024)}`),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Selecciona la acción posterior a la victoria abajo`),
-    ...interactiveRows,
-  ]);
+  embed.addFields({ name: '📜 Registro de Ataques', value: turnLog.substring(0, 1024) });
+  embed.setFooter({ text: 'Selecciona la acción posterior a la victoria abajo' });
+
+  return embed;
 }
 
 export function createPostCombatActionButtons(winnerId: string, loserId: string) {
@@ -485,24 +490,24 @@ export function createPostCombatActionButtons(winnerId: string, loserId: string)
 }
 
 // 14. Vista de Inventario
-export function createInventoryViewEmbed(player: any, interactiveRows: any[] = []) {
+export function createInventoryViewEmbed(player: any) {
   const items = player.inventory || [];
-  let itemStr = 'Tu inventario está vacío. Compra objetos en la **🛒 Tienda** o completa crímenes.';
 
-  if (items.length > 0) {
-    itemStr = items
+  const embed = new EmbedBuilder()
+    .setColor(0xd2691e)
+    .setTitle(`🎒 Inventario de ${player.username}`);
+
+  if (items.length === 0) {
+    embed.setDescription('Tu inventario está vacío. Compra objetos en la **🛒 Tienda** o completa crímenes.');
+  } else {
+    const itemList = items
       .map((inv: any) => `• **${inv.item.name}** x${inv.quantity} (${inv.item.type}) ${inv.isEquipped ? '`[EQUIPADO]`' : ''}`)
       .join('\n');
+    embed.setDescription(itemList);
   }
 
-  return createV2Container(0xd2691e, [
-    createV2TextDisplay(`## 🎒 Inventario de ${player.username}`),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(itemStr),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Capacidad: ${items.length}/100 objetos`),
-    ...interactiveRows,
-  ]);
+  embed.setFooter({ text: `Capacidad: ${items.length}/100 objetos` });
+  return embed;
 }
 
 export function createInventoryItemSelectRow(inventory: any[]) {
@@ -524,43 +529,38 @@ export function createInventoryItemSelectRow(inventory: any[]) {
 }
 
 // 15. Vista de Equipamiento
-export function createEquipmentViewEmbed(player: any, interactiveRows: any[] = []) {
+export function createEquipmentViewEmbed(player: any) {
   const inventory = player.inventory || [];
   const primary = inventory.find((i: any) => i.isEquipped && i.slot === 'PRIMARY')?.item?.name || 'Ninguna (Puños)';
   const secondary = inventory.find((i: any) => i.isEquipped && i.slot === 'SECONDARY')?.item?.name || 'Ninguna';
   const melee = inventory.find((i: any) => i.isEquipped && i.slot === 'MELEE')?.item?.name || 'Ninguna';
   const temporary = inventory.find((i: any) => i.isEquipped && i.slot === 'TEMPORARY')?.item?.name || 'Ninguna';
 
-  return createV2Container(0x4b0082, [
-    createV2TextDisplay(`## ⚔️ Equipamiento de Combate — ${player.username}`),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(
-      `• 🔫 **Arma Principal:** ${primary}\n` +
-      `• 🔫 **Arma Secundaria:** ${secondary}\n` +
-      `• 🔪 **Arma Cuerpo a Cuerpo:** ${melee}\n` +
-      `• 💣 **Arma Temporal:** ${temporary}`
-    ),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Equipa armas desde tu inventario`),
-    ...interactiveRows,
-  ]);
+  return new EmbedBuilder()
+    .setColor(0x4b0082)
+    .setTitle(`⚔️ Equipamiento de Combate — ${player.username}`)
+    .addFields(
+      { name: '🔫 Arma Principal (Primary)', value: `**${primary}**`, inline: true },
+      { name: '🔫 Arma Secundaria (Secondary)', value: `**${secondary}**`, inline: true },
+      { name: '🔪 Arma Cuerpo a Cuerpo (Melee)', value: `**${melee}**`, inline: true },
+      { name: '💣 Arma Temporal (Temporary)', value: `**${temporary}**`, inline: true }
+    )
+    .setFooter({ text: 'Equipa armas desde tu inventario' });
 }
 
 // 16. Vista de Banco y Finanzas
-export function createBankViewEmbed(player: any, interactiveRows: any[] = []) {
+export function createBankViewEmbed(player: any) {
   const wallet = player.wallet;
 
-  return createV2Container(0x2e8b57, [
-    createV2TextDisplay(
-      `## 🏦 Banco Central de Sinford — ${player.username}\n` +
+  return new EmbedBuilder()
+    .setColor(0x2e8b57)
+    .setTitle(`🏦 Banco Central de Sinford — ${player.username}`)
+    .setDescription(
       `Gestiona tus fondos de manera segura sin riesgos de robo.\n\n` +
       `💰 **Efectivo en Mano:** $${wallet.cash.toLocaleString()}\n` +
       `🏦 **Saldo en Banco:** $${wallet.bank.toLocaleString()}`
-    ),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Selecciona una acción bancaria abajo`),
-    ...interactiveRows,
-  ]);
+    )
+    .setFooter({ text: 'Selecciona una acción bancaria abajo' });
 }
 
 export function createBankActionButtons() {
@@ -576,22 +576,20 @@ export function createBankActionButtons() {
 }
 
 // 17. Vista de Tienda de la Ciudad
-export function createShopCatalogEmbed(catalog: any[], interactiveRows: any[] = []) {
+export function createShopCatalogEmbed(catalog: any[]) {
+  const embed = new EmbedBuilder()
+    .setColor(0xff8c00)
+    .setTitle('🛒 ARMERÍA Y MERCADO DE SINFORD')
+    .setDescription('Selecciona un objeto del catálogo para comprarlo con tu efectivo.');
+
   const itemList = catalog.slice(0, 15).map((item: any) =>
     `• **${item.name}** — **$${item.price.toLocaleString()}** (${item.type})`
   ).join('\n');
 
-  return createV2Container(0xff8c00, [
-    createV2TextDisplay(
-      `## 🛒 ARMERÍA Y MERCADO DE SINFORD\n` +
-      `Selecciona un objeto del catálogo para comprarlo con tu efectivo.`
-    ),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(`### 📦 Catálogo Disponible\n${itemList}`),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Sinford Supermarket & Armory`),
-    ...interactiveRows,
-  ]);
+  embed.addFields({ name: '📦 Catálogo Disponible', value: itemList });
+  embed.setFooter({ text: 'Sinford Supermarket & Armory' });
+
+  return embed;
 }
 
 export function createShopSelectRow(catalog: any[]) {
@@ -611,24 +609,25 @@ export function createShopSelectRow(catalog: any[]) {
 }
 
 // 18. Vista de Historial de Transacciones
-export function createTxHistoryEmbed(player: any, txs: any[], interactiveRows: any[] = []) {
-  let listStr = 'Aún no tienes registro de transacciones monetarias.';
-  if (txs.length > 0) {
-    listStr = txs.map((tx: any) => {
+export function createTxHistoryEmbed(player: any, txs: any[]) {
+  const embed = new EmbedBuilder()
+    .setColor(0x708090)
+    .setTitle(`📜 Historial de Transacciones de ${player.username}`);
+
+  if (txs.length === 0) {
+    embed.setDescription('Aún no tienes registro de transacciones monetarias.');
+  } else {
+    const list = txs.map((tx: any) => {
       const dateStr = new Date(tx.timestamp).toLocaleTimeString('es-ES');
       const sign = tx.amount >= 0n ? '+' : '';
       return `\`[${dateStr}]\` **${tx.type}**: ${sign}$${tx.amount.toLocaleString()} (Antes: $${tx.balanceBefore.toLocaleString()} ➔ Después: $${tx.balanceAfter.toLocaleString()})`;
     }).join('\n');
+
+    embed.setDescription(list);
   }
 
-  return createV2Container(0x708090, [
-    createV2TextDisplay(`## 📜 Historial de Transacciones de ${player.username}`),
-    createV2Separator(true, 'small'),
-    createV2TextDisplay(listStr),
-    createV2Separator(false, 'small'),
-    createV2TextDisplay(`-# Registro auditable atómico`),
-    ...interactiveRows,
-  ]);
+  embed.setFooter({ text: 'Registro auditable atómico' });
+  return embed;
 }
 
 // Botón universal de navegación para regresar al Hub

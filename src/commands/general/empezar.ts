@@ -1,7 +1,6 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { PlayerService } from '../../services/playerService.js';
 import { createGameHubEmbed, createGameHubButtons } from '../../ui/embeds.js';
-import { IS_COMPONENTS_V2_FLAG } from '../../ui/visualComponents.js';
 
 export const empezarCommand = {
   data: new SlashCommandBuilder()
@@ -22,12 +21,13 @@ export const empezarCommand = {
       messagePrefix = `ℹ️ Ya estás registrado en este servidor de Sinford Underworld. Cargando tu Hub central...\n\n`;
     }
 
-    const container = createGameHubEmbed(player, createGameHubButtons());
+    const embed = createGameHubEmbed(player);
+    const buttons = createGameHubButtons();
 
     return interaction.reply({
       content: messagePrefix,
-      components: [container] as any,
-      flags: IS_COMPONENTS_V2_FLAG,
+      embeds: [embed],
+      components: buttons as any,
     });
   },
 };
