@@ -2997,3 +2997,73 @@ No empezar todavía a programar.
 - **Navegación e Interacción:**
   - Filas de paginación interactiva con indicador `Página X/Y`.
   - Cuadros de doble confirmación previa a transacciones y operaciones críticas.
+
+---
+
+## Anexo C: Expansiones Estratégicas Avanzadas y Mecánicas de Comunidad (Fases 25 – 30)
+
+### 🌍 C.25 Eventos PvE de Comunidad: "Jefes de la Ciudad" (World Bosses)
+- **Concepto**: Amenazas comunitarias semanales que fomentan la cooperación de todo el servidor frente a desafíos masivos.
+- **Mecánica de Juego**:
+  - **Frecuencia**: Evento global activado 1 vez por semana (ej. Furgón blindado accidentado, Jefe de la Mafia rival o Redada de la SWAT).
+  - **Anuncio Global**: El bot emite una alerta a nivel de servidor notificando la ubicación y el estado del objetivo.
+  - **Vitalidad Colectiva**: El Jefe posee una barra de salud masiva (ej. 1,000,000 HP). Todos los jugadores del servidor disponen de 24 horas para atacarlo cooperativamente.
+  - **Combate y Turnos**: Cada ataque consume energía (25⚡) y aplica daño según el equipamiento y estadísticas del jugador.
+- **Sistema de Recompensas Proporcionales**:
+  - Al derrotar al World Boss, el bot calcula el porcentaje de daño infligido por cada jugador.
+  - El botín (armas únicas, grandes sumas de cash e ítems exclusivos) se distribuye proporcionalmente al aporte realizado.
+
+---
+
+### 🕵️ C.26 Economía Dinámica: "El Mercado Negro" (Eventos Aleatorios)
+- **Concepto**: Eventos de tiempo limitado que introducen liquidez en niveles altos y rompen la monotonía de las tiendas estáticas.
+- **Mecánica de Juego**:
+  - **NPCs Ocultos**: Aparición aleatoria de comerciantes misteriosos (ej. *El Ruso* o *El Flaco*) por un tiempo limitado de 2 horas.
+  - **Catálogo Exclusivo**: Venta de armas experimentales, drogas exóticas con bonificaciones permanentes y cajas de botín (*Lootboxes*).
+  - **Pago en Efectivo Estricto**: Solo se aceptan transacciones en efectivo en mano. Si la actividad del canal supera un umbral, el comerciante se asusta y huye.
+- **Pistas Crípticas en Discord**:
+  - El bot publica pistas aleatorias en el canal general de la ciudad (*"Alguien vio una van negra cerca del puerto..."*).
+  - Los usuarios deben descifrar el comando o ubicación secreta para acceder al catálogo antes de que expire el tiempo.
+
+---
+
+### 🏴 C.27 Expansión de Facciones: "Control de Territorios" (Turf Wars)
+- **Concepto**: Evolución del sistema de guerras de facciones hacia la dominación estratégica del mapa urbano.
+- **Mecánica de Juego**:
+  - **Distritos de la Ciudad**: Sinford se divide en 5 distritos estratégicos (*Puerto de Carga*, *Centro Médico*, *Barrio Bajo*, *Distrito Financiero*, *Zona Industrial*).
+  - **Asaltos de Fin de Semana**: Las facciones rivales compiten por acumular victorias de combate dentro de cada distrito durante el fin de semana.
+  - **Buffs Pasivos de Dominio**:
+    - *Centro Médico*: Reduce los tiempos de hospitalización de toda la facción en un 30%.
+    - *Puerto de Carga*: Aumenta las ganancias de las empresas de logística en un +25%.
+    - *Distrito Financiero*: Otorga un bono de interés bancario extra para los miembros.
+
+---
+
+### 🐕 C.28 Progresión Secundaria: Sistema de Mascotas (Pets)
+- **Concepto**: Sistema de progresión secundario y sumidero constante de dinero que añade profundidad táctica en combate.
+- **Mecánica de Juego**:
+  - **Adquisición y Crianza**: Comprar, criar y entrenar mascotas urbanas (*Pitbull*, *Doberman*, *Halcón de Caza*, *Pastor Alemán*).
+  - **Equipamiento en Combate**: Las mascotas se equipan junto a las armas en una ranura dedicada.
+  - **Asistencia en Combate**: En cada turno de combate, la mascota tiene una probabilidad porcentual de realizar un ataque sorpresa o interceptar daño enemigo.
+  - **Mantenimiento y Lealtad**: Es obligatorio comprar alimento para la mascota periódicamente en la tienda. De no alimentarla, la mascota pierde lealtad y deja de asistir en combate.
+
+---
+
+### 🛠️ C.29 Crafteo y Chatarra: Fabricación del Bajo Mundo
+- **Concepto**: Utilidad extendida para el inventario y revalorización de los crímenes de nivel bajo e intermedio.
+- **Mecánica de Juego**:
+  - **Materiales de Rapiña**: Al realizar crímenes (como hurgar en basureros o hurtar), los jugadores obtienen componentes como *Chatarra*, *Electrónica Rota*, *Químicos* o *Polvo de Pólvora*.
+  - **Mesa de Fabricación (Crafting Bench)**: Ensamblaje de componentes para fabricar modificadores de armas:
+    - *Miras telescópicas* (+Precisión)
+    - *Silenciadores y Cañones recortados* (+Daño)
+    - *Componentes mecánicos* para la mejora de autos de carreras (Fase 17).
+
+---
+
+### 🎭 C.30 Profesiones Ilegales (Skill Trees / Especializaciones)
+- **Concepto**: Árboles de habilidades y especialización de clase al alcanzar el Nivel 10.
+- **Mecánica de Juego**:
+  - **Elección de Especialidad (Nivel 10)**:
+    - 💻 **Hacker**: Acceso a la mecánica de Hacking Bancario contra otros jugadores (bajo % de éxito, alto riesgo de condenas de prisión prolongadas, pero botín bancario directo).
+    - 📦 **Contrabandista**: Reduce los tiempos de viaje internacional (Fase 13) y aumenta la capacidad de carga de ítems traídos del extranjero.
+    - 🎯 **Sicario**: Duplica las recompensas obtenidas al cobrar Bounties y otorga un +10% de probabilidad de asestar golpes críticos en combate PvP.
