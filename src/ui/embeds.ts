@@ -20,26 +20,26 @@ export function createGameHubEmbed(player: any) {
       `⚡ Energía: **${stats.energy}/${stats.maxEnergy}** | 🧠 Nerve: **${stats.nerve}/${stats.maxNerve}** | 😊 Happy: **${stats.happy}/${stats.maxHappy}**\n` +
       `💰 Efectivo: **$${wallet.cash.toLocaleString()}** | 🏦 Banco: **$${wallet.bank.toLocaleString()}**`
     )
-    .addFields({
-      name: '📌 Navegación del Hub',
-      value:
-        `• **👤 Perfil:** Tu información general, nivel y estado corporal (6 partes).\n` +
-        `• **📊 Stats:** Estadísticas de combate y laborales.\n` +
-        `• **⚔️ Guerra:** Guerras entre facciones y ranking de respetabilidad.\n` +
-        `• **💼 Trabajos:** Empleos de la ciudad, salarios diarios y Working Stats.\n` +
-        `• **🎓 Universidad:** Cursos educativos con bonuses permanentes.\n` +
-        `• **🏴 Facción:** Juego en equipo, tesorería y crímenes organizados.\n` +
-        `• **🏋️ Gimnasio:** Entrena Fuerza, Defensa, Velocidad y Destreza.\n` +
-        `• **🕵️ Crímenes:** Ejecuta actividades ilícitas para ganar dinero y Crime XP.\n` +
-        `• **🎯 Bounties:** Recompensas PvP por la cabeza de jugadores objetivos.\n` +
-        `• **📋 Misiones:** Objetivos diarios y recompensas de experiencia.\n` +
-        `• **🚨 Prisión:** Revisa prisioneros, realiza fugas o paga fianzas.\n` +
-        `• **⚔️ Combate:** Ataca a otros jugadores en duelo PvP (25⚡).\n` +
-        `• **🎒 Inventario:** Usar consumibles, equipar armas o vender ítems.\n` +
-        `• **🏦 Banco & Finanzas:** Depósitos, retiros y transferencias a jugadores.\n` +
-        `• **🛒 Tienda:** Armería y mercado de suministros médicos, drogas y bebidas.`,
-      inline: false,
-    })
+    .addFields(
+      {
+        name: '📌 Desarrollo & Actividades',
+        value:
+          `• **👤 Perfil & 📊 Stats:** Tu información general, nivel y estadísticas.\n` +
+          `• **⚔️ Guerra & 🏴 Facción:** Guerras entre facciones, tesorería y crímenes organizados.\n` +
+          `• **💼 Trabajos & 🎓 Universidad:** Salarios diarios, Working Stats y cursos pasivos.\n` +
+          `• **🏋️ Gimnasio & 🕵️ Crímenes:** Entrena Battle Stats y comete delitos para ganar XP.`,
+        inline: false,
+      },
+      {
+        name: '🎒 Economía & Servicios',
+        value:
+          `• **🎯 Bounties & 📋 Misiones:** Cazarecompensas PvP y objetivos diarios.\n` +
+          `• **🎒 Inventario & 🛒 Tienda:** Armas equipables, consumibles y armería.\n` +
+          `• **🏦 Banco & Finanzas:** Depósitos, retiros y registro atómico auditado.\n` +
+          `• **🚨 Prisión:** Fugas propias y rescate de compañeros encarcelados.`,
+        inline: false,
+      }
+    )
     .setFooter({ text: 'Sinford Underworld • Pulsa los botones para navegar' })
     .setTimestamp();
 }
