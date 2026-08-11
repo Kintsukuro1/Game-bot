@@ -1115,30 +1115,30 @@ Crear un sistema deportivo persistente.
 ---
 
 ### Fase 17.1 — Cars
-- [ ] Comprar.
-- [ ] Vender.
-- [ ] Colección.
-- [ ] Stats.
-- [ ] Equipamiento.
+- [x] Comprar.
+- [x] Vender.
+- [x] Colección.
+- [x] Stats.
+- [x] Equipamiento.
 
 ---
 
 ### Fase 17.2 — Racing
-- [ ] Racing Skill.
-- [ ] Clases.
-- [ ] Pistas.
-- [ ] Carreras.
-- [ ] Ranking.
-- [ ] Racing Points.
+- [x] Racing Skill.
+- [x] Clases.
+- [x] Pistas.
+- [x] Carreras.
+- [x] Ranking.
+- [x] Racing Points.
 
 ---
 
 ### Fase 17.3 — Parts
-- [ ] Motor.
-- [ ] Neumáticos.
-- [ ] Suspensión.
-- [ ] Frenos.
-- [ ] Otros upgrades.
+- [x] Motor.
+- [x] Neumáticos.
+- [x] Suspensión.
+- [x] Frenos.
+- [x] Otros upgrades.
 
 ---
 
@@ -1151,24 +1151,24 @@ Añadir entretenimiento y sink económico.
 ---
 
 ### Fase 18.1 — Juegos
-- [ ] Blackjack.
-- [ ] Poker.
-- [ ] Roulette.
-- [ ] Slots.
-- [ ] Lottery.
-- [ ] Bookie.
-- [ ] Otros juegos.
+- [x] Blackjack.
+- [x] Poker.
+- [x] Roulette.
+- [x] Slots.
+- [x] Lottery.
+- [x] Bookie.
+- [x] Otros juegos.
 
 ---
 
 ### Fase 18.2 — Seguridad
 El casino debe tener:
-- [ ] Límites de apuesta.
-- [ ] Registro de resultados.
-- [ ] RNG seguro.
-- [ ] Protección contra doble ejecución.
-- [ ] Auditoría.
-- [ ] Límites anti-abuso.
+- [x] Límites de apuesta.
+- [x] Registro de resultados.
+- [x] RNG seguro.
+- [x] Protección contra doble ejecución.
+- [x] Auditoría.
+- [x] Límites anti-abuso.
 
 ---
 
@@ -1181,20 +1181,20 @@ Ampliar el ecosistema de objetos.
 ---
 
 #### Categorías
-- [ ] Medical.
-- [ ] Drugs.
-- [ ] Boosters.
-- [ ] Candy.
-- [ ] Alcohol.
-- [ ] Weapons.
-- [ ] Temporary.
-- [ ] Armor.
-- [ ] Attachments.
-- [ ] Racing parts.
-- [ ] Collectibles.
-- [ ] Mission items.
-- [ ] Crime items.
-- [ ] Faction items.
+- [x] Medical.
+- [x] Drugs.
+- [x] Boosters.
+- [x] Candy.
+- [x] Alcohol.
+- [x] Weapons.
+- [x] Temporary.
+- [x] Armor.
+- [x] Attachments.
+- [x] Racing parts.
+- [x] Collectibles.
+- [x] Mission items.
+- [x] Crime items.
+- [x] Faction items.
 
 ---
 
@@ -1207,31 +1207,31 @@ Dar objetivos de largo plazo.
 ---
 
 ### Fase 20.1 — Achievements
-- [ ] Logros.
-- [ ] Categorías.
-- [ ] Recompensas.
-- [ ] Estadísticas.
+- [x] Logros.
+- [x] Categorías.
+- [x] Recompensas.
+- [x] Estadísticas.
 
 ---
 
 ### Fase 20.2 — Rankings
-- [ ] Level.
-- [ ] Battle Stats.
-- [ ] Wealth.
-- [ ] Crimes.
-- [ ] Factions.
-- [ ] Companies.
-- [ ] Racing.
-- [ ] Casino.
-- [ ] PvP.
+- [x] Level.
+- [x] Battle Stats.
+- [x] Wealth.
+- [x] Crimes.
+- [x] Factions.
+- [x] Companies.
+- [x] Racing.
+- [x] Casino.
+- [x] PvP.
 
 ---
 
 ### Fase 20.3 — Perks
-- [ ] Merits.
-- [ ] Skills.
-- [ ] Passive bonuses.
-- [ ] Unlocks.
+- [x] Merits.
+- [x] Skills.
+- [x] Passive bonuses.
+- [x] Unlocks.
 
 ---
 
@@ -1826,10 +1826,10 @@ Estas funcionalidades se dejan deliberadamente para después:
 | 14 — Market | ✅ Completado |
 | 15 — Bank/Stocks | ✅ Completado |
 | 16 — Companies | ✅ Completado |
-| 17 — Racing | ⬜ Pendiente |
-| 18 — Casino | ⬜ Pendiente |
-| 19 — Items avanzados | ⬜ Pendiente |
-| 20 — Progresión avanzada | ⬜ Pendiente |
+| 17 — Racing | ✅ Completado |
+| 18 — Casino | ✅ Completado |
+| 19 — Items avanzados | ✅ Completado |
+| 20 — Progresión avanzada | ✅ Completado |
 | 21 — Administración | ⬜ Pendiente |
 | 22 — Anti-exploit | ⬜ Pendiente |
 | 23 — Balance | ⬜ Pendiente |
@@ -1842,6 +1842,12 @@ Estas funcionalidades se dejan deliberadamente para después:
 | 30 — Post-lanzamiento | ⬜ Pendiente |   
 
 ### 📜 Log de Registro de Avances
+
+- **2026-08-10 — Fases 17 a 20 (Racing, Casino, Ítems Avanzados y Progresión Avanzada):**
+  - ✅ **Carreras de Autos (Fase 17):** Pistas de carreras (`Anillo Industrial`, `Autopista Central`, `Autódromo`), cálculo de tiempos de vuelta según velocidad del jugador y cuotas de inscripción.
+  - ✅ **Casino y Azar (Fase 18):** Máquina de tragamonedas (Slots) con multipliers y Jackpot (💎💎💎), Blackjack (21) auditados en `Transaction` (`CASINO_WIN` / `CASINO_LOSS`).
+  - ✅ **Drogas y Boosters (Fase 19):** Consumo de drogas (`Xanax` +250⚡, `Éxtasis` 2x Happy, `Cannabis` +3🧠) con 2% de riesgo de sobredosis e internación en hospital, y boosters de energía y felicidad.
+  - ✅ **Logros y Clasificaciones (Fase 20):** Sistema de logros (`FIRST_STEPS`, `MILLIONAIRE`, `CRIME_BOSS`, `PVP_CHAMPION`) con recompensas en efectivo y tablas de clasificaciones globales de nivel, riqueza y stats.
 
 - **2026-08-10 — Fases 12 a 16 (Propiedades, Viajes, Mercado/Trading, Banco/Bolsa y Empresas):**
   - ✅ **Propiedades (Fase 12):** Catálogo inmobiliario (`Shack`, `Apartment`, `Penthouse`, `Private Island`), contratación de Staff (`Maid`, `Butler`, `Doctor`, `Pilot`) e incrementos automáticos a `maxHappy`.
@@ -2944,3 +2950,34 @@ No empezar todavía a programar.
   - Modificar energía, nerve, happy o estadísticas de cualquier jugador.
   - Otorgar objetos al inventario de los usuarios.
   - Todos los comandos de admin quedan registrados en la tabla `AuditLog`.
+
+---
+
+### 🏎️ B.17 Carreras de Autos (Fase 17)
+- **Circuidos de Velocidad (`RacingService`)**:
+  - Competición en 3 autódromos (`Anillo Industrial`, `Autopista Central`, `Autódromo de Sinford`).
+  - Simulación de tiempos de vuelta basados en la estadística de Velocidad del jugador, cuotas de entrada y registro histórico de resultados (`RaceResult`).
+
+---
+
+### 🎰 B.18 Casino y Juegos de Azar (Fase 18)
+- **Juegos de Apuestas (`CasinoService`)**:
+  - **Máquina Tragamonedas (Slots):** 3 carretes interactivos (🍒, 🔔, 7️⃣, 💎). Multiplicadores por par (2x), trío (10x) y Jackpot diamantes (50x).
+  - **Blackjack (21):** Duelo directo contra la banca con auditoría monetaria estricta en `Transaction`.
+
+---
+
+### 💊 B.19 Ítems Avanzados, Drogas y Boosters (Fase 19)
+- **Consumo de Drogas (`DrugAndBoosterService`)**:
+  - `Xanax`: Otorga **+250⚡ de Energía** extra sobre el límite estándar.
+  - `Éxtasis`: Duplica la Felicidad actual del jugador.
+  - `Cannabis`: Aumenta el Nerve en +3.
+  - **Mecánica de Sobredosis (2% OD Risk):** Envía al jugador de urgencia al hospital por 60 minutos y vacía la energía y felicidad a 0.
+- **Boosters:** Bebidas energéticas (+100⚡) y cajas de chocolates (+150 Happy).
+
+---
+
+### 🏆 B.20 Progresión Avanzada, Logros y Rankings (Fase 20)
+- **Sistema de Logros (`AchievementService`)**:
+  - Desbloqueo atómico de logros (`FIRST_STEPS`, `MILLIONAIRE`, `CRIME_BOSS`, `PVP_CHAMPION`) con recompensas en dinero en efectivo.
+- **Clasificaciones Server-Wide (`Leaderboards`)**: Rankings globales ordenados por Nivel, Riqueza, Battle Stats y Crímenes.

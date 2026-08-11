@@ -365,3 +365,21 @@ model CompanyEmployee {
   salary    BigInt   @default(500)
   joinedAt  DateTime @default(now())
 }
+
+model PlayerAchievement {
+  id            String   @id @default(uuid())
+  playerId      String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  @@unique([playerId, achievementId])
+}
+
+model RaceResult {
+  id          String   @id @default(uuid())
+  playerId    String
+  trackId     String
+  position    Int      @default(1)
+  timeSeconds Float    @default(60.0)
+  createdAt   DateTime @default(now())
+}
