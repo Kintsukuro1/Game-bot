@@ -906,22 +906,22 @@ Crear contenido PvP colectivo.
 ---
 
 ### Fase 11.1 — Warfare
-- [ ] Declarar guerra.
-- [ ] Aceptar.
-- [ ] Preparación.
-- [ ] Duración.
-- [ ] Objetivo.
-- [ ] Score.
-- [ ] Respect ganado/perdido.
-- [ ] Recompensas.
+- [x] Declarar guerra.
+- [x] Aceptar.
+- [x] Preparación.
+- [x] Duración.
+- [x] Objetivo.
+- [x] Score.
+- [x] Respect ganado/perdido.
+- [x] Recompensas.
 
 ---
 
 ### Fase 11.2 — Faction Events
-- [ ] Guerra.
-- [ ] Competencias.
-- [ ] Rankings.
-- [ ] Eventos especiales.
+- [x] Guerra.
+- [x] Competencias.
+- [x] Rankings.
+- [x] Eventos especiales.
 
 ---
 
@@ -1802,7 +1802,7 @@ Estas funcionalidades se dejan deliberadamente para después:
 | 8 — MVP | ✅ Completado |
 | 9 — Jobs/Education | ✅ Completado |
 | 10 — Factions | ✅ Completado |
-| 11 — Warfare | ⬜ Pendiente |
+| 11 — Warfare | ✅ Completado |
 | 12 — Properties | ⬜ Pendiente |
 | 13 — Travel | ⬜ Pendiente |
 | 14 — Market | ⬜ Pendiente |
@@ -1824,6 +1824,10 @@ Estas funcionalidades se dejan deliberadamente para después:
 | 30 — Post-lanzamiento | ⬜ Pendiente |   
 
 ### 📜 Log de Registro de Avances
+
+- **2026-08-10 — Fase 11 (Guerras entre Facciones y Rankings):**
+  - ✅ **Faction Warfare (Fase 11.1):** Declaración de guerra entre facciones enemigas (`targetScore` de 100 puntos, 24 horas de duración). Cada duelo PvP ganado por un miembro suma +10 pts de guerra y +15 Puntos de Respeto.
+  - ✅ **Recompensas y Rankings (Fase 11.2):** La facción vencedora obtiene +500 Puntos de Respeto extra y +$100,000 en la tesorería. Tabla de ranking de facciones por respeto en tiempo real.
 
 - **2026-08-10 — Fase 9 (Jobs y Educación) & Fase 10 (Facciones, Armería y Crímenes Organizados):**
   - ✅ **Empleos & Working Stats (Fase 9.1):** Mapeo de empleos iniciales (`Grocer`, `Casino`, `Medical`), verificación de requisitos de Working Stats (`manualLabor`, `intelligence`, `endurance`), salarios diarios auditados en `Transaction` (`JOB_SALARY`) y acumulación de Job Points.

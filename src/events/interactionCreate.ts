@@ -11,6 +11,7 @@ import { MissionService } from '../services/missionService.js';
 import { JobService } from '../services/jobService.js';
 import { EducationService } from '../services/educationService.js';
 import { FactionService } from '../services/factionService.js';
+import { WarfareService } from '../services/warfareService.js';
 import { prisma } from '../db/prisma.js';
 import {
   createGameHubEmbed,
@@ -31,6 +32,7 @@ import {
   createEducationSelectRow,
   createFactionViewEmbed,
   createFactionButtons,
+  createWarfareViewEmbed,
   createInventoryViewEmbed,
   createInventoryItemSelectRow,
   createEquipmentViewEmbed,
@@ -184,6 +186,17 @@ export async function handleInteraction(interaction: Interaction) {
         const res = await CombatService.resolvePostCombatAction(winnerId, loserId, actionEnum);
         await MissionService.progressMission(winnerId, 'ATTACKS', 1);
 
+        // Registrar golpe de guerra de facciones
+        const warRes = await WarfareService.recordWarHit(winnerId, loserId);
+        let warBonusStr = '';
+        if (warRes) {
+          if (warRes.warFinished) {
+            warBonusStr = `\n⚔️ **¡GUERRA GANADA!** Tu facción alcanzó el objetivo de puntos y ganó **+$100,000** en la tesorería y +500 Puntos de Respeto.`;
+          } else {
+            warBonusStr = `\n⚔️ **¡Golpe de Guerra!** +${warRes.pointsGained} pts de guerra y +15 Puntos de Respeto para tu facción (Marcador: ${warRes.currentScore}/${warRes.targetScore}).`;
+          }
+        }
+
         const claimedBounty = await BountyService.checkAndClaimBounty(winnerId, loserId);
         let bountyBonusStr = '';
         if (claimedBounty) {
@@ -191,12 +204,21 @@ export async function handleInteraction(interaction: Interaction) {
         }
 
         return interaction.update({
-          content: `🎯 **Acción completada:** ${res.resultMessage}${bountyBonusStr}`,
+          content: `🎯 **Acción completada:** ${res.resultMessage}${warBonusStr}${bountyBonusStr}`,
           components: [backRow as any],
         });
       }
 
       switch (interaction.customId) {
+        case 'act_war': {
+          const rankings = await WarfareService.getFactionRankings(guildId);
+          const embed = createWarfareViewEmbed(rankings);
+          return interaction.update({
+            content: null,
+            embeds: [embed],
+            components: [backRow as any],
+          });
+        }
         case 'act_jobs': {
           const playerJob = await prisma.playerJob.findUnique({ where: { playerId: player.id } });
           const embed = createJobsViewEmbed(playerJob);

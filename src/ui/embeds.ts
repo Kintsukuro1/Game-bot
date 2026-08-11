@@ -25,6 +25,7 @@ export function createGameHubEmbed(player: any) {
       value:
         `• **👤 Perfil:** Tu información general, nivel y estado corporal (6 partes).\n` +
         `• **📊 Stats:** Estadísticas de combate y laborales.\n` +
+        `• **⚔️ Guerra:** Guerras entre facciones y ranking de respetabilidad.\n` +
         `• **💼 Trabajos:** Empleos de la ciudad, salarios diarios y Working Stats.\n` +
         `• **🎓 Universidad:** Cursos educativos con bonuses permanentes.\n` +
         `• **🏴 Facción:** Juego en equipo, tesorería y crímenes organizados.\n` +
@@ -47,20 +48,21 @@ export function createGameHubButtons() {
   const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setCustomId('hub_profile').setLabel('Perfil').setEmoji('👤').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('hub_stats').setLabel('Stats').setEmoji('📊').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('act_war').setLabel('Guerra & Ranking').setEmoji('⚔️').setStyle(ButtonStyle.Danger),
     new ButtonBuilder().setCustomId('act_jobs').setLabel('Trabajos').setEmoji('💼').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('act_edu').setLabel('Educación').setEmoji('🎓').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('act_faction').setLabel('Facción').setEmoji('🏴').setStyle(ButtonStyle.Primary)
+    new ButtonBuilder().setCustomId('act_edu').setLabel('Educación').setEmoji('🎓').setStyle(ButtonStyle.Success)
   );
 
   const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId('act_faction').setLabel('Facción').setEmoji('🏴').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('act_gym').setLabel('Gimnasio').setEmoji('🏋️').setStyle(ButtonStyle.Success),
     new ButtonBuilder().setCustomId('act_crime').setLabel('Crímenes').setEmoji('🕵️').setStyle(ButtonStyle.Danger),
     new ButtonBuilder().setCustomId('act_bounties').setLabel('Bounties').setEmoji('🎯').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId('act_missions').setLabel('Misiones').setEmoji('📋').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('act_jail').setLabel('Prisión').setEmoji('🚨').setStyle(ButtonStyle.Secondary)
+    new ButtonBuilder().setCustomId('act_missions').setLabel('Misiones').setEmoji('📋').setStyle(ButtonStyle.Primary)
   );
 
   const row3 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId('act_jail').setLabel('Prisión').setEmoji('🚨').setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId('hub_inventory').setLabel('Inventario').setEmoji('🎒').setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId('act_bank').setLabel('Banco').setEmoji('🏦').setStyle(ButtonStyle.Success),
     new ButtonBuilder().setCustomId('act_shop').setLabel('Tienda').setEmoji('🛒').setStyle(ButtonStyle.Success),
@@ -70,7 +72,27 @@ export function createGameHubButtons() {
   return [row1, row2, row3];
 }
 
-// 2. Vista de Trabajos (Jobs)
+// 2. Vista de Guerras y Rankings de Facciones
+export function createWarfareViewEmbed(rankings: any[]) {
+  const embed = new EmbedBuilder()
+    .setColor(0x8b0000)
+    .setTitle('⚔️ GUERRAS Y RANKING DE FACCIONES')
+    .setDescription('Compite contra otras facciones por la supremacía de la ciudad y el control del respeto.');
+
+  if (rankings.length === 0) {
+    embed.addFields({ name: '🏆 Ranking de Facciones', value: 'Aún no se han fundado facciones en este servidor.' });
+  } else {
+    const list = rankings.map((f, i) =>
+      `\`#${i + 1}\` **${f.name}** — ⭐ **${f.respect.toLocaleString()} Respeto** | 👥 **${f.members?.length || 1} Miembros** | 🏦 **$${BigInt(f.treasury).toLocaleString()}**`
+    ).join('\n');
+    embed.addFields({ name: '🏆 Top Facciones de la Ciudad', value: list });
+  }
+
+  embed.setFooter({ text: 'Los duelos de combate durante la guerra aportan +10 pts de guerra y +15 Respeto' });
+  return embed;
+}
+
+// 3. Vista de Trabajos (Jobs)
 export function createJobsViewEmbed(playerJob: any) {
   const embed = new EmbedBuilder()
     .setColor(0x1e90ff)
@@ -109,7 +131,7 @@ export function createJobsButtons() {
   return [row];
 }
 
-// 3. Vista de Educación (Courses)
+// 4. Vista de Educación (Courses)
 export function createEducationViewEmbed(activeCourse: any) {
   const embed = new EmbedBuilder()
     .setColor(0x9370db)
@@ -153,7 +175,7 @@ export function createEducationSelectRow() {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
 }
 
-// 4. Vista de Facción
+// 5. Vista de Facción
 export function createFactionViewEmbed(faction: any) {
   const embed = new EmbedBuilder()
     .setColor(0x800080)
@@ -192,7 +214,7 @@ export function createFactionButtons(hasFaction: boolean) {
   return [row];
 }
 
-// 5. Vista de Bounties
+// 6. Vista de Bounties
 export function createBountiesViewEmbed(bounties: any[]) {
   const embed = new EmbedBuilder()
     .setColor(0xb22222)
@@ -212,7 +234,7 @@ export function createBountiesViewEmbed(bounties: any[]) {
   return embed;
 }
 
-// 6. Vista de Misiones
+// 7. Vista de Misiones
 export function createMissionsViewEmbed(missions: any[]) {
   const embed = new EmbedBuilder()
     .setColor(0x4682b4)
@@ -232,7 +254,7 @@ export function createMissionsViewEmbed(missions: any[]) {
   return embed;
 }
 
-// 7. Vista de Crímenes
+// 8. Vista de Crímenes
 export function createCrimesViewEmbed(player: any) {
   const stats = player.stats;
 
@@ -270,7 +292,7 @@ export function createCrimeSelectRow() {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
 }
 
-// 8. Vista de Prisión (Jail)
+// 9. Vista de Prisión (Jail)
 export function createJailViewEmbed(jailedPlayers: any[]) {
   const embed = new EmbedBuilder()
     .setColor(0x4b0082)
@@ -303,7 +325,7 @@ export function createJailActionButtons() {
   return [row];
 }
 
-// 9. Vista de Perfil General
+// 10. Vista de Perfil General
 export function createProfileViewEmbed(player: any) {
   const wallet = player.wallet;
   const stats = player.stats;
@@ -342,7 +364,7 @@ export function createProfileViewEmbed(player: any) {
     .setFooter({ text: 'Pantalla de Perfil General' });
 }
 
-// 10. Vista de Estadísticas (Battle Stats & Working Stats)
+// 11. Vista de Estadísticas (Battle Stats & Working Stats)
 export function createStatsViewEmbed(player: any) {
   const stats = player.stats;
 
@@ -371,7 +393,7 @@ export function createStatsViewEmbed(player: any) {
     .setFooter({ text: 'Utiliza el Gimnasio y Trabajos para aumentar tus stats' });
 }
 
-// 11. Vista de Gimnasio
+// 12. Vista de Gimnasio
 export function createGymViewEmbed(player: any) {
   const stats = player.stats;
   const currentGym = GymService.getGymByTier(player.gymTier);
@@ -425,7 +447,7 @@ export function createGymButtons() {
   return [row1, row2];
 }
 
-// 12. Vista y Resultados de Combate PvP
+// 13. Vista y Resultados de Combate PvP
 export function createCombatResultEmbed(result: CombatResult) {
   const embed = new EmbedBuilder()
     .setColor(0xdc143c)
@@ -456,7 +478,7 @@ export function createPostCombatActionButtons(winnerId: string, loserId: string)
   return [row];
 }
 
-// 13. Vista de Inventario
+// 14. Vista de Inventario
 export function createInventoryViewEmbed(player: any) {
   const items = player.inventory || [];
 
@@ -495,7 +517,7 @@ export function createInventoryItemSelectRow(inventory: any[]) {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
 }
 
-// 14. Vista de Equipamiento
+// 15. Vista de Equipamiento
 export function createEquipmentViewEmbed(player: any) {
   const inventory = player.inventory || [];
   const primary = inventory.find((i: any) => i.isEquipped && i.slot === 'PRIMARY')?.item?.name || 'Ninguna (Puños)';
@@ -515,7 +537,7 @@ export function createEquipmentViewEmbed(player: any) {
     .setFooter({ text: 'Equipa armas desde tu inventario' });
 }
 
-// 15. Vista de Banco y Finanzas
+// 16. Vista de Banco y Finanzas
 export function createBankViewEmbed(player: any) {
   const wallet = player.wallet;
 
@@ -542,7 +564,7 @@ export function createBankActionButtons() {
   return [row];
 }
 
-// 16. Vista de Tienda de la Ciudad
+// 17. Vista de Tienda de la Ciudad
 export function createShopCatalogEmbed(catalog: any[]) {
   const embed = new EmbedBuilder()
     .setColor(0xff8c00)
@@ -575,7 +597,7 @@ export function createShopSelectRow(catalog: any[]) {
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
 }
 
-// 17. Vista de Historial de Transacciones
+// 18. Vista de Historial de Transacciones
 export function createTxHistoryEmbed(player: any, txs: any[]) {
   const embed = new EmbedBuilder()
     .setColor(0x708090)

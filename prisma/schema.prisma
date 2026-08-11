@@ -245,3 +245,21 @@ model OrganizedCrime {
   respect   Int      @default(100)
   createdAt DateTime @default(now())
 }
+
+model FactionWar {
+  id              String   @id @default(uuid())
+  challengerId    String
+  defenderId      String
+  status          String   @default("ACTIVE") // ACTIVE, FINISHED
+  targetScore     Int      @default(100)
+  challengerScore Int      @default(0)
+  defenderScore   Int      @default(0)
+  winnerId        String?
+  startsAt        DateTime @default(now())
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([challengerId, status])
+  @@index([defenderId, status])
+}
