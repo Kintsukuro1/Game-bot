@@ -21,11 +21,9 @@ export class PlayerService {
   }
 
   static async registerPlayer(discordId: string, username: string, guildId: string = 'GLOBAL') {
-    // Check if player exists in this guild
     const existing = await this.getPlayerByDiscordId(discordId, guildId);
     if (existing) return existing;
 
-    // Create player atomically with Wallet, Stats, and BodyParts for this specific Guild
     return prisma.player.create({
       data: {
         guildId,
@@ -71,8 +69,44 @@ export class PlayerService {
     });
   }
 
+  // Cálculo de Experiencia requerida por Nivel: 100 * (Level ^ 2)
+  static getRequiredXpForNextLevel(level: number): number {
+    return 100 * (level ** 2);
+  }
+
+  // Otorgar XP y verificar Subida de Nivel
+  static async addXp(playerId: string, xpGained: number) {
+    const player = await prisma.player.findUnique({ where: { id: playerId } });
+    if (!player) return null;
+
+    let newXp = player.xp + xpGained;
+    let newLevel = player.level;
+    let leveledUp = false;
+
+    let required = this.getRequiredXpForNextLevel(newLevel);
+    while (newXp >= required) {
+      newLevel += 1;
+      leveledUp = true;
+      required = this.getRequiredXpForNextLevel(newLevel);
+    }
+
+    const updated = await prisma.player.update({
+      where: { id: playerId },
+      data: {
+        xp: newXp,
+        level: newLevel,
+      },
+    });
+
+    return {
+      updated,
+      leveledUp,
+      oldLevel: player.level,
+      newLevel,
+    };
+  }
+
   static async regenerateStats() {
-    // Regenerate +5 Energy, +1 Nerve every tick up to max
     const players = await prisma.player.findMany({
       include: { stats: true },
     });
