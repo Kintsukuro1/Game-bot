@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { CombatService } from '../../services/combatService.js';
 import { createCombatResultEmbed, createPostCombatActionButtons } from '../../ui/embeds.js';
+import { IS_COMPONENTS_V2_FLAG } from '../../ui/visualComponents.js';
 
 export const atacarCommand = {
   data: new SlashCommandBuilder()
@@ -20,12 +21,12 @@ export const atacarCommand = {
 
       // Ejecutar combate PvP aislado por servidor (guildId)
       const combatResult = await CombatService.executePvPCombat(attackerDiscordId, defenderDiscordId, guildId);
-      const embed = createCombatResultEmbed(combatResult);
+      const container = createCombatResultEmbed(combatResult);
       const postActionButtons = createPostCombatActionButtons(combatResult.winnerId, combatResult.loserId);
 
       return interaction.editReply({
-        embeds: [embed],
-        components: postActionButtons as any,
+        components: [container, ...postActionButtons] as any,
+        flags: IS_COMPONENTS_V2_FLAG,
       });
     } catch (err: any) {
       if (interaction.deferred) {

@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 import { PlayerService } from '../../services/playerService.js';
 import { createProfileViewEmbed } from '../../ui/embeds.js';
 
@@ -17,7 +17,10 @@ export const profileCommand = {
       });
     }
 
-    const embed = createProfileViewEmbed(player);
-    return interaction.reply({ embeds: [embed], ephemeral: true });
+    const container = createProfileViewEmbed(player);
+    return interaction.reply({
+      components: [container] as any,
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+    });
   },
 };

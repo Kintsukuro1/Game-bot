@@ -13,6 +13,7 @@ import { EducationService } from '../services/educationService.js';
 import { FactionService } from '../services/factionService.js';
 import { WarfareService } from '../services/warfareService.js';
 import { prisma } from '../db/prisma.js';
+import { IS_COMPONENTS_V2_FLAG } from '../ui/visualComponents.js';
 import {
   createGameHubEmbed,
   createGameHubButtons,
@@ -47,17 +48,27 @@ import { empezarCommand } from '../commands/general/empezar.js';
 import { gameCommand } from '../commands/general/game.js';
 import { atacarCommand } from '../commands/general/atacar.js';
 import { adminCommand } from '../commands/general/admin.js';
+import { profileCommand } from '../commands/general/profile.js';
 
 const commands = new Map<string, any>([
   [empezarCommand.data.name, empezarCommand],
   [gameCommand.data.name, gameCommand],
   [atacarCommand.data.name, atacarCommand],
   [adminCommand.data.name, adminCommand],
+  [profileCommand.data.name, profileCommand],
 ]);
+
+function sendV2Update(interaction: any, container: any, interactiveRows: any[] = [], content: string | null = null) {
+  return interaction.update({
+    content,
+    components: [container, ...interactiveRows],
+    flags: IS_COMPONENTS_V2_FLAG,
+  });
+}
 
 export async function handleInteraction(interaction: Interaction) {
   try {
-    // 1. Manejador de Comandos Slash (/empezar, /game, /atacar, /admin)
+    // 1. Manejador de Comandos Slash (/empezar, /game, /atacar, /admin, /profile)
     if (interaction.isChatInputCommand()) {
       const command = commands.get(interaction.commandName);
       if (command) {
@@ -82,15 +93,16 @@ export async function handleInteraction(interaction: Interaction) {
         try {
           const res = await EducationService.enrollCourse(player.id, courseId);
           const activeCourse = await EducationService.getActiveCourse(player.id);
-          const embed = createEducationViewEmbed(activeCourse);
+          const container = createEducationViewEmbed(activeCourse);
           const selectRow = createEducationSelectRow();
           const backRow = createBackButtonRow();
 
-          return interaction.update({
-            content: `🎓 **¡Matrícula Exitosa!** Te inscribiste en **${res.courseName}**. Duración: **${res.durationHours} horas**.`,
-            embeds: [embed],
-            components: [selectRow as any, backRow as any],
-          });
+          return sendV2Update(
+            interaction,
+            container,
+            [selectRow, backRow],
+            `🎓 **¡Matrícula Exitosa!** Te inscribiste en **${res.courseName}**. Duración: **${res.durationHours} horas**.`
+          );
         } catch (err: any) {
           return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
         }
@@ -103,15 +115,11 @@ export async function handleInteraction(interaction: Interaction) {
           await MissionService.progressMission(player.id, 'CRIMES', 1);
 
           const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
-          const embed = createCrimesViewEmbed(updated);
+          const container = createCrimesViewEmbed(updated);
           const selectRow = createCrimeSelectRow();
           const backRow = createBackButtonRow();
 
-          return interaction.update({
-            content: result.message,
-            embeds: [embed],
-            components: [selectRow as any, backRow as any],
-          });
+          return sendV2Update(interaction, container, [selectRow, backRow], result.message);
         } catch (err: any) {
           return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
         }
@@ -186,7 +194,6 @@ export async function handleInteraction(interaction: Interaction) {
         const res = await CombatService.resolvePostCombatAction(winnerId, loserId, actionEnum);
         await MissionService.progressMission(winnerId, 'ATTACKS', 1);
 
-        // Registrar golpe de guerra de facciones
         const warRes = await WarfareService.recordWarHit(winnerId, loserId);
         let warBonusStr = '';
         if (warRes) {
@@ -212,34 +219,27 @@ export async function handleInteraction(interaction: Interaction) {
       switch (interaction.customId) {
         case 'act_war': {
           const rankings = await WarfareService.getFactionRankings(guildId);
-          const embed = createWarfareViewEmbed(rankings);
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components: [backRow as any],
-          });
+          const container = createWarfareViewEmbed(rankings);
+          return sendV2Update(interaction, container, [backRow]);
         }
         case 'act_jobs': {
           const playerJob = await prisma.playerJob.findUnique({ where: { playerId: player.id } });
-          const embed = createJobsViewEmbed(playerJob);
+          const container = createJobsViewEmbed(playerJob);
           const jobBtns = createJobsButtons();
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components: jobBtns as any,
-          });
+          return sendV2Update(interaction, container, jobBtns);
         }
         case 'job_collect_salary': {
           try {
             const res = await JobService.collectSalary(player.id);
             const playerJob = await prisma.playerJob.findUnique({ where: { playerId: player.id } });
-            const embed = createJobsViewEmbed(playerJob);
+            const container = createJobsViewEmbed(playerJob);
             const jobBtns = createJobsButtons();
-            return interaction.update({
-              content: `💵 **¡Salario Cobrado!** Recibiste **+$${res.salary.toLocaleString()}** de tu trabajo en **${res.jobName}** y +5 Job Points.`,
-              embeds: [embed],
-              components: jobBtns as any,
-            });
+            return sendV2Update(
+              interaction,
+              container,
+              jobBtns,
+              `💵 **¡Salario Cobrado!** Recibiste **+$${res.salary.toLocaleString()}** de tu trabajo en **${res.jobName}** y +5 Job Points.`
+            );
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
@@ -256,26 +256,23 @@ export async function handleInteraction(interaction: Interaction) {
             const jobId = map[interaction.customId];
             const res = await JobService.applyJob(player.id, jobId);
             const playerJob = await prisma.playerJob.findUnique({ where: { playerId: player.id } });
-            const embed = createJobsViewEmbed(playerJob);
+            const container = createJobsViewEmbed(playerJob);
             const jobBtns = createJobsButtons();
-            return interaction.update({
-              content: `🎉 **¡Contratado!** Ahora trabajas en **${res.jobName}** (Salario Base: $${res.salary}/día).`,
-              embeds: [embed],
-              components: jobBtns as any,
-            });
+            return sendV2Update(
+              interaction,
+              container,
+              jobBtns,
+              `🎉 **¡Contratado!** Ahora trabajas en **${res.jobName}** (Salario Base: $${res.salary}/día).`
+            );
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
         }
         case 'act_edu': {
           const activeCourse = await EducationService.getActiveCourse(player.id);
-          const embed = createEducationViewEmbed(activeCourse);
+          const container = createEducationViewEmbed(activeCourse);
           const selectRow = createEducationSelectRow();
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components: [selectRow as any, backRow as any],
-          });
+          return sendV2Update(interaction, container, [selectRow, backRow]);
         }
         case 'act_faction': {
           const member = await prisma.factionMember.findUnique({
@@ -283,25 +280,22 @@ export async function handleInteraction(interaction: Interaction) {
             include: { faction: { include: { members: true } } },
           });
           const faction = member ? member.faction : null;
-          const embed = createFactionViewEmbed(faction);
+          const container = createFactionViewEmbed(faction);
           const factionBtns = createFactionButtons(!!faction);
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components: factionBtns as any,
-          });
+          return sendV2Update(interaction, container, factionBtns);
         }
         case 'faction_create': {
           try {
             const factionName = `Facción de ${player.username}`;
             const faction = await FactionService.createFaction(player.id, factionName, 'Facción creada desde el Hub', guildId);
-            const embed = createFactionViewEmbed(faction);
+            const container = createFactionViewEmbed(faction);
             const factionBtns = createFactionButtons(true);
-            return interaction.update({
-              content: `🎉 **¡Facción Creada!** Fundaste la facción **${faction.name}**.`,
-              embeds: [embed],
-              components: factionBtns as any,
-            });
+            return sendV2Update(
+              interaction,
+              container,
+              factionBtns,
+              `🎉 **¡Facción Creada!** Fundaste la facción **${faction.name}**.`
+            );
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
@@ -313,13 +307,14 @@ export async function handleInteraction(interaction: Interaction) {
               where: { playerId: player.id },
               include: { faction: { include: { members: true } } },
             });
-            const embed = createFactionViewEmbed(member?.faction);
+            const container = createFactionViewEmbed(member?.faction);
             const factionBtns = createFactionButtons(true);
-            return interaction.update({
-              content: '💰 **¡Depósito Exitoso!** Acreditaste **+$10,000** a la tesorería de tu facción.',
-              embeds: [embed],
-              components: factionBtns as any,
-            });
+            return sendV2Update(
+              interaction,
+              container,
+              factionBtns,
+              '💰 **¡Depósito Exitoso!** Acreditaste **+$10,000** a la tesorería de tu facción.'
+            );
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
@@ -331,149 +326,94 @@ export async function handleInteraction(interaction: Interaction) {
               where: { playerId: player.id },
               include: { faction: { include: { members: true } } },
             });
-            const embed = createFactionViewEmbed(member?.faction);
+            const container = createFactionViewEmbed(member?.faction);
             const factionBtns = createFactionButtons(true);
-            return interaction.update({
-              content: `🔥 **¡Crimen Organizado Exitoso!** Tu facción ejecutó el golpe y obtuvo **+$${res.rewardCash.toLocaleString()}** en la tesorería y **+${res.respectGained} Puntos de Respeto**.`,
-              embeds: [embed],
-              components: factionBtns as any,
-            });
+            return sendV2Update(
+              interaction,
+              container,
+              factionBtns,
+              `🔥 **¡Crimen Organizado Exitoso!** Tu facción ejecutó el golpe y obtuvo **+$${res.rewardCash.toLocaleString()}** en la tesorería y **+${res.respectGained} Puntos de Respeto**.`
+            );
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
         }
         case 'hub_profile': {
-          const embed = createProfileViewEmbed(player);
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components: [backRow as any],
-          });
+          const container = createProfileViewEmbed(player);
+          return sendV2Update(interaction, container, [backRow]);
         }
         case 'hub_stats': {
-          const embed = createStatsViewEmbed(player);
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components: [backRow as any],
-          });
+          const container = createStatsViewEmbed(player);
+          return sendV2Update(interaction, container, [backRow]);
         }
         case 'act_gym': {
-          const embed = createGymViewEmbed(player);
+          const container = createGymViewEmbed(player);
           const gymButtons = createGymButtons();
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components: gymButtons as any,
-          });
+          return sendV2Update(interaction, container, gymButtons);
         }
         case 'act_crime': {
-          const embed = createCrimesViewEmbed(player);
+          const container = createCrimesViewEmbed(player);
           const selectRow = createCrimeSelectRow();
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components: [selectRow as any, backRow as any],
-          });
+          return sendV2Update(interaction, container, [selectRow, backRow]);
         }
         case 'act_bounties': {
           const bounties = await BountyService.getActiveBounties();
-          const embed = createBountiesViewEmbed(bounties);
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components: [backRow as any],
-          });
+          const container = createBountiesViewEmbed(bounties);
+          return sendV2Update(interaction, container, [backRow]);
         }
         case 'act_missions': {
           const missions = await MissionService.getMissions(player.id);
-          const embed = createMissionsViewEmbed(missions);
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components: [backRow as any],
-          });
+          const container = createMissionsViewEmbed(missions);
+          return sendV2Update(interaction, container, [backRow]);
         }
         case 'act_jail': {
           const jailedPlayers = await CrimeService.getJailedPlayers();
-          const embed = createJailViewEmbed(jailedPlayers);
+          const container = createJailViewEmbed(jailedPlayers);
           const jailButtons = createJailActionButtons();
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components: jailButtons as any,
-          });
+          return sendV2Update(interaction, container, jailButtons);
         }
         case 'jail_self_bust': {
           try {
             const res = await CrimeService.selfBust(player.id);
             const jailedPlayers = await CrimeService.getJailedPlayers();
-            const embed = createJailViewEmbed(jailedPlayers);
+            const container = createJailViewEmbed(jailedPlayers);
             const jailButtons = createJailActionButtons();
-            return interaction.update({
-              content: res.message,
-              embeds: [embed],
-              components: jailButtons as any,
-            });
+            return sendV2Update(interaction, container, jailButtons, res.message);
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
         }
         case 'hub_inventory': {
-          const embed = createInventoryViewEmbed(player);
+          const container = createInventoryViewEmbed(player);
           const selectRow = createInventoryItemSelectRow(player.inventory || []);
-          const components = selectRow ? [selectRow as any, backRow as any] : [backRow as any];
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components,
-          });
+          const rows = selectRow ? [selectRow, backRow] : [backRow];
+          return sendV2Update(interaction, container, rows);
         }
         case 'hub_equipment': {
-          const embed = createEquipmentViewEmbed(player);
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components: [backRow as any],
-          });
+          const container = createEquipmentViewEmbed(player);
+          return sendV2Update(interaction, container, [backRow]);
         }
         case 'act_bank': {
-          const embed = createBankViewEmbed(player);
+          const container = createBankViewEmbed(player);
           const bankButtons = createBankActionButtons();
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components: bankButtons as any,
-          });
+          return sendV2Update(interaction, container, bankButtons);
         }
         case 'act_shop': {
           const catalog = await ShopService.getCatalog();
-          const embed = createShopCatalogEmbed(catalog);
+          const container = createShopCatalogEmbed(catalog);
           const selectRow = createShopSelectRow(catalog);
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components: [selectRow as any, backRow as any],
-          });
+          return sendV2Update(interaction, container, [selectRow, backRow]);
         }
         case 'act_tx_history': {
           const txs = await EconomyService.getTransactionHistory(player.id);
-          const embed = createTxHistoryEmbed(player, txs);
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components: [backRow as any],
-          });
+          const container = createTxHistoryEmbed(player, txs);
+          return sendV2Update(interaction, container, [backRow]);
         }
         case 'nav_back_hub': {
           const refreshedPlayer = await PlayerService.getPlayerByDiscordId(discordId, guildId);
-          const embed = createGameHubEmbed(refreshedPlayer);
+          const container = createGameHubEmbed(refreshedPlayer);
           const buttons = createGameHubButtons();
-          return interaction.update({
-            content: null,
-            embeds: [embed],
-            components: buttons as any,
-          });
+          return sendV2Update(interaction, container, buttons);
         }
 
         // --- Entrenamiento de Gimnasio ---
@@ -494,14 +434,15 @@ export async function handleInteraction(interaction: Interaction) {
             await MissionService.progressMission(player.id, 'TRAINING', 1);
 
             const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
-            const embed = createGymViewEmbed(updated);
+            const container = createGymViewEmbed(updated);
             const gymButtons = createGymButtons();
 
-            return interaction.update({
-              content: `🏋️ **¡Entrenamiento exitoso en ${result.gymName}!** Aumentaste **+${result.gain.toFixed(3)}** de **${result.statName.toUpperCase()}**.`,
-              embeds: [embed],
-              components: gymButtons as any,
-            });
+            return sendV2Update(
+              interaction,
+              container,
+              gymButtons,
+              `🏋️ **¡Entrenamiento exitoso en ${result.gymName}!** Aumentaste **+${result.gain.toFixed(3)}** de **${result.statName.toUpperCase()}**.`
+            );
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
@@ -510,14 +451,15 @@ export async function handleInteraction(interaction: Interaction) {
           try {
             const newGym = await GymService.upgradeGym(player.id);
             const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
-            const embed = createGymViewEmbed(updated);
+            const container = createGymViewEmbed(updated);
             const gymButtons = createGymButtons();
 
-            return interaction.update({
-              content: `🎉 **¡Membresía Mejorada!** Bienvenido a **${newGym.name}** (Tier ${newGym.tier}).`,
-              embeds: [embed],
-              components: gymButtons as any,
-            });
+            return sendV2Update(
+              interaction,
+              container,
+              gymButtons,
+              `🎉 **¡Membresía Mejorada!** Bienvenido a **${newGym.name}** (Tier ${newGym.tier}).`
+            );
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
@@ -528,8 +470,9 @@ export async function handleInteraction(interaction: Interaction) {
           try {
             await EconomyService.deposit(player.id, 100n);
             const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
-            const embed = createBankViewEmbed(updated);
-            return interaction.update({ embeds: [embed] });
+            const container = createBankViewEmbed(updated);
+            const bankButtons = createBankActionButtons();
+            return sendV2Update(interaction, container, bankButtons);
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
@@ -539,8 +482,9 @@ export async function handleInteraction(interaction: Interaction) {
             const cashAmt = player.wallet?.cash || 0n;
             await EconomyService.deposit(player.id, cashAmt);
             const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
-            const embed = createBankViewEmbed(updated);
-            return interaction.update({ embeds: [embed] });
+            const container = createBankViewEmbed(updated);
+            const bankButtons = createBankActionButtons();
+            return sendV2Update(interaction, container, bankButtons);
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
@@ -549,8 +493,9 @@ export async function handleInteraction(interaction: Interaction) {
           try {
             await EconomyService.withdraw(player.id, 100n);
             const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
-            const embed = createBankViewEmbed(updated);
-            return interaction.update({ embeds: [embed] });
+            const container = createBankViewEmbed(updated);
+            const bankButtons = createBankActionButtons();
+            return sendV2Update(interaction, container, bankButtons);
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
@@ -560,8 +505,9 @@ export async function handleInteraction(interaction: Interaction) {
             const bankAmt = player.wallet?.bank || 0n;
             await EconomyService.withdraw(player.id, bankAmt);
             const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
-            const embed = createBankViewEmbed(updated);
-            return interaction.update({ embeds: [embed] });
+            const container = createBankViewEmbed(updated);
+            const bankButtons = createBankActionButtons();
+            return sendV2Update(interaction, container, bankButtons);
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }

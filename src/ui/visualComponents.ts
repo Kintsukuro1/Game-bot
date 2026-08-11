@@ -1,6 +1,40 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { ComponentType, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
-// 1. Renderizador de Barras de Progreso ASCII/Emoji
+export const IS_COMPONENTS_V2_FLAG = MessageFlags.IsComponentsV2;
+
+// 1. Helpers de Construcción para Discord Components V2
+export function createV2Container(accentColor: number = 0x2f3136, components: any[]) {
+  return {
+    type: ComponentType.Container, // 17
+    accent_color: accentColor,
+    components,
+  };
+}
+
+export function createV2TextDisplay(content: string) {
+  return {
+    type: ComponentType.TextDisplay, // 10
+    content,
+  };
+}
+
+export function createV2Separator(divider: boolean = true, spacing: 'small' | 'large' = 'small') {
+  return {
+    type: ComponentType.Separator, // 14
+    divider,
+    spacing,
+  };
+}
+
+export function createV2Section(text: string, accessory?: any) {
+  return {
+    type: ComponentType.Section, // 9
+    components: [createV2TextDisplay(text)],
+    accessory,
+  };
+}
+
+// 2. Renderizador de Barras de Progreso ASCII/Emoji
 export function renderProgressBar(
   current: number,
   max: number,
@@ -17,7 +51,7 @@ export function renderProgressBar(
   return `[\`${bar}\`] **${percentText}%**`;
 }
 
-// 2. Renderizador de Barra de Salud por Colores (6 Partes Corporales)
+// 3. Renderizador de Barra de Salud por Colores (6 Partes Corporales)
 export function renderHealthBar(currentHp: number, maxHp: number = 100): string {
   const percentage = currentHp / maxHp;
   let char = '🟩';
@@ -31,7 +65,7 @@ export function renderHealthBar(currentHp: number, maxHp: number = 100): string 
   return `${char.repeat(filled)}${'⬛'.repeat(empty)} **${currentHp}/${maxHp} HP**`;
 }
 
-// 3. Generador de Paginación Interactiva con Botones
+// 4. Generador de Paginación Interactiva con Botones
 export function createPaginationRow(currentPage: number, totalPages: number, actionPrefix: string) {
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
@@ -56,7 +90,7 @@ export function createPaginationRow(currentPage: number, totalPages: number, act
   return row;
 }
 
-// 4. Modal Helper para Formularios de Entrada de Datos
+// 5. Modal Helper para Formularios de Entrada de Datos
 export function createConfirmationRow(actionId: string, confirmLabel: string = 'Confirmar Operación') {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()

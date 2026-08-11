@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { PlayerService } from '../../services/playerService.js';
 import { createGameHubEmbed, createGameHubButtons } from '../../ui/embeds.js';
+import { IS_COMPONENTS_V2_FLAG } from '../../ui/visualComponents.js';
 
 export const gameCommand = {
   data: new SlashCommandBuilder()
@@ -14,12 +15,12 @@ export const gameCommand = {
       player = await PlayerService.registerPlayer(discordId, interaction.user.username);
     }
 
-    const embed = createGameHubEmbed(player);
+    const container = createGameHubEmbed(player);
     const buttons = createGameHubButtons();
 
     return interaction.reply({
-      embeds: [embed],
-      components: buttons as any,
+      components: [container, ...buttons] as any,
+      flags: IS_COMPONENTS_V2_FLAG,
     });
   },
 };
