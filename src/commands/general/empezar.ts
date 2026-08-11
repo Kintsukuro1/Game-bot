@@ -22,12 +22,11 @@ export const empezarCommand = {
       messagePrefix = `ℹ️ Ya estás registrado en este servidor de Sinford Underworld. Cargando tu Hub central...\n\n`;
     }
 
-    const container = createGameHubEmbed(player);
-    const buttons = createGameHubButtons();
+    const container = createGameHubEmbed(player, createGameHubButtons());
 
     return interaction.reply({
       content: messagePrefix,
-      components: [container, ...buttons] as any,
+      components: [container] as any,
       flags: IS_COMPONENTS_V2_FLAG,
     });
   },

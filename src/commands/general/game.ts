@@ -15,11 +15,10 @@ export const gameCommand = {
       player = await PlayerService.registerPlayer(discordId, interaction.user.username);
     }
 
-    const container = createGameHubEmbed(player);
-    const buttons = createGameHubButtons();
+    const container = createGameHubEmbed(player, createGameHubButtons());
 
     return interaction.reply({
-      components: [container, ...buttons] as any,
+      components: [container] as any,
       flags: IS_COMPONENTS_V2_FLAG,
     });
   },

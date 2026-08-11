@@ -7,7 +7,7 @@ import { COURSES } from '../services/educationService.js';
 import { renderProgressBar, renderHealthBar, createV2Container, createV2TextDisplay, createV2Separator } from './visualComponents.js';
 
 // 1. Hub Principal de la Ciudad (Components V2 Container)
-export function createGameHubEmbed(player: any) {
+export function createGameHubEmbed(player: any, interactiveRows: any[] = []) {
   const stats = player.stats;
   const wallet = player.wallet;
 
@@ -46,6 +46,7 @@ export function createGameHubEmbed(player: any) {
     ),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Sinford Underworld • Components V2 Navigation`),
+    ...interactiveRows,
   ]);
 }
 
@@ -79,7 +80,7 @@ export function createGameHubButtons() {
 }
 
 // 2. Vista de Perfil General (Components V2 Container)
-export function createProfileViewEmbed(player: any) {
+export function createProfileViewEmbed(player: any, interactiveRows: any[] = []) {
   const wallet = player.wallet;
   const stats = player.stats;
   const body = player.bodyParts;
@@ -113,11 +114,12 @@ export function createProfileViewEmbed(player: any) {
     ),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Pantalla de Perfil General • Components V2`),
+    ...interactiveRows,
   ]);
 }
 
 // 3. Vista de Guerras y Rankings de Facciones (Components V2 Container)
-export function createWarfareViewEmbed(rankings: any[]) {
+export function createWarfareViewEmbed(rankings: any[], interactiveRows: any[] = []) {
   let listStr = 'Aún no se han fundado facciones en este servidor.';
   if (rankings.length > 0) {
     listStr = rankings.map((f, i) =>
@@ -134,11 +136,12 @@ export function createWarfareViewEmbed(rankings: any[]) {
     createV2TextDisplay(`### 🏆 Top Facciones de la Ciudad\n${listStr}`),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Los duelos de combate durante la guerra aportan +10 pts de guerra y +15 Respeto`),
+    ...interactiveRows,
   ]);
 }
 
 // 4. Vista de Trabajos (Jobs)
-export function createJobsViewEmbed(playerJob: any) {
+export function createJobsViewEmbed(playerJob: any, interactiveRows: any[] = []) {
   let jobText = 'No tienes un trabajo activo. Elige uno del catálogo abajo.';
   if (playerJob) {
     const jobDef = JOBS.find((j) => j.id === playerJob.jobId);
@@ -160,6 +163,7 @@ export function createJobsViewEmbed(playerJob: any) {
     createV2TextDisplay(`### 📋 Trabajos Disponibles\n${jobList}`),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Selecciona una acción laboral abajo`),
+    ...interactiveRows,
   ]);
 }
 
@@ -176,7 +180,7 @@ export function createJobsButtons() {
 }
 
 // 5. Vista de Educación (Courses)
-export function createEducationViewEmbed(activeCourse: any) {
+export function createEducationViewEmbed(activeCourse: any, interactiveRows: any[] = []) {
   let courseText = 'No estás inscrito en ningún curso actualmente.';
   if (activeCourse) {
     const courseDef = COURSES.find((c) => c.id === activeCourse.courseId);
@@ -199,6 +203,7 @@ export function createEducationViewEmbed(activeCourse: any) {
     createV2TextDisplay(`### 📚 Catálogo de Cursos\n${courseList}`),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Inscríbete seleccionando un curso abajo`),
+    ...interactiveRows,
   ]);
 }
 
@@ -219,7 +224,7 @@ export function createEducationSelectRow() {
 }
 
 // 6. Vista de Facción
-export function createFactionViewEmbed(faction: any) {
+export function createFactionViewEmbed(faction: any, interactiveRows: any[] = []) {
   let factionText = 'No perteneces a ninguna facción actualmente. Crea una por **$50,000** o únete a una existente.';
   if (faction) {
     factionText =
@@ -232,6 +237,7 @@ export function createFactionViewEmbed(faction: any) {
     createV2TextDisplay(`## 🏴 FACCIÓN — ${faction ? faction.name : 'Sin Facción'}\n${factionText}`),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Juego en equipo y Crímenes Organizados`),
+    ...interactiveRows,
   ]);
 }
 
@@ -255,7 +261,7 @@ export function createFactionButtons(hasFaction: boolean) {
 }
 
 // 7. Vista de Bounties
-export function createBountiesViewEmbed(bounties: any[]) {
+export function createBountiesViewEmbed(bounties: any[], interactiveRows: any[] = []) {
   let listStr = 'No hay recompensas activas en este momento.';
   if (bounties.length > 0) {
     listStr = bounties.map((b) =>
@@ -272,11 +278,12 @@ export function createBountiesViewEmbed(bounties: any[]) {
     createV2TextDisplay(`### 📋 Bounties Activos\n${listStr}`),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Recompensas PvP con 10% de comisión`),
+    ...interactiveRows,
   ]);
 }
 
 // 8. Vista de Misiones
-export function createMissionsViewEmbed(missions: any[]) {
+export function createMissionsViewEmbed(missions: any[], interactiveRows: any[] = []) {
   let listStr = '¡Has completado todas tus misiones diarias!';
   if (missions.length > 0) {
     listStr = missions.map((m) =>
@@ -293,11 +300,12 @@ export function createMissionsViewEmbed(missions: any[]) {
     createV2TextDisplay(`### 🎯 Misiones Activas\n${listStr}`),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Se reinician cada 24 horas`),
+    ...interactiveRows,
   ]);
 }
 
 // 9. Vista de Crímenes
-export function createCrimesViewEmbed(player: any) {
+export function createCrimesViewEmbed(player: any, interactiveRows: any[] = []) {
   const stats = player.stats;
 
   const crimeList = CRIMES.map(
@@ -314,6 +322,7 @@ export function createCrimesViewEmbed(player: any) {
     createV2TextDisplay(`### 📋 Lista de Crímenes\n${crimeList}`),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Selecciona un crimen abajo para cometerlo`),
+    ...interactiveRows,
   ]);
 }
 
@@ -334,7 +343,7 @@ export function createCrimeSelectRow() {
 }
 
 // 10. Vista de Prisión (Jail)
-export function createJailViewEmbed(jailedPlayers: any[]) {
+export function createJailViewEmbed(jailedPlayers: any[], interactiveRows: any[] = []) {
   let listStr = 'No hay prisioneros actualmente encarcelados.';
   if (jailedPlayers.length > 0) {
     const now = new Date();
@@ -354,6 +363,7 @@ export function createJailViewEmbed(jailedPlayers: any[]) {
     createV2TextDisplay(`### 🔒 Prisioneros Encarcelados\n${listStr}`),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Pulsa los botones para interactuar con la prisión`),
+    ...interactiveRows,
   ]);
 }
 
@@ -367,7 +377,7 @@ export function createJailActionButtons() {
 }
 
 // 11. Vista de Estadísticas (Battle Stats & Working Stats)
-export function createStatsViewEmbed(player: any) {
+export function createStatsViewEmbed(player: any, interactiveRows: any[] = []) {
   const stats = player.stats;
 
   return createV2Container(0x1e90ff, [
@@ -389,11 +399,12 @@ export function createStatsViewEmbed(player: any) {
     ),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Utiliza el Gimnasio y Trabajos para aumentar tus stats`),
+    ...interactiveRows,
   ]);
 }
 
 // 12. Vista de Gimnasio
-export function createGymViewEmbed(player: any) {
+export function createGymViewEmbed(player: any, interactiveRows: any[] = []) {
   const stats = player.stats;
   const currentGym = GymService.getGymByTier(player.gymTier);
   const nextGym = GYMS.find((g) => g.tier === player.gymTier + 1);
@@ -420,6 +431,7 @@ export function createGymViewEmbed(player: any) {
     ),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Fórmula de ganancia inspirada en Torn Wiki`),
+    ...interactiveRows,
   ]);
 }
 
@@ -440,7 +452,7 @@ export function createGymButtons() {
 }
 
 // 13. Vista y Resultados de Combate PvP
-export function createCombatResultEmbed(result: CombatResult) {
+export function createCombatResultEmbed(result: CombatResult, interactiveRows: any[] = []) {
   const turnLog = result.turns.map((t) => {
     if (!t.isHit) {
       return `\`[Turno ${t.turnNumber}]\` **${t.attackerName}** usó **${t.weaponName}** y ❌ **FALLÓ** el disparo.`;
@@ -458,6 +470,7 @@ export function createCombatResultEmbed(result: CombatResult) {
     createV2TextDisplay(`### 📜 Registro de Ataques por Turnos\n${turnLog.substring(0, 1024)}`),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Selecciona la acción posterior a la victoria abajo`),
+    ...interactiveRows,
   ]);
 }
 
@@ -472,7 +485,7 @@ export function createPostCombatActionButtons(winnerId: string, loserId: string)
 }
 
 // 14. Vista de Inventario
-export function createInventoryViewEmbed(player: any) {
+export function createInventoryViewEmbed(player: any, interactiveRows: any[] = []) {
   const items = player.inventory || [];
   let itemStr = 'Tu inventario está vacío. Compra objetos en la **🛒 Tienda** o completa crímenes.';
 
@@ -488,6 +501,7 @@ export function createInventoryViewEmbed(player: any) {
     createV2TextDisplay(itemStr),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Capacidad: ${items.length}/100 objetos`),
+    ...interactiveRows,
   ]);
 }
 
@@ -510,7 +524,7 @@ export function createInventoryItemSelectRow(inventory: any[]) {
 }
 
 // 15. Vista de Equipamiento
-export function createEquipmentViewEmbed(player: any) {
+export function createEquipmentViewEmbed(player: any, interactiveRows: any[] = []) {
   const inventory = player.inventory || [];
   const primary = inventory.find((i: any) => i.isEquipped && i.slot === 'PRIMARY')?.item?.name || 'Ninguna (Puños)';
   const secondary = inventory.find((i: any) => i.isEquipped && i.slot === 'SECONDARY')?.item?.name || 'Ninguna';
@@ -528,11 +542,12 @@ export function createEquipmentViewEmbed(player: any) {
     ),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Equipa armas desde tu inventario`),
+    ...interactiveRows,
   ]);
 }
 
 // 16. Vista de Banco y Finanzas
-export function createBankViewEmbed(player: any) {
+export function createBankViewEmbed(player: any, interactiveRows: any[] = []) {
   const wallet = player.wallet;
 
   return createV2Container(0x2e8b57, [
@@ -544,6 +559,7 @@ export function createBankViewEmbed(player: any) {
     ),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Selecciona una acción bancaria abajo`),
+    ...interactiveRows,
   ]);
 }
 
@@ -560,7 +576,7 @@ export function createBankActionButtons() {
 }
 
 // 17. Vista de Tienda de la Ciudad
-export function createShopCatalogEmbed(catalog: any[]) {
+export function createShopCatalogEmbed(catalog: any[], interactiveRows: any[] = []) {
   const itemList = catalog.slice(0, 15).map((item: any) =>
     `• **${item.name}** — **$${item.price.toLocaleString()}** (${item.type})`
   ).join('\n');
@@ -574,6 +590,7 @@ export function createShopCatalogEmbed(catalog: any[]) {
     createV2TextDisplay(`### 📦 Catálogo Disponible\n${itemList}`),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Sinford Supermarket & Armory`),
+    ...interactiveRows,
   ]);
 }
 
@@ -594,7 +611,7 @@ export function createShopSelectRow(catalog: any[]) {
 }
 
 // 18. Vista de Historial de Transacciones
-export function createTxHistoryEmbed(player: any, txs: any[]) {
+export function createTxHistoryEmbed(player: any, txs: any[], interactiveRows: any[] = []) {
   let listStr = 'Aún no tienes registro de transacciones monetarias.';
   if (txs.length > 0) {
     listStr = txs.map((tx: any) => {
@@ -610,6 +627,7 @@ export function createTxHistoryEmbed(player: any, txs: any[]) {
     createV2TextDisplay(listStr),
     createV2Separator(false, 'small'),
     createV2TextDisplay(`-# Registro auditable atómico`),
+    ...interactiveRows,
   ]);
 }
 

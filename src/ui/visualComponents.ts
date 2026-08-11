@@ -4,10 +4,17 @@ export const IS_COMPONENTS_V2_FLAG = MessageFlags.IsComponentsV2;
 
 // 1. Helpers de Construcción para Discord Components V2
 export function createV2Container(accentColor: number = 0x2f3136, components: any[]) {
+  const serializedComponents = components.map((comp) => {
+    if (comp && typeof comp.toJSON === 'function') {
+      return comp.toJSON();
+    }
+    return comp;
+  });
+
   return {
     type: ComponentType.Container, // 17
     accent_color: accentColor,
-    components,
+    components: serializedComponents,
   };
 }
 

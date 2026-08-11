@@ -21,11 +21,11 @@ export const atacarCommand = {
 
       // Ejecutar combate PvP aislado por servidor (guildId)
       const combatResult = await CombatService.executePvPCombat(attackerDiscordId, defenderDiscordId, guildId);
-      const container = createCombatResultEmbed(combatResult);
       const postActionButtons = createPostCombatActionButtons(combatResult.winnerId, combatResult.loserId);
+      const container = createCombatResultEmbed(combatResult, postActionButtons);
 
       return interaction.editReply({
-        components: [container, ...postActionButtons] as any,
+        components: [container] as any,
         flags: IS_COMPONENTS_V2_FLAG,
       });
     } catch (err: any) {
