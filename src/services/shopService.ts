@@ -1,5 +1,39 @@
 import { prisma } from '../db/prisma.js';
 
+export interface ShopCategoryInfo {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+}
+
+export const SHOP_CATEGORIES: ShopCategoryInfo[] = [
+  {
+    id: 'general',
+    name: 'General & Alimentos',
+    emoji: '🍎',
+    description: 'Comida rápida, dulces, loterías y paquetes de suministros generales.',
+  },
+  {
+    id: 'medical',
+    name: 'Medicina & Salud',
+    emoji: '🏥',
+    description: 'Botiquines de primeros auxilios, transfusiones y bolsas de sangre.',
+  },
+  {
+    id: 'boosters',
+    name: 'Drogas, Alcohol & Energéticas',
+    emoji: '💊',
+    description: 'Bebidas energéticas, licores, esteroides y drogas para boostear stats.',
+  },
+  {
+    id: 'weapons',
+    name: 'Armería & Armamentos',
+    emoji: '⚔️',
+    description: 'Pistolas, rifles de asalto, subfusiles, katanas y granadas pesadas.',
+  },
+];
+
 export class ShopService {
   // Cálculo de Nivel Mínimo requerido según el precio y la potencia del ítem
   static getItemMinLevel(item: any): number {
@@ -10,7 +44,52 @@ export class ShopService {
     return 15;
   }
 
-  // Catálogo de la Armería y Mercado de Suministros
+  // Obtener catálogo filtrado por la categoría activa (0: General, 1: Medicina, 2: Drogas, 3: Armería)
+  static async getCatalogByCategory(catIndex: number) {
+    const validIndex = ((catIndex % SHOP_CATEGORIES.length) + SHOP_CATEGORIES.length) % SHOP_CATEGORIES.length;
+
+    switch (validIndex) {
+      case 0: // General & Alimentos
+        return prisma.item.findMany({
+          where: {
+            OR: [
+              { type: 'MISC' },
+              { type: 'CONSUMABLE', weaponType: { in: ['Food', 'Candy', 'SupplyPack', 'Ticket'] } },
+            ],
+          },
+          orderBy: { price: 'asc' },
+        });
+
+      case 1: // Medicina & Salud
+        return prisma.item.findMany({
+          where: { type: 'MEDICAL' },
+          orderBy: { price: 'asc' },
+        });
+
+      case 2: // Drogas, Alcohol & Energéticas
+        return prisma.item.findMany({
+          where: {
+            type: 'CONSUMABLE',
+            OR: [
+              { weaponType: { in: ['Drug', 'EnergyDrink', 'Alcohol', 'Booster'] } },
+              { weaponType: null },
+            ],
+          },
+          orderBy: { price: 'asc' },
+        });
+
+      case 3: // Armería & Armamentos
+        return prisma.item.findMany({
+          where: { type: 'WEAPON' },
+          orderBy: { price: 'asc' },
+        });
+
+      default:
+        return prisma.item.findMany({ orderBy: { price: 'asc' } });
+    }
+  }
+
+  // Catálogo completo o por tipo
   static async getCatalog(category?: string) {
     return prisma.item.findMany({
       where: category ? { type: category } : undefined,

@@ -40,6 +40,7 @@ import {
   createBankActionButtons,
   createShopCatalogEmbed,
   createShopSelectRow,
+  createShopNavButtons,
   createTxHistoryEmbed,
   createBackButtonRow,
   createSecretAlleyViewEmbed,
@@ -209,6 +210,26 @@ export async function handleInteraction(interaction: Interaction) {
           content: `🎯 **Acción completada:** ${res.resultMessage}${warBonusStr}${bountyBonusStr}`,
           components: [backRow as any],
         });
+      }
+
+      // Navegación entre Categorías de la Tienda (◀️ shop_cat_X ▶️)
+      if (interaction.customId.startsWith('shop_cat_') && interaction.customId !== 'shop_cat_info') {
+        const catIndexStr = interaction.customId.replace('shop_cat_', '');
+        const targetIndex = parseInt(catIndexStr, 10);
+
+        if (!isNaN(targetIndex)) {
+          const catalog = await ShopService.getCatalogByCategory(targetIndex);
+          const embed = createShopCatalogEmbed(catalog, player.level, targetIndex);
+          const selectRow = createShopSelectRow(catalog);
+          const navBtns = createShopNavButtons(targetIndex);
+          const components = selectRow ? [selectRow as any, ...navBtns as any] : [...navBtns as any];
+
+          return interaction.update({
+            content: null,
+            embeds: [embed],
+            components,
+          });
+        }
       }
 
       switch (interaction.customId) {
@@ -457,13 +478,16 @@ export async function handleInteraction(interaction: Interaction) {
           });
         }
         case 'act_shop': {
-          const catalog = await ShopService.getCatalog();
-          const embed = createShopCatalogEmbed(catalog, player.level);
+          const catalog = await ShopService.getCatalogByCategory(0);
+          const embed = createShopCatalogEmbed(catalog, player.level, 0);
           const selectRow = createShopSelectRow(catalog);
+          const navBtns = createShopNavButtons(0);
+          const components = selectRow ? [selectRow as any, ...navBtns as any] : [...navBtns as any];
+
           return interaction.update({
             content: null,
             embeds: [embed],
-            components: [selectRow as any, backRow as any],
+            components,
           });
         }
         case 'act_tx_history': {

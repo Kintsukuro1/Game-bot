@@ -4,7 +4,7 @@ import { CombatResult } from '../services/combatService.js';
 import { CRIMES } from '../services/crimeService.js';
 import { JOBS } from '../services/jobService.js';
 import { COURSES } from '../services/educationService.js';
-import { ShopService } from '../services/shopService.js';
+import { ShopService, SHOP_CATEGORIES } from '../services/shopService.js';
 import { renderProgressBar, renderHealthBar } from './visualComponents.js';
 
 // 1. Hub Principal con Progresión Espaciada y Desbloqueo Gradual por Hitos (Niveles 1, 3, 5, 10, 15)
@@ -628,35 +628,64 @@ export function createBankActionButtons() {
   return [row];
 }
 
-// 17. Vista de Tienda de la Ciudad con Requisitos de Nivel por Potencia
-export function createShopCatalogEmbed(catalog: any[], playerLevel: number = 1) {
+// 17. Vista de Tienda de la Ciudad Paginada por Categorías
+export function createShopCatalogEmbed(catalog: any[], playerLevel: number = 1, catIndex: number = 0) {
+  const category = SHOP_CATEGORIES[catIndex] || SHOP_CATEGORIES[0];
+
   const embed = new EmbedBuilder()
     .setColor(0xff8c00)
-    .setTitle('🛒 ARMERÍA Y MERCADO DE SINFORD')
-    .setDescription('Selecciona un objeto del catálogo para comprarlo con tu efectivo.');
+    .setTitle(`🛒 TIENDA DE SINFORD — ${category.emoji} ${category.name.toUpperCase()}`)
+    .setDescription(
+      `**Sección (${catIndex + 1}/${SHOP_CATEGORIES.length}):** ${category.description}\n` +
+      `Navega entre las secciones usando los botones **◀️ Anterior** y **▶️ Siguiente** abajo.`
+    );
 
-  const itemList = catalog.slice(0, 15).map((item: any) => {
-    const minLevel = ShopService.getItemMinLevel(item);
-    const lockTag = playerLevel >= minLevel ? '' : ` \`[🔒 Nv. ${minLevel}]\``;
-    return `• **${item.name}** — **$${item.price.toLocaleString()}** (${item.type})${lockTag}`;
-  }).join('\n');
+  if (catalog.length === 0) {
+    embed.addFields({ name: `📦 Productos de ${category.name}`, value: 'No hay productos en esta categoría actualmente.' });
+  } else {
+    const itemList = catalog.slice(0, 15).map((item: any) => {
+      const minLevel = ShopService.getItemMinLevel(item);
+      const lockTag = playerLevel >= minLevel ? '' : ` \`[🔒 Nv. ${minLevel}]\``;
+      const typeTag = item.weaponType ? ` (${item.weaponType})` : ` (${item.type})`;
+      return `• **${item.name}** — **$${item.price.toLocaleString()}**${typeTag}${lockTag}`;
+    }).join('\n');
 
-  embed.addFields({ name: '📦 Catálogo Disponible', value: itemList });
-  embed.setFooter({ text: `Tu Nivel Actual: ${playerLevel} • Sinford Supermarket & Armory` });
+    embed.addFields({ name: `📦 Productos de ${category.name}`, value: itemList });
+  }
+
+  embed.setFooter({ text: `Tu Nivel: ${playerLevel} • Sección ${catIndex + 1} de ${SHOP_CATEGORIES.length} • Sinford Armory` });
 
   return embed;
 }
 
+// Botones de Navegación entre Categorías de la Tienda
+export function createShopNavButtons(currentCatIndex: number = 0) {
+  const total = SHOP_CATEGORIES.length;
+  const prevIndex = (currentCatIndex - 1 + total) % total;
+  const nextIndex = (currentCatIndex + 1) % total;
+
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId(`shop_cat_${prevIndex}`).setLabel('Anterior').setEmoji('◀️').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('shop_cat_info').setLabel(`Sección ${currentCatIndex + 1}/${total}`).setStyle(ButtonStyle.Secondary).setDisabled(true),
+    new ButtonBuilder().setCustomId(`shop_cat_${nextIndex}`).setLabel('Siguiente').setEmoji('▶️').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('nav_back_hub').setLabel('Volver al Hub').setEmoji('🔙').setStyle(ButtonStyle.Secondary)
+  );
+
+  return [row];
+}
+
 export function createShopSelectRow(catalog: any[]) {
+  if (!catalog || catalog.length === 0) return null;
+
   const select = new StringSelectMenuBuilder()
     .setCustomId('select_shop_item')
-    .setPlaceholder('Selecciona un objeto para comprar...');
+    .setPlaceholder('Selecciona un objeto de esta sección para comprar...');
 
   const options = catalog.slice(0, 25).map((item: any) =>
     new StringSelectMenuOptionBuilder()
       .setLabel(`${item.name} ($${item.price.toLocaleString()})`)
       .setValue(item.id)
-      .setDescription(item.description.substring(0, 50))
+      .setDescription((item.description || 'Sin descripción').substring(0, 50))
   );
 
   select.addOptions(options);
