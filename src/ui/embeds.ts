@@ -1,4 +1,5 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
+import { PlayerService } from '../services/playerService.js';
 import { GYMS, GymService } from '../services/gymService.js';
 import { CombatResult } from '../services/combatService.js';
 import { CRIMES } from '../services/crimeService.js';
@@ -48,12 +49,14 @@ export function createGameHubEmbed(player: any) {
     unlockedList.push('• **🕳️ El Callejón del Sapo:** Mercado negro subterráneo y atracos de elite.');
   }
 
+  const rankTitle = PlayerService.getPlayerRankTitle(level);
+
   return new EmbedBuilder()
     .setColor(0x2f3136)
     .setTitle('🏙️ LA CIUDAD DE SINFORD')
     .setDescription(
-      `Bienvenido a la central de la ciudad, **${player.username}** (Nivel ${level}).\n` +
-      `Tómate tu tiempo para dominar cada sistema antes de acceder a nuevos distritos urbanos.\n\n` +
+      `Bienvenido a la central de la ciudad, **${player.username}**.\n` +
+      `**Rango Urbano:** ${rankTitle} (Nivel ${level} / 100)\n\n` +
       `**Estado Rápido & Vitalidad:**\n` +
       `⚡ Energía: ${energyBar} (**${stats.energy}/${stats.maxEnergy}**)\n` +
       `🧠 Nerve: ${nerveBar} (**${stats.nerve}/${stats.maxNerve}**)\n` +
@@ -142,15 +145,20 @@ export function createProfileViewEmbed(player: any) {
   const stats = player.stats;
   const body = player.bodyParts;
   const createdDate = new Date(player.createdAt).toLocaleDateString('es-ES');
+  const rankTitle = PlayerService.getPlayerRankTitle(player.level);
+  const maxHp = PlayerService.getMaxHpForLevel(player.level);
 
   return new EmbedBuilder()
     .setColor(0x8b0000)
     .setTitle(`👤 Perfil de Jugador — ${player.username}`)
-    .setDescription(`**ID de Discord:** \`${player.discordId}\` | **Miembro desde:** ${createdDate}`)
+    .setDescription(
+      `**Rango Urbano:** ${rankTitle}\n` +
+      `**ID de Discord:** \`${player.discordId}\` | **Miembro desde:** ${createdDate}`
+    )
     .addFields(
       {
         name: '⭐ Progresión Base',
-        value: `Nivel: **${player.level}**\nExperiencia (XP): **${player.xp.toLocaleString()}**`,
+        value: `Nivel: **${player.level} / 100**\nExperiencia (XP): **${player.xp.toLocaleString()} XP**`,
         inline: true,
       },
       {
@@ -164,7 +172,7 @@ export function createProfileViewEmbed(player: any) {
         inline: true,
       },
       {
-        name: '🏥 Salud de Extremidades Corporales (6 Partes)',
+        name: `🏥 Salud Corporal (HP Máx: ${maxHp} HP)`,
         value:
           `🧠 **Cabeza:** ${renderHealthBar(body.headHp, 100)}\n` +
           `🫀 **Torso:** ${renderHealthBar(body.torsoHp, 100)}\n` +
@@ -175,7 +183,7 @@ export function createProfileViewEmbed(player: any) {
         inline: false,
       }
     )
-    .setFooter({ text: 'Pantalla de Perfil General' });
+    .setFooter({ text: 'Pantalla de Perfil General • Torn City Standard' });
 }
 
 // 3. Vista de Guerras y Rankings de Facciones
