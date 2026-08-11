@@ -42,6 +42,7 @@ import {
   createShopSelectRow,
   createTxHistoryEmbed,
   createBackButtonRow,
+  createSecretAlleyViewEmbed,
 } from '../ui/embeds.js';
 import { empezarCommand } from '../commands/general/empezar.js';
 import { gameCommand } from '../commands/general/game.js';
@@ -420,6 +421,14 @@ export async function handleInteraction(interaction: Interaction) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
         }
+        case 'act_secret_alley': {
+          const embed = createSecretAlleyViewEmbed(player);
+          return interaction.update({
+            content: null,
+            embeds: [embed],
+            components: [backRow as any],
+          });
+        }
         case 'hub_inventory': {
           const embed = createInventoryViewEmbed(player);
           const selectRow = createInventoryItemSelectRow(player.inventory || []);
@@ -468,8 +477,9 @@ export async function handleInteraction(interaction: Interaction) {
         }
         case 'nav_back_hub': {
           const refreshedPlayer = await PlayerService.getPlayerByDiscordId(discordId, guildId);
+          if (!refreshedPlayer) return;
           const embed = createGameHubEmbed(refreshedPlayer);
-          const buttons = createGameHubButtons();
+          const buttons = createGameHubButtons(refreshedPlayer.level);
           return interaction.update({
             content: null,
             embeds: [embed],

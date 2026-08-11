@@ -6,78 +6,130 @@ import { JOBS } from '../services/jobService.js';
 import { COURSES } from '../services/educationService.js';
 import { renderProgressBar, renderHealthBar } from './visualComponents.js';
 
-// 1. Hub Principal de la Ciudad (Embed de Alta Estética con Barras de Progreso)
+// 1. Hub Principal de la Ciudad con Sistema de Descubrimiento y Desbloqueo por Nivel
 export function createGameHubEmbed(player: any) {
   const stats = player.stats;
   const wallet = player.wallet;
+  const level = player.level || 1;
 
   const energyBar = renderProgressBar(stats.energy, stats.maxEnergy, 8, '⚡', '░');
   const nerveBar = renderProgressBar(stats.nerve, stats.maxNerve, 8, '🧠', '░');
   const happyBar = renderProgressBar(stats.happy, stats.maxHappy, 8, '😊', '░');
 
+  const unlockedList = [];
+  unlockedList.push('• **👤 Perfil & 📊 Stats:** Tu información general y nivel.');
+  unlockedList.push('• **🏋️ Gimnasio & 🕵️ Crímenes:** Entrenar stats y robar en las calles.');
+  unlockedList.push('• **🛒 Tienda & 🚨 Prisión:** Tienda de conveniencia y hospital/prisión.');
+
+  if (level >= 2) {
+    unlockedList.push('• **💼 Trabajos & 📋 Misiones:** `[DESBLOQUEADO NV. 2]` Salarios diarios y objetivos.');
+  } else {
+    unlockedList.push('• **🔒 Trabajos & Misiones:** `[BLOQUEADO - Al canzar Nivel 2]`');
+  }
+
+  if (level >= 3) {
+    unlockedList.push('• **🎓 Universidad & 🏦 Banco:** `[DESBLOQUEADO NV. 3]` Cursos pasivos e interés bancario.');
+  } else {
+    unlockedList.push('• **🔒 Universidad & Banco:** `[BLOQUEADO - Alcanzar Nivel 3]`');
+  }
+
+  if (level >= 5) {
+    unlockedList.push('• **🏴 Facción & ⚔️ Guerras:** `[DESBLOQUEADO NV. 5]` Duelos de pandilla y bounties.');
+  } else {
+    unlockedList.push('• **🔒 Facciones & Guerras:** `[BLOQUEADO - Alcanzar Nivel 5]`');
+  }
+
+  if (level >= 7) {
+    unlockedList.push('• **🕳️ El Callejón del Sapo:** `[LUGAR SECRETO DESCUBIERTO]` Actividades clandestinas.');
+  } else {
+    unlockedList.push('• **🔒 Lugar Desconocido:** `[??? - Alcanzar Nivel 7]`');
+  }
+
   return new EmbedBuilder()
     .setColor(0x2f3136)
     .setTitle('🏙️ LA CIUDAD DE SINFORD')
     .setDescription(
-      `Bienvenido a la central de la ciudad, **${player.username}**.\n` +
-      `Todo tu progreso e interacciones ocurren desde este Hub interactivo sin saturar el chat.\n\n` +
+      `Bienvenido a la central de la ciudad, **${player.username}** (Nivel ${level}).\n` +
+      `Conforme subas de nivel, descubrirás nuevas zonas, empleos y contenido secreto.\n\n` +
       `**Estado Rápido & Vitalidad:**\n` +
       `⚡ Energía: ${energyBar} (**${stats.energy}/${stats.maxEnergy}**)\n` +
       `🧠 Nerve: ${nerveBar} (**${stats.nerve}/${stats.maxNerve}**)\n` +
       `😊 Happy: ${happyBar} (**${stats.happy}/${stats.maxHappy}**)\n\n` +
       `💰 Efectivo: **$${wallet.cash.toLocaleString()}** | 🏦 Banco: **$${wallet.bank.toLocaleString()}**`
     )
-    .addFields(
-      {
-        name: '📌 Desarrollo & Actividades',
-        value:
-          `• **👤 Perfil & 📊 Stats:** Tu información general, nivel y estadísticas.\n` +
-          `• **💼 Trabajos & 🎓 Universidad:** Salarios diarios, Working Stats y cursos pasivos.\n` +
-          `• **🏋️ Gimnasio & 🕵️ Crímenes:** Entrena Battle Stats y comete delitos para ganar XP.\n` +
-          `• **⚔️ Guerra & 🏴 Facción:** Guerras entre facciones, tesorería y crímenes organizados.`,
-        inline: false,
-      },
-      {
-        name: '🎒 Economía & Servicios',
-        value:
-          `• **🎯 Bounties & 📋 Misiones:** Cazarecompensas PvP y objetivos diarios.\n` +
-          `• **🎒 Inventario & 🛒 Tienda:** Armas equipables, consumibles y armería.\n` +
-          `• **🏦 Banco & Finanzas:** Depósitos, retiros y registro atómico auditado.\n` +
-          `• **🚨 Prisión:** Fugas propias y rescate de compañeros encarcelados.`,
-        inline: false,
-      }
-    )
-    .setFooter({ text: 'Sinford Underworld • Pulsa los botones para navegar' })
+    .addFields({
+      name: '🔍 Lugares & Mecánicas Descubiertas',
+      value: unlockedList.join('\n'),
+      inline: false,
+    })
+    .setFooter({ text: `Sinford Underworld • Nivel ${level} • Pulsa los botones para navegar` })
     .setTimestamp();
 }
 
-// Organización armónica de los botones del Hub agrupados por categorías temáticas y colores
-export function createGameHubButtons() {
+// Generación dinámica de botones según el nivel de descubrimiento del jugador
+export function createGameHubButtons(playerLevel: number = 1) {
+  // Fila 1: Perfil, Stats, Trabajos (Nv. 2), Educación (Nv. 3), Misiones (Nv. 2)
   const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setCustomId('hub_profile').setLabel('Perfil').setEmoji('👤').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('hub_stats').setLabel('Stats').setEmoji('📊').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('act_jobs').setLabel('Trabajos').setEmoji('💼').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('act_edu').setLabel('Educación').setEmoji('🎓').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('act_missions').setLabel('Misiones').setEmoji('📋').setStyle(ButtonStyle.Primary)
+    playerLevel >= 2
+      ? new ButtonBuilder().setCustomId('act_jobs').setLabel('Trabajos').setEmoji('💼').setStyle(ButtonStyle.Primary)
+      : new ButtonBuilder().setCustomId('locked_jobs').setLabel('🔒 Nv. 2').setStyle(ButtonStyle.Secondary).setDisabled(true),
+    playerLevel >= 3
+      ? new ButtonBuilder().setCustomId('act_edu').setLabel('Educación').setEmoji('🎓').setStyle(ButtonStyle.Primary)
+      : new ButtonBuilder().setCustomId('locked_edu').setLabel('🔒 Nv. 3').setStyle(ButtonStyle.Secondary).setDisabled(true),
+    playerLevel >= 2
+      ? new ButtonBuilder().setCustomId('act_missions').setLabel('Misiones').setEmoji('📋').setStyle(ButtonStyle.Primary)
+      : new ButtonBuilder().setCustomId('locked_missions').setLabel('🔒 Nv. 2').setStyle(ButtonStyle.Secondary).setDisabled(true)
   );
 
+  // Fila 2: Gimnasio (Nv. 1), Crímenes (Nv. 1), Bounties (Nv. 5), Facción (Nv. 5), Guerras (Nv. 5)
   const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setCustomId('act_gym').setLabel('Gimnasio').setEmoji('🏋️').setStyle(ButtonStyle.Success),
     new ButtonBuilder().setCustomId('act_crime').setLabel('Crímenes').setEmoji('🕵️').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId('act_bounties').setLabel('Bounties').setEmoji('🎯').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId('act_faction').setLabel('Facción').setEmoji('🏴').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId('act_war').setLabel('Guerras').setEmoji('⚔️').setStyle(ButtonStyle.Danger)
+    playerLevel >= 5
+      ? new ButtonBuilder().setCustomId('act_bounties').setLabel('Bounties').setEmoji('🎯').setStyle(ButtonStyle.Danger)
+      : new ButtonBuilder().setCustomId('locked_bounties').setLabel('🔒 Nv. 5').setStyle(ButtonStyle.Secondary).setDisabled(true),
+    playerLevel >= 5
+      ? new ButtonBuilder().setCustomId('act_faction').setLabel('Facción').setEmoji('🏴').setStyle(ButtonStyle.Danger)
+      : new ButtonBuilder().setCustomId('locked_faction').setLabel('🔒 Nv. 5').setStyle(ButtonStyle.Secondary).setDisabled(true),
+    playerLevel >= 5
+      ? new ButtonBuilder().setCustomId('act_war').setLabel('Guerras').setEmoji('⚔️').setStyle(ButtonStyle.Danger)
+      : new ButtonBuilder().setCustomId('locked_war').setLabel('🔒 Nv. 5').setStyle(ButtonStyle.Secondary).setDisabled(true)
   );
 
+  // Fila 3: Inventario (Nv. 3), Banco (Nv. 3), Tienda (Nv. 1), Prisión (Nv. 1), El Callejón del Sapo (Nv. 7)
   const row3 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId('hub_inventory').setLabel('Inventario').setEmoji('🎒').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('act_bank').setLabel('Banco').setEmoji('🏦').setStyle(ButtonStyle.Success),
+    playerLevel >= 3
+      ? new ButtonBuilder().setCustomId('hub_inventory').setLabel('Inventario').setEmoji('🎒').setStyle(ButtonStyle.Secondary)
+      : new ButtonBuilder().setCustomId('locked_inv').setLabel('🔒 Nv. 3').setStyle(ButtonStyle.Secondary).setDisabled(true),
+    playerLevel >= 3
+      ? new ButtonBuilder().setCustomId('act_bank').setLabel('Banco').setEmoji('🏦').setStyle(ButtonStyle.Success)
+      : new ButtonBuilder().setCustomId('locked_bank').setLabel('🔒 Nv. 3').setStyle(ButtonStyle.Secondary).setDisabled(true),
     new ButtonBuilder().setCustomId('act_shop').setLabel('Tienda').setEmoji('🛒').setStyle(ButtonStyle.Success),
     new ButtonBuilder().setCustomId('act_jail').setLabel('Prisión').setEmoji('🚨').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('act_tx_history').setLabel('Historial').setEmoji('📜').setStyle(ButtonStyle.Secondary)
+    playerLevel >= 7
+      ? new ButtonBuilder().setCustomId('act_secret_alley').setLabel('Callejón').setEmoji('🕳️').setStyle(ButtonStyle.Primary)
+      : new ButtonBuilder().setCustomId('locked_secret').setLabel('🔒 Nv. 7').setStyle(ButtonStyle.Secondary).setDisabled(true)
   );
 
   return [row1, row2, row3];
+}
+
+// Vista del Lugar Secreto Descubierto: El Callejón del Sapo (Nivel 7+)
+export function createSecretAlleyViewEmbed(player: any) {
+  return new EmbedBuilder()
+    .setColor(0x006400)
+    .setTitle('🚨 NUEVO LUGAR DESCUBIERTO — 🕳️ El Callejón del Sapo')
+    .setDescription(
+      `*No sabes qué es esto. Probablemente no deberías haber entrado aquí.*\n\n` +
+      `Un grupo de ranas antropomórficas con gabardinas oscuras te observan fijamente desde las sombras mientras cuentan billetes arrugados sobre una caja de cerveza.\n\n` +
+      `**Actividades Clandestinas:**\n` +
+      `• **🐸 El Sapo Don Corleone:** Te ofrece contratos de atraco de alto riesgo.\n` +
+      `• **🧪 Vendedor de Suministros Raros:** Compro y vendo mercancía que la policía no debe ver.\n` +
+      `• **🎲 Dados Clandestinos:** Apuestas ilegales sin comisiones bancarias.`
+    )
+    .setFooter({ text: 'Lugar Secreto • Humor & Caos de Sinford Underworld' });
 }
 
 // 2. Vista de Perfil General con Barras de Salud Visuales en 6 Partes Corporales

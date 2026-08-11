@@ -2142,6 +2142,7 @@ Completar "Conoce al contrabandista"
 
 El jugador no debe conocer necesariamente todo el contenido disponible.
 El descubrimiento será una mecánica.
+- [x] Mecánica de Descubrimiento e Interfaces Progresivas completada.
 Ejemplo:
 ```text
 🔒

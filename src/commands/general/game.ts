@@ -15,7 +15,7 @@ export const gameCommand = {
     }
 
     const embed = createGameHubEmbed(player);
-    const buttons = createGameHubButtons();
+    const buttons = createGameHubButtons(player.level);
 
     return interaction.reply({
       embeds: [embed],
