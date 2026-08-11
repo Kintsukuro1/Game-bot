@@ -1,4 +1,6 @@
 import { prisma } from '../db/prisma.js';
+import { MAX_INVESTMENT_CAP, INVESTMENT_INTEREST_RATE_28_DAYS } from '../config/constants.js';
+import { InsufficientFundsError, InvalidAmountError } from '../errors/gameErrors.js';
 
 export interface StockDefinition {
   symbol: string;
@@ -14,18 +16,22 @@ export const INITIAL_STOCKS: StockDefinition[] = [
 ];
 
 export class InvestmentService {
-  // 1. Inversiones Billetera Bancaria a Plazo Fijo
+  // 1. Inversiones Billetera Bancaria a Plazo Fijo Rebalanceadas
   static async createBankInvestment(playerId: string, amount: bigint, durationDays: number) {
-    if (amount < 1000n) throw new Error('La inversión mínima en el banco es de **$1,000**.');
+    if (amount < 1000n) throw new InvalidAmountError('La inversión mínima en el banco es de **$1,000**.');
 
-    let interestRate = 0.05; // 5% por 7 días
-    if (durationDays === 14) interestRate = 0.12; // 12% por 14 días
-    if (durationDays === 28) interestRate = 0.30; // 30% por 28 días
+    if (amount > MAX_INVESTMENT_CAP) {
+      throw new InvalidAmountError(`🏦 La inversión máxima permitida a plazo fijo es de **$${MAX_INVESTMENT_CAP.toLocaleString()}**.`);
+    }
+
+    let interestRate = 0.015; // 1.5% por 7 días
+    if (durationDays === 14) interestRate = 0.035; // 3.5% por 14 días
+    if (durationDays === 28) interestRate = INVESTMENT_INTEREST_RATE_28_DAYS; // 6% por 28 días (rebalanceado)
 
     return prisma.$transaction(async (tx) => {
       const wallet = await tx.wallet.findUnique({ where: { playerId } });
       if (!wallet || wallet.cash < amount) {
-        throw new Error(`Efectivo insuficiente. Tienes **$${wallet?.cash.toLocaleString()}**.`);
+        throw new InsufficientFundsError(amount, wallet?.cash || 0n);
       }
 
       const balanceBefore = wallet.cash;
@@ -33,7 +39,7 @@ export class InvestmentService {
 
       await tx.wallet.update({
         where: { playerId },
-        data: { cash: balanceAfter },
+        data: { cash: { decrement: amount } },
       });
 
       const payout = amount + BigInt(Math.floor(Number(amount) * interestRate));
@@ -86,7 +92,7 @@ export class InvestmentService {
 
       await tx.wallet.update({
         where: { playerId },
-        data: { cash: balanceAfter },
+        data: { cash: { increment: inv.payout } },
       });
 
       await tx.bankInvestment.update({
@@ -112,7 +118,7 @@ export class InvestmentService {
 
   // 2. Mercado Accionario (Stock Market)
   static async buyStockShares(playerId: string, symbol: string, sharesCount: number) {
-    if (sharesCount <= 0) throw new Error('La cantidad de acciones debe ser mayor a 0.');
+    if (sharesCount <= 0) throw new InvalidAmountError('La cantidad de acciones a comprar debe ser un valor entero estrictamente mayor a 0.');
 
     const stock = INITIAL_STOCKS.find((s) => s.symbol === symbol);
     if (!stock) throw new Error('Acción no encontrada en la bolsa.');
@@ -122,7 +128,7 @@ export class InvestmentService {
     return prisma.$transaction(async (tx) => {
       const wallet = await tx.wallet.findUnique({ where: { playerId } });
       if (!wallet || wallet.cash < totalCost) {
-        throw new Error(`Efectivo insuficiente. Comprar ${sharesCount} acciones de ${stock.symbol} cuesta **$${totalCost.toLocaleString()}**.`);
+        throw new InsufficientFundsError(totalCost, wallet?.cash || 0n);
       }
 
       const balanceBefore = wallet.cash;
@@ -130,7 +136,7 @@ export class InvestmentService {
 
       await tx.wallet.update({
         where: { playerId },
-        data: { cash: balanceAfter },
+        data: { cash: { decrement: totalCost } },
       });
 
       const playerStock = await tx.playerStock.upsert({

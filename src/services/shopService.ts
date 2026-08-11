@@ -166,7 +166,7 @@ export class ShopService {
       // Deducción de efectivo atómica
       await tx.wallet.update({
         where: { playerId },
-        data: { cash: balanceAfter },
+        data: { cash: { decrement: totalCost } },
       });
 
       // Auditoría estricta de transacción monetaria
@@ -233,7 +233,7 @@ export class ShopService {
       // Acreditar efectivo atómicamente
       await tx.wallet.update({
         where: { playerId },
-        data: { cash: balanceAfter },
+        data: { cash: { increment: totalEarned } },
       });
 
       // Crear transacción de auditoría

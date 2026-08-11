@@ -1,4 +1,6 @@
 import { prisma } from '../db/prisma.js';
+import { DEFAULT_GUILD_ID } from '../config/constants.js';
+import { InsufficientFundsError, InvalidAmountError } from '../errors/gameErrors.js';
 
 export interface CompanyDefinition {
   type: string;
@@ -7,14 +9,15 @@ export interface CompanyDefinition {
   dailyRevenue: number;
 }
 
+// Rebalanceo de empresas con tiempo de amortización aproximado de 60 días
 export const COMPANY_TYPES: CompanyDefinition[] = [
-  { type: 'Sweet Shop', name: 'Tienda de Dulces', price: 100000, dailyRevenue: 5000 },
-  { type: 'Gun Shop', name: 'Armería de la Ciudad', price: 500000, dailyRevenue: 30000 },
-  { type: 'Logistics Firm', name: 'Firma de Logística', price: 1000000, dailyRevenue: 75000 },
+  { type: 'Sweet Shop', name: 'Tienda de Dulces', price: 100000, dailyRevenue: 1650 },
+  { type: 'Gun Shop', name: 'Armería de la Ciudad', price: 500000, dailyRevenue: 8300 },
+  { type: 'Logistics Firm', name: 'Firma de Logística', price: 1000000, dailyRevenue: 16500 },
 ];
 
 export class CompanyService {
-  static async buyCompany(ownerId: string, type: string, name: string, guildId: string = 'GLOBAL') {
+  static async buyCompany(ownerId: string, type: string, name: string, guildId: string = DEFAULT_GUILD_ID) {
     const compDef = COMPANY_TYPES.find((c) => c.type === type);
     if (!compDef) throw new Error('Tipo de empresa no válido.');
 
@@ -26,7 +29,7 @@ export class CompanyService {
       const cost = BigInt(compDef.price);
 
       if (!wallet || wallet.cash < cost) {
-        throw new Error(`Efectivo insuficiente. Comprar la empresa cuesta **$${cost.toLocaleString()}**.`);
+        throw new InsufficientFundsError(cost, wallet?.cash || 0n);
       }
 
       const balanceBefore = wallet.cash;
@@ -34,7 +37,7 @@ export class CompanyService {
 
       await tx.wallet.update({
         where: { playerId: ownerId },
-        data: { cash: balanceAfter },
+        data: { cash: { decrement: cost } },
       });
 
       await tx.transaction.create({
@@ -64,6 +67,8 @@ export class CompanyService {
   }
 
   static async hireEmployee(ownerId: string, targetPlayerId: string, salary: bigint) {
+    if (salary <= 0n) throw new InvalidAmountError('El salario fijado para el empleado debe ser mayor a 0.');
+
     return prisma.$transaction(async (tx) => {
       const company = await tx.company.findUnique({ where: { ownerId } });
       if (!company) throw new Error('No eres dueño de ninguna empresa.');
@@ -97,7 +102,7 @@ export class CompanyService {
 
       await tx.wallet.update({
         where: { playerId: ownerId },
-        data: { cash: balanceAfter },
+        data: { cash: { increment: revenueToCollect } },
       });
 
       await tx.company.update({

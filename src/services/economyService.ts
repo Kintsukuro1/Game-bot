@@ -1,27 +1,28 @@
 import { prisma } from '../db/prisma.js';
+import { InsufficientFundsError, InvalidAmountError } from '../errors/gameErrors.js';
 
 export class EconomyService {
-  // Depósito de Efectivo a Banco
+  // Depósito de Efectivo a Banco con incremento/decremento atómico
   static async deposit(playerId: string, amount: bigint) {
-    if (amount <= 0n) throw new Error('El monto a depositar debe ser mayor a 0.');
+    if (amount <= 0n) throw new InvalidAmountError('El monto a depositar debe ser un valor estrictamente positivo.');
 
     return prisma.$transaction(async (tx) => {
       const wallet = await tx.wallet.findUnique({ where: { playerId } });
       if (!wallet) throw new Error('Cartera no encontrada.');
 
       if (wallet.cash < amount) {
-        throw new Error(`Efectivo insuficiente. Tienes $${wallet.cash.toLocaleString()} en efectivo.`);
+        throw new InsufficientFundsError(amount, wallet.cash);
       }
 
       const balanceBefore = wallet.cash;
       const balanceAfter = wallet.cash - amount;
 
-      // Actualizar cartera
+      // Actualizar cartera de forma atómica
       const updatedWallet = await tx.wallet.update({
         where: { playerId },
         data: {
-          cash: wallet.cash - amount,
-          bank: wallet.bank + amount,
+          cash: { decrement: amount },
+          bank: { increment: amount },
         },
       });
 
@@ -42,16 +43,16 @@ export class EconomyService {
     });
   }
 
-  // Retiro de Banco a Efectivo
+  // Retiro de Banco a Efectivo con incremento/decremento atómico
   static async withdraw(playerId: string, amount: bigint) {
-    if (amount <= 0n) throw new Error('El monto a retirar debe ser mayor a 0.');
+    if (amount <= 0n) throw new InvalidAmountError('El monto a retirar debe ser un valor estrictamente positivo.');
 
     return prisma.$transaction(async (tx) => {
       const wallet = await tx.wallet.findUnique({ where: { playerId } });
       if (!wallet) throw new Error('Cartera no encontrada.');
 
       if (wallet.bank < amount) {
-        throw new Error(`Fondos bancarios insuficientes. Tienes $${wallet.bank.toLocaleString()} en el banco.`);
+        throw new InsufficientFundsError(amount, wallet.bank);
       }
 
       const balanceBefore = wallet.cash;
@@ -60,8 +61,8 @@ export class EconomyService {
       const updatedWallet = await tx.wallet.update({
         where: { playerId },
         data: {
-          cash: wallet.cash + amount,
-          bank: wallet.bank - amount,
+          cash: { increment: amount },
+          bank: { decrement: amount },
         },
       });
 
@@ -81,16 +82,16 @@ export class EconomyService {
     });
   }
 
-  // Transferencia de dinero entre jugadores
+  // Transferencia atómica de dinero entre jugadores
   static async transferCash(senderId: string, receiverDiscordId: string, amount: bigint) {
-    if (amount <= 0n) throw new Error('El monto a transferir debe ser mayor a 0.');
+    if (amount <= 0n) throw new InvalidAmountError('El monto a transferir debe ser un valor estrictamente positivo.');
 
     return prisma.$transaction(async (tx) => {
       const senderWallet = await tx.wallet.findUnique({ where: { playerId: senderId }, include: { player: true } });
       if (!senderWallet) throw new Error('Cartera de remitente no encontrada.');
 
       if (senderWallet.cash < amount) {
-        throw new Error(`Efectivo insuficiente. Tienes $${senderWallet.cash.toLocaleString()}.`);
+        throw new InsufficientFundsError(amount, senderWallet.cash);
       }
 
       const receiver = await tx.player.findFirst({
@@ -106,13 +107,13 @@ export class EconomyService {
         throw new Error('No puedes transferirte dinero a ti mismo.');
       }
 
-      // Restar a remitente
+      // Restar a remitente atómicamente
       const senderBefore = senderWallet.cash;
       const senderAfter = senderWallet.cash - amount;
 
       await tx.wallet.update({
         where: { playerId: senderId },
-        data: { cash: senderAfter },
+        data: { cash: { decrement: amount } },
       });
 
       await tx.transaction.create({
@@ -127,13 +128,13 @@ export class EconomyService {
         },
       });
 
-      // Sumar a destinatario
+      // Sumar a destinatario atómicamente
       const receiverBefore = receiver.wallet.cash;
       const receiverAfter = receiver.wallet.cash + amount;
 
       await tx.wallet.update({
         where: { playerId: receiver.id },
-        data: { cash: receiverAfter },
+        data: { cash: { increment: amount } },
       });
 
       await tx.transaction.create({
@@ -152,7 +153,7 @@ export class EconomyService {
     });
   }
 
-  // Historial de transacciones
+  // Obtener historial de transacciones de un jugador
   static async getTransactionHistory(playerId: string, limit: number = 10) {
     return prisma.transaction.findMany({
       where: { playerId },

@@ -1,8 +1,10 @@
 import { prisma } from '../db/prisma.js';
+import { DEFAULT_GUILD_ID } from '../config/constants.js';
+import { InsufficientFundsError, InvalidAmountError } from '../errors/gameErrors.js';
 
 export class FactionService {
-  // 1. Crear Ficción
-  static async createFaction(leaderId: string, name: string, description: string = '', guildId: string = 'GLOBAL') {
+  // 1. Crear Facción
+  static async createFaction(leaderId: string, name: string, description: string = '', guildId: string = DEFAULT_GUILD_ID) {
     if (name.length < 3 || name.length > 32) {
       throw new Error('El nombre de la facción debe tener entre 3 y 32 caracteres.');
     }
@@ -17,7 +19,7 @@ export class FactionService {
       const createCost = 50000n;
 
       if (!wallet || wallet.cash < createCost) {
-        throw new Error(`Efectivo insuficiente. Crear una facción cuesta **$${createCost.toLocaleString()}**.`);
+        throw new InsufficientFundsError(createCost, wallet?.cash || 0n);
       }
 
       const balanceBefore = wallet.cash;
@@ -25,7 +27,7 @@ export class FactionService {
 
       await tx.wallet.update({
         where: { playerId: leaderId },
-        data: { cash: balanceAfter },
+        data: { cash: { decrement: createCost } },
       });
 
       await tx.transaction.create({
@@ -85,9 +87,9 @@ export class FactionService {
     });
   }
 
-  // 3. Depositar en la Tesorería de la Facción
+  // 3. Depositar en la Tesorería de la Facción con operaciones atómicas
   static async depositTreasury(playerId: string, amount: bigint) {
-    if (amount <= 0n) throw new Error('El monto a depositar debe ser mayor a 0.');
+    if (amount <= 0n) throw new InvalidAmountError('El monto a depositar debe ser mayor a 0.');
 
     return prisma.$transaction(async (tx) => {
       const member = await tx.factionMember.findUnique({ where: { playerId } });
@@ -95,7 +97,7 @@ export class FactionService {
 
       const wallet = await tx.wallet.findUnique({ where: { playerId } });
       if (!wallet || wallet.cash < amount) {
-        throw new Error(`Efectivo insuficiente. Tienes **$${wallet?.cash.toLocaleString()}**.`);
+        throw new InsufficientFundsError(amount, wallet?.cash || 0n);
       }
 
       const balanceBefore = wallet.cash;
@@ -103,7 +105,7 @@ export class FactionService {
 
       await tx.wallet.update({
         where: { playerId },
-        data: { cash: balanceAfter },
+        data: { cash: { decrement: amount } },
       });
 
       await tx.faction.update({

@@ -103,7 +103,7 @@ export class JobService {
 
       await tx.wallet.update({
         where: { playerId },
-        data: { cash: balanceAfter },
+        data: { cash: { increment: salary } },
       });
 
       await tx.transaction.create({

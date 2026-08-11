@@ -155,7 +155,7 @@ export class GymService {
 
       await tx.wallet.update({
         where: { playerId },
-        data: { cash: balanceAfter },
+        data: { cash: { decrement: BigInt(nextGym.cost) } },
       });
 
       await tx.transaction.create({

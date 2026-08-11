@@ -1,14 +1,20 @@
 import { prisma } from '../db/prisma.js';
+import { MAX_CASINO_BET } from '../config/constants.js';
+import { InsufficientFundsError, InvalidAmountError, CasinoBetLimitError } from '../errors/gameErrors.js';
 
 export class CasinoService {
-  // 1. Tragamonedas (Slots Machine)
+  // 1. Tragamonedas (Slots Machine) con límite MAX_CASINO_BET y actualización atómica
   static async playSlots(playerId: string, betCash: bigint) {
-    if (betCash <= 0n) throw new Error('La apuesta debe ser mayor a 0.');
+    if (betCash <= 0n) throw new InvalidAmountError('La apuesta debe ser un valor estrictamente mayor a 0.');
+
+    if (betCash > MAX_CASINO_BET) {
+      throw new CasinoBetLimitError(MAX_CASINO_BET);
+    }
 
     return prisma.$transaction(async (tx) => {
       const wallet = await tx.wallet.findUnique({ where: { playerId } });
       if (!wallet || wallet.cash < betCash) {
-        throw new Error(`Efectivo insuficiente. Tienes **$${wallet?.cash.toLocaleString()}**.`);
+        throw new InsufficientFundsError(betCash, wallet?.cash || 0n);
       }
 
       const symbols = ['🍒', '🔔', '7️⃣', '💎'];
@@ -29,10 +35,17 @@ export class CasinoService {
       const balanceBefore = wallet.cash;
       const balanceAfter = wallet.cash + netGain;
 
-      await tx.wallet.update({
-        where: { playerId },
-        data: { cash: balanceAfter },
-      });
+      if (netGain >= 0n) {
+        await tx.wallet.update({
+          where: { playerId },
+          data: { cash: { increment: netGain } },
+        });
+      } else {
+        await tx.wallet.update({
+          where: { playerId },
+          data: { cash: { decrement: -netGain } },
+        });
+      }
 
       await tx.transaction.create({
         data: {
@@ -50,14 +63,18 @@ export class CasinoService {
     });
   }
 
-  // 2. Blackjack (Duelo de 21 contra la casa)
+  // 2. Blackjack (Duelo de 21 contra la casa) con límite MAX_CASINO_BET y actualización atómica
   static async playBlackjack(playerId: string, betCash: bigint) {
-    if (betCash <= 0n) throw new Error('La apuesta debe ser mayor a 0.');
+    if (betCash <= 0n) throw new InvalidAmountError('La apuesta debe ser un valor estrictamente mayor a 0.');
+
+    if (betCash > MAX_CASINO_BET) {
+      throw new CasinoBetLimitError(MAX_CASINO_BET);
+    }
 
     return prisma.$transaction(async (tx) => {
       const wallet = await tx.wallet.findUnique({ where: { playerId } });
       if (!wallet || wallet.cash < betCash) {
-        throw new Error(`Efectivo insuficiente. Tienes **$${wallet?.cash.toLocaleString()}**.`);
+        throw new InsufficientFundsError(betCash, wallet?.cash || 0n);
       }
 
       const playerHand = Math.floor(Math.random() * 10) + 12; // 12-21
@@ -77,10 +94,17 @@ export class CasinoService {
       const balanceBefore = wallet.cash;
       const balanceAfter = wallet.cash + netGain;
 
-      await tx.wallet.update({
-        where: { playerId },
-        data: { cash: balanceAfter },
-      });
+      if (netGain >= 0n) {
+        await tx.wallet.update({
+          where: { playerId },
+          data: { cash: { increment: netGain } },
+        });
+      } else {
+        await tx.wallet.update({
+          where: { playerId },
+          data: { cash: { decrement: -netGain } },
+        });
+      }
 
       await tx.transaction.create({
         data: {
