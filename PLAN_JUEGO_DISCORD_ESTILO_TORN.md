@@ -86,6 +86,24 @@
   - [A.29 Nivel 2](#a29-nivel-2)
   - [A.30 Principios de diseño consolidados](#a30-principios-de-diseño-consolidados)
 
+### 📖 Anexo B — Guía Completa de Funcionamiento del Sistema (Fases 0 a 16)
+  - [B.1 Arquitectura y Aislamiento por Servidor](#b1-arquitectura-y-aislamiento-por-servidor-guild-id-isolation)
+  - [B.2 Jugador y Salud Corporal](#b2-jugador-progresión-y-salud-corporal-fase-2)
+  - [B.3 Economía y Transacciones](#b3-economía-inventario-y-transacciones-fases-3-14-y-15)
+  - [B.4 Gimnasio y Fórmula Logarítmica](#b4-gimnasio-y-fórmula-logarítmica-de-torn-fase-4)
+  - [B.5 Combate PvP y Post-Acciones](#b5-combate-pvp-y-post-acciones-fase-5)
+  - [B.6 Crímenes y Prisión](#b6-crímenes-crime-skill-y-prisión--jail-fase-6)
+  - [B.7 Bounties y Misiones](#b7-bounties-pvp-y-misiones-diarias-fase-7)
+  - [B.8 Trabajos y Educación](#b8-trabajos-y-educación-fase-9)
+  - [B.9 Facciones y Crímenes Organizados](#b9-facciones-tesorería-y-crímenes-organizados-fase-10)
+  - [B.10 Guerras de Facción y Rankings](#b10-guerras-entre-facciones-y-rankings-fase-11)
+  - [B.11 Propiedades y Personal](#b11-propiedades-y-personal-fase-12)
+  - [B.12 Viajes Internacionales](#b12-viajes-internacionales-fase-13)
+  - [B.13 Mercado y Trading](#b13-mercado-abierto-y-trading-directo-fase-14)
+  - [B.14 Inversiones y Bolsa de Valores](#b14-inversiones-bancarias-y-bolsa-de-valores-fase-15)
+  - [B.15 Empresas y Gestión](#b15-empresas-y-empleados-fase-16)
+  - [B.16 Suite de Administración](#b16-suite-de-administración-admin)
+
 </details>
 
 
@@ -2778,3 +2796,151 @@ No empezar todavía a programar.
 - Definir el esquema inicial de base de datos.
 - Convertir este documento en un backlog de tareas programables.
 - Una vez terminada Fase 0, podremos comenzar Fase 1 con una especificación mucho más precisa y evitar rehacer sistemas posteriormente.
+
+---
+
+## 📖 Anexo B — Guía Completa de Funcionamiento del Sistema (Fases 0 a 16)
+
+> Esta sección documenta detalladamente la arquitectura técnica, las mecánicas de juego y el funcionamiento interno de todos los módulos implementados en el proyecto desde la Fase 0 hasta la Fase 16.
+
+---
+
+### 🛡️ B.1 Arquitectura y Aislamiento por Servidor (Guild ID Isolation)
+- **Persistencia Aislada por Servidor (`guildId`)**: Cada jugador posee un perfil de datos completamente aislado en cada servidor de Discord donde utilice el bot. El modelo de base de datos impone una clave única compuesta `@@unique([guildId, discordId])`. Esto impide que los usuarios puedan farmear recursos en servidores privados para transferirlos a servidores competitivos.
+- **Sincronización Automática de Comandos (`Global & Instant Guild Sync`)**:
+  - Al iniciar el proceso del bot en `src/index.ts`, se conecta a la REST API v10 de Discord y registra los comandos Slash (`/empezar`, `/game`, `/atacar`, `/admin`).
+  - Aplica tanto registro **Global** (`Routes.applicationCommands`) como **Sincronización Instantánea por Servidor** (`Routes.applicationGuildCommands`), garantizando disponibilidad inmediata en 1 segundo sin demoras de caché.
+
+---
+
+### 👤 B.2 Jugador, Progresión y Salud Corporal (Fase 2)
+- **Comando `/empezar`**: Registra al jugador de forma atómica en el servidor actual asignándole:
+  - **Recursos Iniciales:** $100 en efectivo, 100/100⚡ de Energía, 10/10🧠 de Nerve y 100/100😊 de Happy.
+  - **Battle Stats Iniciales:** Fuerza (`1.0`), Defensa (`1.0`), Velocidad (`1.0`) y Destreza (`1.0`).
+  - **Working Stats Iniciales:** Fuerza Manual (`1.0`), Inteligencia (`1.0`) y Resistencia (`1.0`).
+- **Salud Corporal en 6 Partes (6 Body Parts):**
+  - Cabeza (`100 HP`), Torso (`100 HP`), Brazo Izquierdo (`100 HP`), Brazo Derecho (`100 HP`), Pierna Izquierda (`100 HP`) y Pierna Derecha (`100 HP`).
+  - Durante los combates PvP, las extremidades sufren desgaste y daño localizado con barra de vida independiente.
+
+---
+
+### 💰 B.3 Economía, Inventario y Transacciones (Fases 3, 14 y 15)
+- **Cartera Estricta (`Wallet`)**: Gestiona montos en efectivo (`cash`) y saldo bancario (`bank`) mediante enteros de 64 bits (`BigInt`) para prevenir desbordamientos o imprecisiones de punto flotante.
+- **Registro de Auditoría Monetaria (`Transaction`)**: Cada ingreso, egreso, depósito, fianza o transferencia registra de forma atómica: `balanceBefore`, `balanceAfter`, tipo de transacción y metadatos JSON explicativos.
+- **Catálogo de Ítems (178 Objetos de Torn Wiki)**: Incluye armas primarias, secundarias, cuerpo a cuerpo, temporales, botiquines, drogas y consumibles.
+- **Inventario y Equipamiento (`InventoryItem`)**: Apilamiento de unidades por objeto, equipamiento en ranuras exclusivas (`PRIMARY`, `SECONDARY`, `MELEE`, `TEMPORARY`) y uso de consumibles con refresco dinámico de interfaz.
+
+---
+
+### 🏋️ B.4 Gimnasio y Fórmula Logarítmica de Torn (Fase 4)
+- **Membresías por Tiers (7 Gimnasios)**: Progresión desde el gimnasio callejero inicial hasta el club de entrenamiento VIP.
+- **Fórmula Oficial de Ganancia (Torn Wiki Log Formula)**:
+  $$\text{StatGain} = \text{GymMultiplier} \times \left(1 + \frac{\text{Happy}}{250}\right) \times \log_{10}(\text{CurrentStat} + 10)$$
+  - Cada sesión consume **5⚡ de Energía** y reduce de forma proporcional la Felicidad (`Happy`).
+
+---
+
+### ⚔️ B.5 Combate PvP y Post-Acciones (Fase 5)
+- **Comando `/atacar @objetivo`**: Inicia un duelo PvP atómico con un consumo de **25⚡ de Energía**.
+- **Cálculo de Duelo por Turnos**:
+  - Evaluación de acierto/fallo calculada mediante la razón de **Velocidad vs Destreza**.
+  - Cálculo de daño basado en la razón de **Fuerza vs Defensa** y la potencia de las armas equipadas.
+  - **15% de Probabilidad de Impacto Crítico** dirigido a una de las 6 zonas corporales.
+- **Acciones Posteriores a la Victoria**:
+  - **Dejar Tirado (`Leave`):** Otorga el máximo de Experiencia (+100 XP).
+  - **Asaltar (`Mug`):** Roba un porcentaje del efectivo en mano que portaba la víctima (+40 XP).
+  - **Hospitalizar (`Hospitalize`):** Envía a la víctima al hospital de la ciudad durante 60 minutos (+20 XP).
+
+---
+
+### 🕵️ B.6 Crímenes, Crime Skill y Prisión / Jail (Fase 6)
+- **Motor de Crímenes (`CrimeEngine`)**:
+  - Actividades ilícitas (búsqueda de dinero, robos en tiendas, carterismo, asalto armado).
+  - Consumen entre **2🧠 y 10🧠 de Nerve**.
+  - Incrementan el **Crime Skill** y la **Crime XP**, aumentando progresivamente la tasa de éxito en delitos de mayor rango.
+- **Prisión de la Ciudad (`City Jail`)**:
+  - Los fracasos en delitos o fugas encarcelan al jugador bloqueando sus acciones.
+  - **Fianza (`Bail`):** Pago de liberación calculado mediante `Bail = $100 * minutos * nivel`.
+  - **Fuga Propia (`Self Bust`):** Intento de escape que consume el 50% del Nerve máximo disponible.
+
+---
+
+### 🎯 B.7 Bounties PvP y Misiones Diarias (Fase 7)
+- **Bounties (Recompensas PvP)**:
+  - Los jugadores colocan dinero sobre la cabeza de un jugador objetivo (10% de comisión).
+  - Al ganar un duelo `/atacar` contra el objetivo, la recompensa se acredita **automáticamente** en la cartera del cazador.
+- **Misiones Diarias (`Daily Missions`)**:
+  - Objetivos de juego dinámicos (`CRIMES`, `ATTACKS`, `TRAINING`, `ITEMS`) que premian al jugador con dinero y experiencia al completarse.
+
+---
+
+### 💼 B.8 Trabajos y Educación (Fase 9)
+- **Empleos de la Ciudad (`Jobs`)**:
+  - Empleos en `Grocer` (Abarrotes), `Casino` y `Medical` (Hospital).
+  - Requisitos de **Working Stats** (`manualLabor`, `intelligence`, `endurance`).
+  - Pago diario de salario en efectivo, aumento de Working Stats y acumulación de **Job Points**.
+- **Universidad y Cursos (`Education`)**:
+  - Cursos de Biología (`BIO101`), Derecho (`LAW101`), Negocios (`BUS101`) y Combate (`COMBAT101`).
+  - Temporizadores de estudio en tiempo real que conceden bonificaciones pasivas permanentes (descuentos en fianza, +10% salario, +5% daño).
+
+---
+
+### 🏴 B.9 Facciones, Tesorería y Crímenes Organizados (Fase 10)
+- **Facciones (`Faction`)**:
+  - Fundación de facciones ($50,000 en efectivo) con roles de `LEADER`, `CO_LEADER` y `MEMBER`.
+  - **Tesorería Comunitaria (`treasury`):** Bóveda colectiva de la facción.
+  - **Puntos de Respeto (`respect`):** Reputación de la facción.
+- **Crímenes Organizados (`Organized Crimes`)**:
+  - Golpes en equipo (`Asalto al Banco Central`) ejecutados por los líderes que generan **+$50,000** a la tesorería y **+150 Puntos de Respeto**.
+
+---
+
+### ⚔️ B.10 Guerras entre Facciones y Rankings (Fase 11)
+- **Guerras de Facción (`FactionWar`)**:
+  - Declaración de guerra entre facciones rivales con un objetivo de **100 Puntos de Guerra** y 24h de duración.
+  - Cada combate PvP ganado por un miembro suma **+10 pts de guerra** y **+15 Puntos de Respeto**.
+  - **Premio de Victoria:** +$100,000 en la tesorería y +500 Puntos de Respeto para la facción vencedora.
+- **Ranking Server-Wide:** Tabla de clasificación de facciones ordenadas por Respeto.
+
+---
+
+### 🏡 B.11 Propiedades y Personal (Fase 12)
+- **Propiedades Inmobiliarias (`PlayerProperty`)**:
+  - Adquisición de `Shack` (Gratis), `Apartment` ($25k), `Penthouse` ($250k) e `Isla Privada` ($2.5M).
+- **Personal Contratable (`Staff`)**:
+  - Contratación de `Maid`, `Butler`, `Guard`, `Doctor` y `Pilot`.
+  - Incrementa automáticamente el tope de Felicidad del jugador (`maxHappy`) hasta 5,000 puntos.
+
+---
+
+### ✈️ B.12 Viajes Internacionales (Fase 13)
+- **Destinos Internacionales (`TravelState`)**:
+  - Vuelos a `México 🇲🇽`, `Reino Unido 🇬🇧`, `Japón 🇯🇵` y `Suiza 🇨🇭`.
+- **Mecánica de Vuelo**: Billetes de avión, tiempos de vuelo (15m a 120m) y acceso a mercados internacionales.
+
+---
+
+### 🏪 B.13 Mercado Abierto y Trading Directo (Fase 14)
+- **Mercado entre Jugadores (`MarketItem`)**: Publicación de ítems del inventario a precios personalizados y compras con transferencia de efectivo entre carteras.
+- **Comercio Directo (`Trade`)**: Intercambio atómico directo entre 2 jugadores con verificación de confirmación doble.
+
+---
+
+### 🏦 B.14 Inversiones Bancarias y Bolsa de Valores (Fase 15)
+- **Depósitos Bancarios a Plazo Fijo (`BankInvestment`)**: Inversiones a 7 días (5%), 14 días (12%) o 28 días (30% de interés).
+- **Bolsa de Valores (`Stock Market`)**: Compra y venta de acciones en empresas cotizadas (`TNC`, `SYS`, `MED`, `OIL`).
+
+---
+
+### 🏢 B.15 Empresas y Empleados (Fase 16)
+- **Fundación de Empresas (`Company`)**: Adquisición de `Sweet Shop` ($100k), `Gun Shop` ($500k) y `Logistics Firm` ($1M).
+- **Gestión Empresarial**: Contratación de empleados con salarios personalizados y recaudación de ganancias diarias.
+
+---
+
+### 🛠️ B.16 Suite de Administración (`/admin`)
+- Comando con permisos restringidos a administradores para:
+  - Otorgar/quitar efectivo o saldo bancario.
+  - Modificar energía, nerve, happy o estadísticas de cualquier jugador.
+  - Otorgar objetos al inventario de los usuarios.
+  - Todos los comandos de admin quedan registrados en la tabla `AuditLog`.
