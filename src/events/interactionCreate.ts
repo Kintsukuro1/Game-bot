@@ -12,6 +12,7 @@ import { JobService } from '../services/jobService.js';
 import { EducationService } from '../services/educationService.js';
 import { FactionService } from '../services/factionService.js';
 import { WarfareService } from '../services/warfareService.js';
+import { NPCService } from '../services/npcService.js';
 import { prisma } from '../db/prisma.js';
 import {
   createGameHubEmbed,
@@ -111,8 +112,12 @@ export async function handleInteraction(interaction: Interaction) {
           const selectRow = createCrimeSelectRow();
           const backRow = createBackButtonRow();
 
+          const reaction = result.success
+            ? NPCService.getReaction('charly', 'success')
+            : NPCService.getReaction('charly', 'failure');
+
           return interaction.update({
-            content: result.message,
+            content: `${result.message}\n${reaction}`,
             embeds: [embed],
             components: [selectRow as any, backRow as any],
           });
@@ -531,9 +536,10 @@ export async function handleInteraction(interaction: Interaction) {
             const updated = await PlayerService.getPlayerByDiscordId(discordId, guildId);
             const embed = createGymViewEmbed(updated);
             const gymButtons = createGymButtons();
+            const reaction = NPCService.getReaction('tony', 'success');
 
             return interaction.update({
-              content: `🏋️ **¡Entrenamiento exitoso en ${result.gymName}!** Aumentaste **+${result.gain.toFixed(3)}** de **${result.statName.toUpperCase()}**.`,
+              content: `🏋️ **¡Entrenamiento exitoso en ${result.gymName}!** Aumentaste **+${result.gain.toFixed(3)}** de **${result.statName.toUpperCase()}**.\n${reaction}`,
               embeds: [embed],
               components: gymButtons as any,
             });

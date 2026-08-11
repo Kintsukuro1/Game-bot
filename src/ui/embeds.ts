@@ -5,6 +5,7 @@ import { CRIMES } from '../services/crimeService.js';
 import { JOBS } from '../services/jobService.js';
 import { COURSES } from '../services/educationService.js';
 import { ShopService, SHOP_CATEGORIES } from '../services/shopService.js';
+import { NPCService } from '../services/npcService.js';
 import {
   renderProgressBar,
   renderHealthBar,
@@ -120,15 +121,16 @@ export function createGameHubButtons(playerLevel: number = 1) {
 
 // Vista del Lugar Secreto Descubierto: El Callejón del Sapo (Nivel 15+)
 export function createSecretAlleyViewEmbed(player: any) {
+  const quote = NPCService.getRandomQuote('corleone');
   return new EmbedBuilder()
     .setColor(0x006400)
     .setTitle('🚨 NUEVO LUGAR DESCUBIERTO — 🕳️ El Callejón del Sapo')
     .setDescription(
+      `${quote}\n\n` +
       `*No sabes qué es esto. Probablemente no deberías haber entrado aquí.*\n\n` +
-      `Un grupo de ranas antropomórficas con gabardinas oscuras te observan fijamente desde las sombras mientras cuentan billetes arrugados sobre una caja de cerveza.\n\n` +
       `**Actividades Clandestinas:**\n` +
-      `• **🐸 El Sapo Don Corleone:** Te ofrece contratos de atraco de alto riesgo.\n` +
-      `• **🧪 Vendedor de Suministros Raros:** Compro y vendo mercancía que la policía no debe ver.\n` +
+      `• **🐸 Don Corleone "El Sapo":** Te ofrece contratos de atraco de alto riesgo.\n` +
+      `• **🧪 El Profe Vane:** Mercado negro de drogas y estimulantes raros.\n` +
       `• **🎲 Dados Clandestinos:** Apuestas ilegales sin comisiones bancarias.`
     )
     .setFooter({ text: 'Lugar Secreto (Nivel 15+) • Humor & Caos de Sinford Underworld' });
@@ -198,10 +200,11 @@ export function createWarfareViewEmbed(rankings: any[]) {
 
 // 4. Vista de Trabajos (Jobs)
 export function createJobsViewEmbed(playerJob: any) {
+  const quote = NPCService.getRandomQuote('marta');
   const embed = new EmbedBuilder()
     .setColor(0x1e90ff)
     .setTitle('💼 EMPLEOS Y CENTRO LABORAL DE SINFORD')
-    .setDescription('Trabaja diariamente para ganar salarios en efectivo, Job Points y aumentar tus Working Stats.');
+    .setDescription(`${quote}\n\nTrabaja diariamente para ganar salarios en efectivo, Job Points y aumentar tus Working Stats.`);
 
   if (playerJob) {
     const jobDef = JOBS.find((j) => j.id === playerJob.jobId);
@@ -237,10 +240,11 @@ export function createJobsButtons() {
 
 // 5. Vista de Educación (Courses)
 export function createEducationViewEmbed(activeCourse: any) {
+  const quote = NPCService.getRandomQuote('prof_albert');
   const embed = new EmbedBuilder()
     .setColor(0x9370db)
     .setTitle('🎓 UNIVERSIDAD DE SINFORD — CURSOS Y EDUCACIÓN')
-    .setDescription('Inscríbete en cursos para obtener habilidades pasivas permanentes y bonificaciones.');
+    .setDescription(`${quote}\n\nInscríbete en cursos para obtener habilidades pasivas permanentes y bonificaciones.`);
 
   if (activeCourse) {
     const courseDef = COURSES.find((c) => c.id === activeCourse.courseId);
@@ -320,10 +324,11 @@ export function createFactionButtons(hasFaction: boolean) {
 
 // 7. Vista de Bounties
 export function createBountiesViewEmbed(bounties: any[]) {
+  const quote = NPCService.getRandomQuote('callahan');
   const embed = new EmbedBuilder()
     .setColor(0xb22222)
     .setTitle('🎯 RECOMPENSAS PvP — BOUNTIES')
-    .setDescription('Derrota en combate a un jugador objetivo para reclamar la recompensa en efectivo.');
+    .setDescription(`${quote}\n\nDerrota en combate a un jugador objetivo para reclamar la recompensa en efectivo.`);
 
   if (bounties.length === 0) {
     embed.addFields({ name: '📋 Bounties Activos', value: 'No hay recompensas activas en este momento.' });
@@ -361,11 +366,13 @@ export function createMissionsViewEmbed(missions: any[]) {
 // 9. Vista de Crímenes
 export function createCrimesViewEmbed(player: any) {
   const stats = player.stats;
+  const quote = NPCService.getRandomQuote('charly');
 
   const embed = new EmbedBuilder()
     .setColor(0x800000)
     .setTitle(`🕵️ ACTIVIDADES ILÍCITAS Y CRÍMENES`)
     .setDescription(
+      `${quote}\n\n` +
       `Comete crímenes para obtener dinero rápido y aumentar tu **Crime Skill**.\n\n` +
       `🧠 Nerve Disponible: **${stats.nerve}/${stats.maxNerve}** | 📈 Crime Skill: **${stats.crimeSkill.toFixed(2)}** | ⭐ Crime XP: **${stats.crimeExp.toLocaleString()}**`
     );
@@ -463,11 +470,13 @@ export function createGymViewEmbed(player: any) {
   const stats = player.stats;
   const currentGym = GymService.getGymByTier(player.gymTier);
   const nextGym = GYMS.find((g) => g.tier === player.gymTier + 1);
+  const quote = NPCService.getRandomQuote('tony');
 
   return new EmbedBuilder()
     .setColor(0x32cd32)
     .setTitle(`🏋️ GIMNASIO — ${currentGym.name}`)
     .setDescription(
+      `${quote}\n\n` +
       `Entrena tus **Battle Stats** para dominar en combate. Cada sesión de entrenamiento consume **${currentGym.energyPerTrain}⚡ de Energía**.\n\n` +
       `**Recursos Actuales:**\n` +
       `⚡ Energía: **${stats.energy}/${stats.maxEnergy}** | 😊 Happy: **${stats.happy}/${stats.maxHappy}**\n` +
@@ -609,11 +618,13 @@ export function createEquipmentViewEmbed(player: any) {
 // 16. Vista de Banco y Finanzas
 export function createBankViewEmbed(player: any) {
   const wallet = player.wallet;
+  const quote = NPCService.getRandomQuote('salieri');
 
   return new EmbedBuilder()
     .setColor(0x2e8b57)
     .setTitle(`🏦 Banco Central de Sinford — ${player.username}`)
     .setDescription(
+      `${quote}\n\n` +
       `Gestiona tus fondos de manera segura sin riesgos de robo.\n\n` +
       `💰 **Efectivo en Mano:** $${wallet.cash.toLocaleString()}\n` +
       `🏦 **Saldo en Banco:** $${wallet.bank.toLocaleString()}`
@@ -636,11 +647,13 @@ export function createBankActionButtons() {
 // 17. Vista de Tienda de la Ciudad Paginada por Categorías
 export function createShopCatalogEmbed(catalog: any[], playerLevel: number = 1, catIndex: number = 0) {
   const category = SHOP_CATEGORIES[catIndex] || SHOP_CATEGORIES[0];
+  const quote = NPCService.getRandomQuote('jimmy');
 
   const embed = new EmbedBuilder()
     .setColor(0xff8c00)
     .setTitle(`🛒 TIENDA DE SINFORD — ${category.emoji} ${category.name.toUpperCase()}`)
     .setDescription(
+      `${quote}\n\n` +
       `**Sección (${catIndex + 1}/${SHOP_CATEGORIES.length}):** ${category.description}\n` +
       `Navega entre las secciones usando los botones **◀️ Anterior** y **▶️ Siguiente** abajo.`
     );

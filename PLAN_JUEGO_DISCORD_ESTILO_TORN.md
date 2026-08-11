@@ -2242,7 +2242,7 @@ El jugador podrá enfrentarse a NPCs de nivel bajo.
 ---
 
 
-## A.9 NPCs con personalidad
+## A.9 NPCs con personalidad `[COMPLETADO]`
 
 Los NPCs serán una herramienta de gameplay y ambientación.
 No es necesario que exista inicialmente una campaña narrativa compleja.
