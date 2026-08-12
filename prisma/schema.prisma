@@ -29,6 +29,7 @@ model Player {
   transactions  Transaction[]
   auditLogs     AuditLog[]      @relation("TargetPlayer")
   adminLogs     AuditLog[]      @relation("AdminPlayer")
+  bossDamages   WorldBossDamage[]
 
   @@unique([guildId, discordId])
 }
@@ -382,4 +383,38 @@ model RaceResult {
   position    Int      @default(1)
   timeSeconds Float    @default(60.0)
   createdAt   DateTime @default(now())
+}
+
+model WorldBoss {
+  id           String            @id @default(uuid())
+  guildId      String            @default("GLOBAL")
+  name         String
+  type         String            // 'CHEN_CARNICERO', 'PRESIDENTE_HARRISON', 'GENERAL_VANCE', 'DON_CARBONE'
+  category     String            // 'DAILY', 'WEEKLY_FACTION'
+  maxHp        Int
+  currentHp    Int
+  status       String            @default("ACTIVE") // 'ACTIVE', 'DEFEATED', 'EXPIRED'
+  startsAt     DateTime          @default(now())
+  expiresAt    DateTime
+  defeatedAt   DateTime?
+  lastHitBy    String?
+  damageLogs   WorldBossDamage[]
+  createdAt    DateTime          @default(now())
+
+  @@index([guildId, status, category])
+}
+
+model WorldBossDamage {
+  id             String    @id @default(uuid())
+  bossId         String
+  playerId       String
+  factionId      String?
+  damageDealt    Int       @default(0)
+  attacksCount   Int       @default(0)
+  lastAttackedAt DateTime  @updatedAt
+
+  boss           WorldBoss @relation(fields: [bossId], references: [id], onDelete: Cascade)
+  player         Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([bossId, playerId])
 }

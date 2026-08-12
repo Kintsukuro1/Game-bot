@@ -7,6 +7,7 @@ import { JOBS } from '../services/jobService.js';
 import { COURSES } from '../services/educationService.js';
 import { ShopService, SHOP_CATEGORIES } from '../services/shopService.js';
 import { NPCService } from '../services/npcService.js';
+import { BossService } from '../services/bossService.js';
 import {
   renderProgressBar,
   renderHealthBar,
@@ -119,7 +120,15 @@ export function createGameHubButtons(playerLevel: number = 1) {
       : new ButtonBuilder().setCustomId('locked_secret').setLabel('🔒 Nv. 15').setStyle(ButtonStyle.Secondary).setDisabled(true)
   );
 
-  return [row1, row2, row3];
+  // Fila 4: Boss Diario (Nv. 1), Boss Semanal de Facción (Nv. 10)
+  const row4 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId('act_boss_daily').setLabel('Boss Diario (Chen 🥩)').setStyle(ButtonStyle.Danger),
+    playerLevel >= 10
+      ? new ButtonBuilder().setCustomId('act_boss_weekly').setLabel('Raid de Facción (🏴)').setStyle(ButtonStyle.Danger)
+      : new ButtonBuilder().setCustomId('locked_boss_weekly').setLabel('🔒 Raid Nv. 10').setStyle(ButtonStyle.Secondary).setDisabled(true)
+  );
+
+  return [row1, row2, row3, row4];
 }
 
 // Vista del Lugar Secreto Descubierto: El Callejón del Sapo (Nivel 15+)
@@ -746,4 +755,79 @@ export function createBackButtonRow() {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setCustomId('nav_back_hub').setLabel('Volver al Hub').setEmoji('🔙').setStyle(ButtonStyle.Secondary)
   );
+}
+
+// 19. Vista de Boss Diario (Individual / Chen El Fileteador)
+export function createDailyBossViewEmbed(boss: any, playerDamageLog?: any) {
+  const hpBar = renderProgressBar(boss.currentHp, boss.maxHp, 12, '🟥', '░');
+  const playerDamage = playerDamageLog ? playerDamageLog.damageDealt : 0;
+  const quote = BossService.getRandomBossQuote(boss.type);
+
+  return new EmbedBuilder()
+    .setColor(0xd32f2f)
+    .setTitle(`🥩 WORLD BOSS DIARIO — ${boss.name}`)
+    .setDescription(
+      `**Estado del Combate:**\n` +
+      `❤️ Salud Colectiva: ${hpBar} (**${boss.currentHp.toLocaleString()} / ${boss.maxHp.toLocaleString()} HP**)\n\n` +
+      `💬 **Frase del Jefe:**\n> ${quote}\n\n` +
+      `🎯 **Tu Daño Acumulado:** **${playerDamage.toLocaleString()} HP**\n` +
+      `• Hito 1 (5k HP): $2,500 + 100 XP ${playerDamage >= 5000 ? '✅' : '🔒'}\n` +
+      `• Hito 2 (15k HP): $7,500 + 250 XP ${playerDamage >= 15000 ? '✅' : '🔒'}\n` +
+      `• Hito 3 (35k HP Épico): $15,000 + 500 XP ${playerDamage >= 35000 ? '✅' : '🔒'}`
+    )
+    .setFooter({ text: 'Consumo: 25⚡ por ataque • Rotación diaria' });
+}
+
+// 20. Vista de Boss Semanal (Raid de Facción)
+export function createWeeklyBossViewEmbed(boss: any, damageLogs: any[]) {
+  const hpBar = renderProgressBar(boss.currentHp, boss.maxHp, 12, '🟪', '░');
+  const quote = BossService.getRandomBossQuote(boss.type);
+
+  const embed = new EmbedBuilder()
+    .setColor(0x8e24aa)
+    .setTitle(`🏴 RAID DE FACCIÓN SEMANAL — ${boss.name}`)
+    .setDescription(
+      `**Estado de la Incursión:**\n` +
+      `💜 Salud de la Fortaleza: ${hpBar} (**${boss.currentHp.toLocaleString()} / ${boss.maxHp.toLocaleString()} HP**)\n\n` +
+      `💬 **Desafío del Jefe:**\n> ${quote}`
+    );
+
+  if (!damageLogs || damageLogs.length === 0) {
+    embed.addFields({ name: 'Sin ataques registrados', value: '¡Sé la primera facción en enviar combatientes!' });
+  } else {
+    const list = damageLogs.slice(0, 5).map((log: any, idx: number) => {
+      const pName = log.player ? log.player.username : 'Combatiente';
+      return `${idx + 1}. **${pName}**: ${log.damageDealt.toLocaleString()} HP infligidos (${log.attacksCount} ataques)`;
+    }).join('\n');
+
+    embed.addFields(
+      { name: '🎯 Recompensa para la Tesorería de Facción Ganadora', value: '+$500,000 en tesorería + 2,500 Puntos de Respeto + Buff Semanal' },
+      { name: '📊 Clasificación:', value: list }
+    );
+  }
+
+  embed.setFooter({ text: 'Raid de Facción de Fin de Semana • 25⚡ por ataque' });
+  return embed;
+}
+
+export function createBossActionButtons(category: 'DAILY' | 'WEEKLY_FACTION') {
+  const attackBtn = new ButtonBuilder()
+    .setCustomId(`boss_attack_${category}`)
+    .setLabel('Atacar al Boss (25⚡)')
+    .setEmoji('⚔️')
+    .setStyle(ButtonStyle.Danger);
+
+  const claimBtn = new ButtonBuilder()
+    .setCustomId(`boss_claim_${category}`)
+    .setLabel('Reclamar Hitos')
+    .setEmoji('🎁')
+    .setStyle(ButtonStyle.Success);
+
+  const backBtn = new ButtonBuilder()
+    .setCustomId('nav_back_hub')
+    .setLabel('Volver al Hub')
+    .setEmoji('🏙️')
+    .setStyle(ButtonStyle.Secondary);
+
+  return [new ActionRowBuilder<ButtonBuilder>().addComponents(attackBtn, claimBtn, backBtn)];
 }
