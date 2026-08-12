@@ -3003,15 +3003,23 @@ No empezar todavía a programar.
 ## Anexo C: Expansiones Estratégicas Avanzadas y Mecánicas de Comunidad (Fases 25 – 30)
 
 ### 🌍 C.25 Eventos PvE de Comunidad: "Jefes de la Ciudad" (World Bosses)
-- **Concepto**: Amenazas comunitarias semanales que fomentan la cooperación de todo el servidor frente a desafíos masivos.
-- **Mecánica de Juego**:
-  - **Frecuencia**: Evento global activado 1 vez por semana (ej. Furgón blindado accidentado, Jefe de la Mafia rival o Redada de la SWAT).
-  - **Anuncio Global**: El bot emite una alerta a nivel de servidor notificando la ubicación y el estado del objetivo.
-  - **Vitalidad Colectiva**: El Jefe posee una barra de salud masiva (ej. 1,000,000 HP). Todos los jugadores del servidor disponen de 24 horas para atacarlo cooperativamente.
-  - **Combate y Turnos**: Cada ataque consume energía (25⚡) y aplica daño según el equipamiento y estadísticas del jugador.
-- **Sistema de Recompensas Proporcionales**:
-  - Al derrotar al World Boss, el bot calcula el porcentaje de daño infligido por cada jugador.
-  - El botín (armas únicas, grandes sumas de cash e ítems exclusivos) se distribuye proporcionalmente al aporte realizado.
+- **Concepto**: Amenazas urbanas divididas en dos modalidades estratégicas: **Bosses Diarios (Individuales)** y **Bosses Semanales (Exclusivos de Facciones)**.
+- **1. Bosses Diarios (Solo / PvE Individual - Rotación de 24h)**:
+  - **Mecánica**: Rotan diariamente a medianoche. Disponibles para que cualquier jugador compita por hitos de daño individual (5k, 15k, 35k HP) y recompensas de progreso diario.
+  - **🥩 Chen "El Fileteador" (El Carnicero del Barrio Chino)**:
+    - *Lore*: Dueño de la carnicería clandestina *"La Gran Muralla del Sabor"*. Habla en español mezclado con frases en chino y modismos de carnicería.
+    - *Frases Icónicas*: *"¡Nǐ hǎo, pendejo! ¿Tú vienes a comprar corte de primera o vienes a ser la carne del caldo de hoy?"*
+    - *Habilidad (`🔪 Deshuese Rápido`)*: Ráfaga de tajazos que daña brazos/torso y reduce un 5% de energía por impacto.
+    - *Botín Exclusivo*: Filetes de cerdo (*+30⚡ Energía*), Chorizo Chino (*+100😊 Happy*), Cuchillo de Carnicero Pesado (*Cleaver*), Hacha de Deshuesar (*Meat Chopper*) y fajos de dólares grasientos.
+
+- **2. Bosses Semanales (Exclusivos de Facciones - Raids de Fin de Semana)**:
+  - **Mecánica**: Incursiones masivas de 52 horas (Viernes 20:00 a Domingo 23:59) exclusivas para miembros de facciones. El daño de todos los miembros se suma a la barra colectiva de la pandilla.
+  - **🏛️ El Presidente Corrupto ("Presidente Harrison") [10,000,000 HP]**:
+    - *Poder Político*: Protegido por el Servicio Secreto. Recompensa +$500k a la tesorería, +2,500 Respeto y Buff `🏛️ Inmunidad Policial` (-50% carcel por 7 días).
+  - **🪖 El Jefe Militar ("General Vance") [8,000,000 HP]**:
+    - *Poder Armado*: Opera desde el búnker de la base militar con barrajess de morteros en área. Recompensa +$400k tesorería, +2,000 Respeto y fusiles/chalecos pesados para el armero de la facción.
+  - **🎩 El Capo de la Mafia ("Don Ernesto Carbone") [6,000,000 HP]**:
+    - *Poder del Inframundo*: Señor del crimen organizado. Recompensa +$300k tesorería, +1,500 Respeto y Buff `💰 Cobro de Protección` (+15% ingresos en empresas de los miembros).
 
 ---
 
