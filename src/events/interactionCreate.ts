@@ -14,6 +14,8 @@ import { FactionService } from '../services/factionService.js';
 import { WarfareService } from '../services/warfareService.js';
 import { NPCService } from '../services/npcService.js';
 import { BossService } from '../services/bossService.js';
+import { BlackMarketService } from '../services/blackMarketService.js';
+import { ProfessionService } from '../services/professionService.js';
 import { prisma } from '../db/prisma.js';
 import {
   createGameHubEmbed,
@@ -49,6 +51,10 @@ import {
   createDailyBossViewEmbed,
   createWeeklyBossViewEmbed,
   createBossActionButtons,
+  createBlackMarketViewEmbed,
+  createBlackMarketButtons,
+  createProfessionsViewEmbed,
+  createProfessionsSelectRow,
 } from '../ui/embeds.js';
 import { appendActionLog } from '../ui/visualComponents.js';
 import { empezarCommand } from '../commands/general/empezar.js';
@@ -102,6 +108,26 @@ export async function handleInteraction(interaction: Interaction) {
             content: newContent,
             embeds: [embed],
             components: [selectRow as any, backRow as any],
+          });
+        } catch (err: any) {
+          return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
+        }
+      }
+
+      if (interaction.customId === 'select_profession') {
+        const selectedProf = interaction.values[0] as 'HACKER' | 'CONTRABANDISTA' | 'SICARIO';
+        try {
+          const res = await ProfessionService.chooseProfession(player.id, selectedProf);
+          const updatedPlayer = await PlayerService.getPlayerByDiscordId(discordId, guildId);
+          const embed = createProfessionsViewEmbed(updatedPlayer);
+          const msg = `🎉 **¡Profesión Elegida!** Ahora eres **${res.emoji} ${res.professionName}**.`;
+          const newContent = appendActionLog(interaction.message?.content, [msg], 5);
+
+          const backRow = createBackButtonRow();
+          return interaction.update({
+            content: newContent,
+            embeds: [embed],
+            components: [backRow as any],
           });
         } catch (err: any) {
           return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
@@ -607,6 +633,47 @@ export async function handleInteraction(interaction: Interaction) {
           } catch (err: any) {
             return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
           }
+        }
+        case 'act_black_market': {
+          const event = await BlackMarketService.getOrCreateActiveBlackMarket(guildId);
+          const embed = createBlackMarketViewEmbed(event, player);
+          const btns = createBlackMarketButtons(event);
+          return interaction.update({
+            content: null,
+            embeds: [embed],
+            components: btns as any,
+          });
+        }
+        case 'bm_buy_adrenalina':
+        case 'bm_buy_suero': {
+          const itemType = interaction.customId === 'bm_buy_adrenalina' ? 'ADRENALINA' : 'SUERO';
+          try {
+            const res = await BlackMarketService.buyBlackMarketItem(player.id, itemType);
+            const refreshedPlayer = await PlayerService.getPlayerByDiscordId(discordId, guildId);
+            const event = await BlackMarketService.getOrCreateActiveBlackMarket(guildId);
+            const embed = createBlackMarketViewEmbed(event, refreshedPlayer);
+            const btns = createBlackMarketButtons(event);
+            const newContent = appendActionLog(interaction.message?.content, [res.msg], 5);
+
+            return interaction.update({
+              content: newContent,
+              embeds: [embed],
+              components: btns as any,
+            });
+          } catch (err: any) {
+            return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
+          }
+        }
+        case 'act_professions': {
+          const embed = createProfessionsViewEmbed(player);
+          const selectRow = createProfessionsSelectRow(Boolean(player.profession));
+          const components = selectRow ? [selectRow as any, backRow as any] : [backRow as any];
+
+          return interaction.update({
+            content: null,
+            embeds: [embed],
+            components,
+          });
         }
         case 'act_tx_history': {
           const txs = await EconomyService.getTransactionHistory(player.id);

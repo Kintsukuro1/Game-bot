@@ -94,27 +94,30 @@ export class BountyService {
     if (!activeBounty) return null;
 
     return prisma.$transaction(async (tx) => {
-      const attackerWallet = await tx.wallet.findUnique({ where: { playerId: attackerId } });
-      if (!attackerWallet) return null;
+      const attacker = await tx.player.findUnique({ where: { id: attackerId }, include: { wallet: true } });
+      if (!attacker || !attacker.wallet) return null;
 
-      const balanceBefore = attackerWallet.cash;
-      const balanceAfter = attackerWallet.cash + activeBounty.reward;
+      const isHitman = attacker.profession === 'SICARIO';
+      const finalReward = isHitman ? activeBounty.reward * 2n : activeBounty.reward;
+
+      const balanceBefore = attacker.wallet.cash;
+      const balanceAfter = attacker.wallet.cash + finalReward;
 
       // Acreditar recompensa al cazador
       await tx.wallet.update({
         where: { playerId: attackerId },
-        data: { cash: balanceAfter },
+        data: { cash: { increment: finalReward } },
       });
 
       await tx.transaction.create({
         data: {
           playerId: attackerId,
-          amount: activeBounty.reward,
+          amount: finalReward,
           balanceBefore,
           balanceAfter,
-          type: 'BOUNTY_CLAIMED',
-          source: defenderId,
-          metadata: JSON.stringify({ bountyId: activeBounty.id, reward: activeBounty.reward.toString() }),
+          type: 'BOUNTY_REWARD',
+          source: 'BOUNTY_SYSTEM',
+          metadata: JSON.stringify({ targetPlayerId: defenderId, reward: finalReward.toString(), isHitmanBonus: isHitman }),
         },
       });
 

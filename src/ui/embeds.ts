@@ -8,6 +8,8 @@ import { COURSES } from '../services/educationService.js';
 import { ShopService, SHOP_CATEGORIES } from '../services/shopService.js';
 import { NPCService } from '../services/npcService.js';
 import { BossService } from '../services/bossService.js';
+import { BlackMarketService } from '../services/blackMarketService.js';
+import { PROFESSIONS } from '../services/professionService.js';
 import {
   renderProgressBar,
   renderHealthBar,
@@ -120,12 +122,18 @@ export function createGameHubButtons(playerLevel: number = 1) {
       : new ButtonBuilder().setCustomId('locked_secret').setLabel('🔒 Nv. 15').setStyle(ButtonStyle.Secondary).setDisabled(true)
   );
 
-  // Fila 4: Boss Diario (Nv. 1), Boss Semanal de Facción (Nv. 10)
+  // Fila 4: Boss Diario (Nv. 1), Raid de Facción (Nv. 10), Mercado Negro (Nv. 5), Profesiones (Nv. 10)
   const row4 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setCustomId('act_boss_daily').setLabel('Boss Diario (Chen 🥩)').setStyle(ButtonStyle.Danger),
     playerLevel >= 10
       ? new ButtonBuilder().setCustomId('act_boss_weekly').setLabel('Raid de Facción (🏴)').setStyle(ButtonStyle.Danger)
-      : new ButtonBuilder().setCustomId('locked_boss_weekly').setLabel('🔒 Raid Nv. 10').setStyle(ButtonStyle.Secondary).setDisabled(true)
+      : new ButtonBuilder().setCustomId('locked_boss_weekly').setLabel('🔒 Raid Nv. 10').setStyle(ButtonStyle.Secondary).setDisabled(true),
+    playerLevel >= 5
+      ? new ButtonBuilder().setCustomId('act_black_market').setLabel('Mercado Negro').setEmoji('🕵️').setStyle(ButtonStyle.Secondary)
+      : new ButtonBuilder().setCustomId('locked_bm').setLabel('🔒 Nv. 5').setStyle(ButtonStyle.Secondary).setDisabled(true),
+    playerLevel >= 10
+      ? new ButtonBuilder().setCustomId('act_professions').setLabel('Profesión').setEmoji('🎭').setStyle(ButtonStyle.Primary)
+      : new ButtonBuilder().setCustomId('locked_prof').setLabel('🔒 Nv. 10').setStyle(ButtonStyle.Secondary).setDisabled(true)
   );
 
   return [row1, row2, row3, row4];
@@ -830,4 +838,105 @@ export function createBossActionButtons(category: 'DAILY' | 'WEEKLY_FACTION') {
     .setStyle(ButtonStyle.Secondary);
 
   return [new ActionRowBuilder<ButtonBuilder>().addComponents(attackBtn, claimBtn, backBtn)];
+}
+
+// 21. Vista de Mercado Negro (C.26)
+export function createBlackMarketViewEmbed(event: any, player: any) {
+  const stats = player.stats || {};
+  const isSmuggler = player.profession === 'CONTRABANDISTA';
+  const discountText = isSmuggler ? ' (🟢 -10% Descuento de Contrabandista aplicado)' : '';
+
+  const adrUses = stats.adrenalinaUses || 0;
+  const sueroUses = stats.sueroUses || 0;
+
+  const adrBaseCost = 100000n;
+  const sueroBaseCost = 75000n;
+
+  const adrPrice = BlackMarketService.calculateScaledPrice(adrBaseCost, adrUses);
+  const sueroPrice = BlackMarketService.calculateScaledPrice(sueroBaseCost, sueroUses);
+
+  const adrFinal = isSmuggler ? (adrPrice * 90n) / 100n : adrPrice;
+  const sueroFinal = isSmuggler ? (sueroPrice * 90n) / 100n : sueroPrice;
+
+  return new EmbedBuilder()
+    .setColor(0x1a1a1a)
+    .setTitle(`🕵️ MERCADO NEGRO — ${event.npcName}`)
+    .setDescription(
+      `*${event.clueMessage}*\n\n` +
+      `**Ubicación Actual:** ${event.locationName}${discountText}\n\n` +
+      `**Catálogo Exclusivo en Efectivo:**\n` +
+      `• 💉 **Inyección de Adrenalina Pura** — **$${adrFinal.toLocaleString()}** (Stock: ${event.adrenalinaStock}/1 | Tu Uso: ${adrUses}/5 usos máx)\n` +
+      `  *Efecto: +5 Energía Máxima (⚡) permanente por uso*\n\n` +
+      `• 🧪 **Suero Muscular Experimental** — **$${sueroFinal.toLocaleString()}** (Stock: ${event.sueroStock}/1 | Tu Uso: ${sueroUses}/3 usos máx)\n` +
+      `  *Efecto: +1.0 Strength permanente por uso*\n\n` +
+      `⚠️ *Controles Anti-Abuso: Stock limitado a 1 unidad por servidor, escalado de precios +50% y riesgo del 15% de Sobredosis si consumes múltiples en 24h.*`
+    )
+    .setFooter({ text: 'Pago en Efectivo en Mano Solamente • 2 Horas de Duración' });
+}
+
+export function createBlackMarketButtons(event: any) {
+  const adrBtn = new ButtonBuilder()
+    .setCustomId('bm_buy_adrenalina')
+    .setLabel('Comprar Adrenalina (+5⚡)')
+    .setEmoji('💉')
+    .setStyle(ButtonStyle.Danger)
+    .setDisabled(event.adrenalinaStock <= 0);
+
+  const sueroBtn = new ButtonBuilder()
+    .setCustomId('bm_buy_suero')
+    .setLabel('Comprar Suero (+1.0 STR)')
+    .setEmoji('🧪')
+    .setStyle(ButtonStyle.Primary)
+    .setDisabled(event.sueroStock <= 0);
+
+  const backBtn = new ButtonBuilder()
+    .setCustomId('nav_back_hub')
+    .setLabel('Volver al Hub')
+    .setEmoji('🏙️')
+    .setStyle(ButtonStyle.Secondary);
+
+  return [new ActionRowBuilder<ButtonBuilder>().addComponents(adrBtn, sueroBtn, backBtn)];
+}
+
+// 22. Vista de Profesiones Ilegales (C.30)
+export function createProfessionsViewEmbed(player: any) {
+  const currentProf = player.profession;
+  const embed = new EmbedBuilder()
+    .setColor(0x4a148c)
+    .setTitle('🎭 PROFESIONES ILEGALES — Especialización de Nivel 10+');
+
+  if (currentProf) {
+    const prof = PROFESSIONS.find((p) => p.id === currentProf);
+    embed.setDescription(
+      `**Tu Profesión Activa:** ${prof?.emoji} **${prof?.name}**\n\n` +
+      `**Beneficios Exclusivos de tu Clase:**\n` +
+      (prof?.perks.map((perk) => `• ${perk}`).join('\n') || '')
+    );
+  } else {
+    embed.setDescription(
+      `Has alcanzado el **Nivel 10**. Es momento de elegir tu especialización del inframundo.\n\n` +
+      PROFESSIONS.map((p) => `${p.emoji} **${p.name}**:\n${p.description}\n${p.perks.map((perk) => `  • ${perk}`).join('\n')}`).join('\n\n')
+    );
+  }
+
+  embed.setFooter({ text: 'Especialización Única • Torn City Standard' });
+  return embed;
+}
+
+export function createProfessionsSelectRow(hasProfession: boolean) {
+  if (hasProfession) return null;
+
+  const select = new StringSelectMenuBuilder()
+    .setCustomId('select_profession')
+    .setPlaceholder('Elige tu especialización de Nivel 10...');
+
+  const options = PROFESSIONS.map((p) =>
+    new StringSelectMenuOptionBuilder()
+      .setLabel(`${p.emoji} ${p.name}`)
+      .setValue(p.id)
+      .setDescription(p.description.substring(0, 50))
+  );
+
+  select.addOptions(options);
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
 }

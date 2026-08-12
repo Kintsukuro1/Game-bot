@@ -1284,16 +1284,16 @@ Evitar que la economía sea destruida.
 ---
 
 #### Controles
-- [ ] Rate limits.
-- [ ] Cooldown server-side.
-- [ ] Atomic transactions.
-- [ ] Idempotency.
-- [ ] Anti-duplication.
-- [ ] Anti-double-spend.
-- [ ] Suspicious transaction detection.
-- [ ] Multi-account detection.
-- [ ] Bot detection.
-- [ ] Economy anomaly detection.
+- [x] Rate limits.
+- [x] Cooldown server-side.
+- [x] Atomic transactions.
+- [x] Idempotency.
+- [x] Anti-duplication.
+- [x] Anti-double-spend.
+- [x] Suspicious transaction detection.
+- [x] Multi-account detection.
+- [x] Bot detection.
+- [x] Economy anomaly detection.
 
 ---
 
@@ -1307,19 +1307,19 @@ Evitar que una estrategia sea claramente superior.
 
 #### Métricas
 - Medir:
-- [ ] Dinero generado por hora.
-- [ ] Dinero gastado por hora.
-- [ ] Energy utilizada.
-- [ ] Nerve utilizada.
-- [ ] Battle Stats promedio.
-- [ ] Tasa de victorias.
-- [ ] Tasa de éxito de crímenes.
-- [ ] Inflación.
-- [ ] Distribución de riqueza.
-- [ ] Valor promedio de inventario.
-- [ ] Participación en factions.
-- [ ] Retención diaria.
-- [ ] Retención semanal.
+- [x] Dinero generado por hora.
+- [x] Dinero gastado por hora.
+- [x] Energy utilizada.
+- [x] Nerve utilizada.
+- [x] Battle Stats promedio.
+- [x] Tasa de victorias.
+- [x] Tasa de éxito de crímenes.
+- [x] Inflación.
+- [x] Distribución de riqueza.
+- [x] Valor promedio de inventario.
+- [x] Participación en factions.
+- [x] Retención diaria.
+- [x] Retención semanal.
 
 ---
 

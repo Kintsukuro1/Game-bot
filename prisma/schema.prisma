@@ -18,6 +18,7 @@ model Player {
   gymExp        Int             @default(0)
   hospitalUntil DateTime?
   jailUntil     DateTime?
+  profession    String?         // HACKER, CONTRABANDISTA, SICARIO
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
@@ -62,6 +63,8 @@ model Stats {
   endurance    Float    @default(1.0)
   crimeSkill   Float    @default(1.0)
   crimeExp     Int      @default(0)
+  adrenalinaUses Int    @default(0)
+  sueroUses    Int      @default(0)
   updatedAt    DateTime @updatedAt
 }
 
@@ -417,4 +420,20 @@ model WorldBossDamage {
   player         Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
   @@unique([bossId, playerId])
+}
+
+model BlackMarketEvent {
+  id           String   @id @default(uuid())
+  guildId      String   @default("GLOBAL")
+  npcName      String   // El Ruso, El Flaco
+  locationName String   // Muelle 4, Callejón del Sapo, Puerto Industrial
+  clueMessage  String
+  adrenalinaStock Int   @default(1)
+  sueroStock      Int   @default(1)
+  m32Stock        Int   @default(1)
+  isActive     Boolean  @default(true)
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([guildId, isActive])
 }
