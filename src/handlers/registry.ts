@@ -122,6 +122,10 @@ const prefixRules: PrefixRule[] = [
     handler: handleShopCategory,
     exclude: ['shop_cat_info'],
   },
+  {
+    prefix: 'boss_atk_',
+    handler: handleBossAttack,
+  },
 ];
 
 export function resolveHandler(customId: string): HandlerFn | null {

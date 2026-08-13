@@ -52,10 +52,21 @@ export async function handleBossAttack(
   player: PlayerWithRelations,
   guildId: string
 ): Promise<void> {
-  const category = interaction.customId === 'boss_attack_DAILY' ? 'DAILY' : 'WEEKLY_FACTION';
+  const customId = interaction.customId;
+  let category: 'DAILY' | 'WEEKLY_FACTION' = 'DAILY';
+  let actionType: 'FRONTAL' | 'COVER' | 'ITEM' | 'TAUNT' = 'FRONTAL';
+
+  if (customId.includes('WEEKLY_FACTION')) {
+    category = 'WEEKLY_FACTION';
+  }
+
+  if (customId.includes('_COVER_')) actionType = 'COVER';
+  if (customId.includes('_ITEM_')) actionType = 'ITEM';
+  if (customId.includes('_TAUNT_')) actionType = 'TAUNT';
+
   try {
     const boss = await BossService.getOrCreateActiveBoss(guildId, category);
-    const res = await BossService.attackBoss(player.id, boss.id);
+    const res = await BossService.attackBoss(player.id, boss.id, actionType);
 
     const updatedBoss = await BossService.getOrCreateActiveBoss(guildId, category);
     const damageLog = await prisma.worldBossDamage.findUnique({
@@ -72,7 +83,26 @@ export async function handleBossAttack(
       : createWeeklyBossViewEmbed(updatedBoss, damageLogs);
 
     const btns = createBossActionButtons(category);
-    const attackMsg = `⚔️ **¡Ataque Asestado!** Infligiste **+${res.damageDealt.toLocaleString()} HP** a **${res.bossName}**.\n${res.quote}`;
+
+    const actionTag =
+      actionType === 'COVER'
+        ? '🛡️ **[Cobertura Táctica]**'
+        : actionType === 'ITEM'
+        ? `💉 **[Inyección en Combate con ${res.usedMedicalItemName}]** (+${res.healedHp} HP Cura)`
+        : actionType === 'TAUNT'
+        ? '📢 **[Provocar / Taunt de Facción]** (+25% Daño de Facción registrado)'
+        : '⚔️ **[Ataque Frontal]**';
+
+    const critTag = res.isCrit ? ' 💥 **¡IMPACTO CRÍTICO!**' : '';
+    let attackMsg = `${actionTag}${critTag} Infligiste **+${res.damageDealt.toLocaleString()} HP** a **${res.bossName}**.\n` +
+      `🛡️ Contraataque (${res.phaseEmoji} ${res.phaseTitle}): Sufriste **-${res.counterDamage} HP** al torso.\n` +
+      `${res.extraEffectNote ? `${res.extraEffectNote}\n` : ''}` +
+      `${res.quote}`;
+
+    if (res.isDefeated) {
+      attackMsg += `\n\n🎉 **¡FELICIDADES! ${res.bossName} HA SIDO DERROTADO EN COMBATE!**`;
+    }
+
     const newContent = appendActionLog(interaction.message?.content, [attackMsg], 5);
 
     await interaction.update({

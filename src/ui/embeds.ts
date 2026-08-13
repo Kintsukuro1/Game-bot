@@ -7,7 +7,7 @@ import { JOBS } from '../services/jobService.js';
 import { COURSES } from '../services/educationService.js';
 import { ShopService, SHOP_CATEGORIES } from '../services/shopService.js';
 import { NPCService } from '../services/npcService.js';
-import { BossService } from '../services/bossService.js';
+import { BossService, BOSS_DEFINITIONS, getBossPhase } from '../services/bossService.js';
 import { BlackMarketService } from '../services/blackMarketService.js';
 import { PROFESSIONS } from '../services/professionService.js';
 import {
@@ -765,38 +765,52 @@ export function createBackButtonRow() {
   );
 }
 
-// 19. Vista de Boss Diario (Individual / Chen El Fileteador)
+// 19. Vista de Boss Diario (Individual)
 export function createDailyBossViewEmbed(boss: any, playerDamageLog?: any) {
+  const phaseInfo = getBossPhase(boss.currentHp, boss.maxHp);
+  const def = BOSS_DEFINITIONS[boss.type] || {
+    abilityName: '⚔️ Habilidad Desconocida',
+    abilityDescription: 'Sin datos tácticos.',
+  };
   const hpBar = renderProgressBar(boss.currentHp, boss.maxHp, 12, '🟥', '░');
   const playerDamage = playerDamageLog ? playerDamageLog.damageDealt : 0;
-  const quote = BossService.getRandomBossQuote(boss.type);
+  const quote = BossService.getRandomBossQuote(boss.type, phaseInfo.phase);
 
   return new EmbedBuilder()
-    .setColor(0xd32f2f)
-    .setTitle(`🥩 WORLD BOSS DIARIO — ${boss.name}`)
+    .setColor(phaseInfo.phase === 'DESPERATE' ? 0xff0000 : phaseInfo.phase === 'ENRAGED' ? 0xff5500 : 0xd32f2f)
+    .setTitle(`${phaseInfo.emoji} WORLD BOSS DIARIO — ${boss.name}`)
     .setDescription(
-      `**Estado del Combate:**\n` +
+      `**Estado del Combate:** ${phaseInfo.title}\n` +
       `❤️ Salud Colectiva: ${hpBar} (**${boss.currentHp.toLocaleString()} / ${boss.maxHp.toLocaleString()} HP**)\n\n` +
+      `⚡ **Pasiva del Boss:** **${def.abilityName}**\n` +
+      `*${def.abilityDescription}*\n\n` +
       `💬 **Frase del Jefe:**\n> ${quote}\n\n` +
       `🎯 **Tu Daño Acumulado:** **${playerDamage.toLocaleString()} HP**\n` +
       `• Hito 1 (5k HP): $2,500 + 100 XP ${playerDamage >= 5000 ? '✅' : '🔒'}\n` +
       `• Hito 2 (15k HP): $7,500 + 250 XP ${playerDamage >= 15000 ? '✅' : '🔒'}\n` +
       `• Hito 3 (35k HP Épico): $15,000 + 500 XP ${playerDamage >= 35000 ? '✅' : '🔒'}`
     )
-    .setFooter({ text: 'Consumo: 25⚡ por ataque • Rotación diaria' });
+    .setFooter({ text: 'Usa las Acciones Tácticas abajo para maximizar tu supervivencia' });
 }
 
 // 20. Vista de Boss Semanal (Raid de Facción)
 export function createWeeklyBossViewEmbed(boss: any, damageLogs: any[]) {
+  const phaseInfo = getBossPhase(boss.currentHp, boss.maxHp);
+  const def = BOSS_DEFINITIONS[boss.type] || {
+    abilityName: '⚔️ Habilidad Desconocida',
+    abilityDescription: 'Sin datos tácticos.',
+  };
   const hpBar = renderProgressBar(boss.currentHp, boss.maxHp, 12, '🟪', '░');
-  const quote = BossService.getRandomBossQuote(boss.type);
+  const quote = BossService.getRandomBossQuote(boss.type, phaseInfo.phase);
 
   const embed = new EmbedBuilder()
-    .setColor(0x8e24aa)
-    .setTitle(`🏴 RAID DE FACCIÓN SEMANAL — ${boss.name}`)
+    .setColor(phaseInfo.phase === 'DESPERATE' ? 0x9900cc : phaseInfo.phase === 'ENRAGED' ? 0xaa00aa : 0x8e24aa)
+    .setTitle(`${phaseInfo.emoji} RAID DE FACCIÓN SEMANAL — ${boss.name}`)
     .setDescription(
-      `**Estado de la Incursión:**\n` +
+      `**Estado de Incursión:** ${phaseInfo.title}\n` +
       `💜 Salud de la Fortaleza: ${hpBar} (**${boss.currentHp.toLocaleString()} / ${boss.maxHp.toLocaleString()} HP**)\n\n` +
+      `⚡ **Pasiva de Fortaleza:** **${def.abilityName}**\n` +
+      `*${def.abilityDescription}*\n\n` +
       `💬 **Desafío del Jefe:**\n> ${quote}`
     );
 
@@ -814,30 +828,54 @@ export function createWeeklyBossViewEmbed(boss: any, damageLogs: any[]) {
     );
   }
 
-  embed.setFooter({ text: 'Raid de Facción de Fin de Semana • 25⚡ por ataque' });
+  embed.setFooter({ text: 'Raid de Facción de Fin de Semana • Elige tu acción táctica' });
   return embed;
 }
 
 export function createBossActionButtons(category: 'DAILY' | 'WEEKLY_FACTION') {
-  const attackBtn = new ButtonBuilder()
-    .setCustomId(`boss_attack_${category}`)
-    .setLabel('Atacar al Boss (25⚡)')
-    .setEmoji('⚔️')
-    .setStyle(ButtonStyle.Danger);
+  const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`boss_atk_FRONTAL_${category}`)
+      .setLabel('Ataque Frontal (25⚡)')
+      .setEmoji('⚔️')
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId(`boss_atk_COVER_${category}`)
+      .setLabel('Cobertura Táctica (30⚡)')
+      .setEmoji('🛡️')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId(`boss_atk_ITEM_${category}`)
+      .setLabel('Inyección Médica (20⚡)')
+      .setEmoji('💉')
+      .setStyle(ButtonStyle.Success)
+  );
 
-  const claimBtn = new ButtonBuilder()
-    .setCustomId(`boss_claim_${category}`)
-    .setLabel('Reclamar Hitos')
-    .setEmoji('🎁')
-    .setStyle(ButtonStyle.Success);
+  const row2 = new ActionRowBuilder<ButtonBuilder>();
+  if (category === 'WEEKLY_FACTION') {
+    row2.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`boss_atk_TAUNT_${category}`)
+        .setLabel('Provocar / Taunt (15⚡)')
+        .setEmoji('📢')
+        .setStyle(ButtonStyle.Primary)
+    );
+  }
 
-  const backBtn = new ButtonBuilder()
-    .setCustomId('nav_back_hub')
-    .setLabel('Volver al Hub')
-    .setEmoji('🏙️')
-    .setStyle(ButtonStyle.Secondary);
+  row2.addComponents(
+    new ButtonBuilder()
+      .setCustomId(`boss_claim_${category}`)
+      .setLabel('Reclamar Hitos')
+      .setEmoji('🎁')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId('nav_back_hub')
+      .setLabel('Volver al Hub')
+      .setEmoji('🏙️')
+      .setStyle(ButtonStyle.Secondary)
+  );
 
-  return [new ActionRowBuilder<ButtonBuilder>().addComponents(attackBtn, claimBtn, backBtn)];
+  return [row1, row2];
 }
 
 // 21. Vista de Mercado Negro (C.26)
