@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, REST, Routes } from 'discord.js';
+import { Client, Events, GatewayIntentBits, REST, Routes } from 'discord.js';
 import dotenv from 'dotenv';
 import { handleInteraction } from './events/interactionCreate.js';
 import { startScheduler } from './services/scheduler.js';
@@ -20,7 +20,7 @@ export const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
 
-client.once('ready', async () => {
+client.once(Events.ClientReady, async () => {
   console.log(`🤖 Bot iniciado con éxito como: ${client.user?.tag}`);
 
   // Usar siempre el ID real autenticado de la aplicación del bot
