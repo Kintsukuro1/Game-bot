@@ -71,13 +71,11 @@ export async function handleActTxHistory(
 
 export async function handleNavBackHub(
   interaction: ButtonInteraction | StringSelectMenuInteraction,
-  _player: PlayerWithRelations,
-  guildId: string
+  player: PlayerWithRelations,
+  _guildId: string
 ): Promise<void> {
-  const refreshedPlayer = await PlayerService.getPlayerByDiscordId(interaction.user.id, guildId);
-  if (!refreshedPlayer) return;
-  const embed = createGameHubEmbed(refreshedPlayer);
-  const buttons = createGameHubButtons(refreshedPlayer.level);
+  const embed = createGameHubEmbed(player);
+  const buttons = createGameHubButtons(player.level);
   await interaction.update({
     content: null,
     embeds: [embed],

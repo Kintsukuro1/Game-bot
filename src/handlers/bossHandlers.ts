@@ -22,12 +22,11 @@ export async function handleActBossDaily(
   }
 
   const boss = await BossService.getOrCreateActiveBoss(guildId, 'DAILY');
-  const freshPlayer = await PlayerService.getPlayerByDiscordId(player.discordId, guildId);
   const damageLog = await prisma.worldBossDamage.findUnique({
     where: { bossId_playerId: { bossId: boss.id, playerId: player.id } },
   });
-  const embed = createDailyBossViewEmbed(boss, damageLog, freshPlayer || player);
-  const btns = createBossActionButtons('DAILY', freshPlayer || player);
+  const embed = createDailyBossViewEmbed(boss, damageLog, player);
+  const btns = createBossActionButtons('DAILY', player);
   await interaction.update({
     content: null,
     embeds: [embed],
@@ -45,14 +44,13 @@ export async function handleActBossWeekly(
     return;
   }
   const boss = await BossService.getOrCreateActiveBoss(guildId, 'WEEKLY_FACTION');
-  const freshPlayer = await PlayerService.getPlayerByDiscordId(player.discordId, guildId);
   const damageLogs = await prisma.worldBossDamage.findMany({
     where: { bossId: boss.id },
     include: { player: true },
     orderBy: { damageDealt: 'desc' },
   });
-  const embed = createWeeklyBossViewEmbed(boss, damageLogs, freshPlayer || player);
-  const btns = createBossActionButtons('WEEKLY_FACTION', freshPlayer || player);
+  const embed = createWeeklyBossViewEmbed(boss, damageLogs, player);
+  const btns = createBossActionButtons('WEEKLY_FACTION', player);
   await interaction.update({
     content: null,
     embeds: [embed],
