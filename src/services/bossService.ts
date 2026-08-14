@@ -15,6 +15,53 @@ export interface BossDefinition {
 
 export type BossPhase = 'NORMAL' | 'ENRAGED' | 'DESPERATE';
 
+export type BossCombatActionType =
+  | 'ATK_PRIMARY'
+  | 'ATK_SECONDARY'
+  | 'ATK_MELEE'
+  | 'TACTICAL_COVER'
+  | 'TACTICAL_MED'
+  | 'TACTICAL_THROWABLE'
+  | 'FACTION_TAUNT'
+  | 'FRONTAL'
+  | 'COVER'
+  | 'ITEM'
+  | 'TAUNT';
+
+export interface BossAttackResult {
+  bossName: string;
+  bossType: string;
+  actionType: BossCombatActionType;
+  weaponName: string;
+  isHit: boolean;
+  damageDealt: number;
+  isCrit: boolean;
+  remainingBossHp: number;
+  bossMaxHp: number;
+  isDefeated: boolean;
+  counterDamage: number;
+  bodyPartStruck: string;
+  bodyPartDamage: number;
+  updatedPlayerBody: {
+    headHp: number;
+    torsoHp: number;
+    leftArmHp: number;
+    rightArmHp: number;
+    leftLegHp: number;
+    rightLegHp: number;
+  };
+  isKnockedOut: boolean;
+  hospitalMinutes: number;
+  energyUsed: number;
+  remainingEnergy: number;
+  phaseTitle: string;
+  phaseEmoji: string;
+  healedHp?: number;
+  usedMedicalItemName?: string;
+  extraEffectNote?: string;
+  quote: string;
+}
+
 export function getBossPhase(currentHp: number, maxHp: number): { phase: BossPhase; title: string; emoji: string } {
   const pct = (currentHp / maxHp) * 100;
   if (pct > 60) {
@@ -282,12 +329,19 @@ export class BossService {
     return activeBoss;
   }
 
-  // Atacar al World Boss con Selección Táctica de Acción
+  // Atacar al World Boss con Selección Táctica de Acción y Daño Anatómico
   static async attackBoss(
     playerId: string,
     bossId: string,
-    actionType: 'FRONTAL' | 'COVER' | 'ITEM' | 'TAUNT' = 'FRONTAL'
-  ) {
+    rawActionType: BossCombatActionType = 'ATK_PRIMARY'
+  ): Promise<BossAttackResult> {
+    // Mapeo retrocompatible
+    let actionType: BossCombatActionType = rawActionType;
+    if (rawActionType === 'FRONTAL') actionType = 'ATK_PRIMARY';
+    if (rawActionType === 'COVER') actionType = 'TACTICAL_COVER';
+    if (rawActionType === 'ITEM') actionType = 'TACTICAL_MED';
+    if (rawActionType === 'TAUNT') actionType = 'FACTION_TAUNT';
+
     return prisma.$transaction(async (tx) => {
       const player = await tx.player.findUnique({
         where: { id: playerId },
@@ -300,7 +354,8 @@ export class BossService {
 
       const now = new Date();
       if (player.hospitalUntil && player.hospitalUntil > now) {
-        throw new Error('🏥 Estás hospitalizado y no puedes participar en el combate contra el Boss.');
+        const remainingMin = Math.ceil((player.hospitalUntil.getTime() - now.getTime()) / 60000);
+        throw new Error(`🏥 Estás hospitalizado durante los próximos **${remainingMin} minutos**. Puedes usar un Botiquín rápido para darte el alta.`);
       }
 
       if (player.jailUntil && player.jailUntil > now) {
@@ -308,13 +363,15 @@ export class BossService {
       }
 
       // Determinar consumo de energía según acción táctica
-      let energyCost = 25;
-      if (actionType === 'COVER') energyCost = 30;
-      if (actionType === 'ITEM') energyCost = 20;
-      if (actionType === 'TAUNT') energyCost = 15;
+      let energyCost = 25; // default para primaria
+      if (actionType === 'ATK_SECONDARY' || actionType === 'ATK_MELEE') energyCost = 15;
+      if (actionType === 'TACTICAL_COVER') energyCost = 10;
+      if (actionType === 'TACTICAL_MED') energyCost = 15;
+      if (actionType === 'TACTICAL_THROWABLE') energyCost = 20;
+      if (actionType === 'FACTION_TAUNT') energyCost = 15;
 
       if (player.stats.energy < energyCost) {
-        throw new Error(`⚡ Energía insuficiente para la acción táctica. Requiere **${energyCost}⚡** y tienes **${player.stats.energy}⚡**.`);
+        throw new Error(`⚡ Energía insuficiente para esta acción táctica. Requiere **${energyCost}⚡** y tienes **${player.stats.energy}⚡**.`);
       }
 
       const boss = await tx.worldBoss.findUnique({
@@ -333,17 +390,31 @@ export class BossService {
         }
       }
 
-      // Procesar acción de ÍTEM si aplica
+      // 1. Procesar acción de ÍTEM MÉDICO si aplica
       let usedMedicalItemName = '';
       let healedHp = 0;
-      if (actionType === 'ITEM') {
+      const currentBody = { ...player.bodyParts };
+
+      if (actionType === 'TACTICAL_MED') {
         const medicalInv = player.inventory.find((i) => i.item.type === 'MEDICAL' && i.quantity > 0);
         if (!medicalInv) {
           throw new Error('💊 No tienes ningún objeto médico (botiquín, vendas) en tu inventario para usar en combate.');
         }
 
         usedMedicalItemName = medicalInv.item.name;
-        healedHp = Math.min(30, 100 - player.bodyParts.torsoHp);
+        // Priorizar curación a Torso y Cabeza
+        const torsoDeficit = 100 - currentBody.torsoHp;
+        const headDeficit = 100 - currentBody.headHp;
+        const totalHealPool = 40;
+
+        const healTorso = Math.min(torsoDeficit, Math.floor(totalHealPool * 0.6));
+        const healHead = Math.min(headDeficit, totalHealPool - healTorso);
+
+        currentBody.torsoHp = Math.min(100, currentBody.torsoHp + healTorso);
+        currentBody.headHp = Math.min(100, currentBody.headHp + healHead);
+        currentBody.leftArmHp = Math.min(100, currentBody.leftArmHp + 10);
+        currentBody.rightArmHp = Math.min(100, currentBody.rightArmHp + 10);
+        healedHp = healTorso + healHead;
 
         if (medicalInv.quantity > 1) {
           await tx.inventoryItem.update({
@@ -353,78 +424,122 @@ export class BossService {
         } else {
           await tx.inventoryItem.delete({ where: { id: medicalInv.id } });
         }
-
-        await tx.bodyParts.update({
-          where: { playerId },
-          data: { torsoHp: player.bodyParts.torsoHp + healedHp },
-        });
       }
 
-      // Consumir energía
+      // Consumir energía del jugador
+      const remainingEnergy = player.stats.energy - energyCost;
       await tx.stats.update({
         where: { playerId },
-        data: { energy: player.stats.energy - energyCost },
+        data: { energy: remainingEnergy },
       });
 
-      // Calcular Fase actual del Boss
+      // 2. Determinar fase y modificadores del Jefe
       const phaseInfo = getBossPhase(boss.currentHp, boss.maxHp);
       let phaseCounterMult = 1.0;
       let playerCritBonus = 0.0;
 
       if (phaseInfo.phase === 'ENRAGED') {
-        phaseCounterMult = 1.5;
+        phaseCounterMult = 1.35;
       } else if (phaseInfo.phase === 'DESPERATE') {
-        phaseCounterMult = 2.0;
-        playerCritBonus = 0.20; // +20% chance de crit en fase desesperada
+        phaseCounterMult = 1.75;
+        playerCritBonus = 0.15; // +15% probabilidad de crítico en fase desesperada
       }
 
-      // Seleccionar armas y calcular daño base del jugador
-      const weapons = player.inventory.filter((i) => i.isEquipped && i.item.type === 'WEAPON');
-      const bestWeapon = weapons[0]?.item || { name: 'Puños', damage: 15, weaponType: 'MELEE' };
+      // 3. Selección de Armamento según acción
+      const equippedWeapons = player.inventory.filter((i) => i.isEquipped && i.item.type === 'WEAPON');
+      const primaryWep = equippedWeapons.find((i) => i.slot === 'PRIMARY')?.item;
+      const secondaryWep = equippedWeapons.find((i) => i.slot === 'SECONDARY')?.item;
+      const meleeWep = equippedWeapons.find((i) => i.slot === 'MELEE')?.item;
 
-      let actionDamageMult = 1.0;
-      if (actionType === 'COVER') actionDamageMult = 0.75;
-      if (actionType === 'ITEM') actionDamageMult = 0.90;
-      if (actionType === 'TAUNT') actionDamageMult = 0.50;
+      let chosenWeapon: { name: string; damage: number; accuracy: number; weaponType?: string | null } = {
+        name: 'Puños',
+        damage: 15,
+        accuracy: 50.0,
+        weaponType: 'MELEE',
+      };
 
-      // Habilidad del Alcaide Voss (Desarme / Melee bonus)
-      if (boss.type === 'ALCAIDE_VOSS' && actionType !== 'COVER') {
-        if (bestWeapon.weaponType === 'MELEE') {
-          actionDamageMult += 0.20;
-        } else {
-          actionDamageMult -= 0.30;
+      if (actionType === 'ATK_PRIMARY') {
+        chosenWeapon = primaryWep || secondaryWep || meleeWep || chosenWeapon;
+      } else if (actionType === 'ATK_SECONDARY') {
+        chosenWeapon = secondaryWep || meleeWep || chosenWeapon;
+      } else if (actionType === 'ATK_MELEE') {
+        chosenWeapon = meleeWep || chosenWeapon;
+      } else if (actionType === 'TACTICAL_THROWABLE') {
+        chosenWeapon = { name: 'Granada Táctica', damage: 45, accuracy: 75.0, weaponType: 'Heavy Artillery' };
+      } else if (actionType === 'TACTICAL_COVER') {
+        chosenWeapon = { name: 'Disparo de Cobertura', damage: 12, accuracy: 40.0, weaponType: 'Pistol' };
+      }
+
+      // 4. Penalizaciones por extremidades dañadas del jugador
+      let accuracyPenalty = 0.0;
+      let damagePenalty = 0.0;
+      if (currentBody.leftArmHp < 40 || currentBody.rightArmHp < 40) {
+        accuracyPenalty += 0.10;
+      }
+      if (currentBody.leftArmHp < 30 && currentBody.rightArmHp < 30) {
+        accuracyPenalty += 0.15;
+        damagePenalty += 0.15;
+      }
+
+      // 5. Cálculo de Acierto (Hit Chance estilo Torn)
+      const attackerSpeed = player.stats.speed;
+      const bossDex = 20.0;
+      const weaponAcc = chosenWeapon.accuracy || 50.0;
+      const hitChance = Math.min(
+        Math.max(0.5 * (attackerSpeed / bossDex) * (weaponAcc / 50.0) - accuracyPenalty, 0.20),
+        0.95
+      );
+      const isHit = actionType === 'TACTICAL_MED' ? false : Math.random() <= hitChance;
+
+      // 6. Cálculo de Daño al Jefe
+      let rawDamage = 0;
+      let isCrit = false;
+      let bossNegatedDamage = false;
+
+      if (isHit) {
+        let actionDamageMult = 1.0;
+        if (actionType === 'TACTICAL_COVER') actionDamageMult = 0.50;
+        if (actionType === 'FACTION_TAUNT') actionDamageMult = 0.60;
+        if (actionType === 'ATK_PRIMARY') actionDamageMult = 1.15;
+        if (actionType === 'TACTICAL_THROWABLE') actionDamageMult = 1.30;
+
+        // Modificadores de pasivas de jefes
+        if (boss.type === 'ALCAIDE_VOSS') {
+          if (chosenWeapon.weaponType === 'MELEE') {
+            actionDamageMult += 0.20;
+          } else {
+            actionDamageMult -= 0.30;
+          }
+        }
+        if (boss.type === 'PRESIDENTE_HARRISON' && boss.currentHp > boss.maxHp * 0.5) {
+          actionDamageMult -= 0.20;
+        }
+
+        isCrit = Math.random() < (0.12 + playerCritBonus);
+        const critMult = isCrit ? 1.65 : 1.0;
+
+        const statRatio = Math.sqrt(player.stats.strength / 15.0);
+        const randomFactor = 0.85 + Math.random() * 0.3;
+        rawDamage = Math.floor(
+          chosenWeapon.damage * statRatio * actionDamageMult * critMult * (1.0 - damagePenalty) * randomFactor
+        );
+
+        // Habilidad de Payaso Pepino (Trip)
+        if (boss.type === 'PAYASO_SINFORD' && actionType !== 'TACTICAL_COVER' && Math.random() < 0.15) {
+          bossNegatedDamage = true;
+        }
+
+        // Habilidad de Dra. Reyes (Toxicidad)
+        if (boss.type === 'QUIMICA_REYES' && actionType !== 'TACTICAL_COVER' && Math.random() < 0.20) {
+          rawDamage = Math.floor(rawDamage * 0.85);
         }
       }
 
-      // Habilidad del Presidente Harrison (Escudo del Servicio Secreto)
-      if (boss.type === 'PRESIDENTE_HARRISON' && boss.currentHp > boss.maxHp * 0.5 && actionType !== 'COVER') {
-        actionDamageMult -= 0.20;
-      }
-
-      const isCrit = Math.random() < (0.10 + playerCritBonus);
-      const critMult = isCrit ? 1.5 : 1.0;
-
-      let rawDamage = Math.floor(
-        bestWeapon.damage * (1 + player.stats.strength / 20) * (0.9 + Math.random() * 0.3) * actionDamageMult * critMult
-      );
-
-      // Evaluación de la Habilidad Especial de Payaso Pepino (Trip / Miss)
-      let isTrippedByClown = false;
-      if (boss.type === 'PAYASO_SINFORD' && actionType !== 'COVER' && Math.random() < 0.20) {
-        isTrippedByClown = true;
-        rawDamage = 0;
-      }
-
-      // Evaluación de Habilidad de Dra. Reyes (Toxicidad)
-      if (boss.type === 'QUIMICA_REYES' && actionType !== 'COVER' && Math.random() < 0.25) {
-        rawDamage = Math.floor(rawDamage * 0.85);
-      }
-
-      const damageDealt = Math.max(rawDamage, isTrippedByClown ? 0 : 30);
+      const damageDealt = isHit && !bossNegatedDamage ? Math.max(rawDamage, 20) : 0;
       const newBossHp = Math.max(0, boss.currentHp - damageDealt);
       const isDefeated = newBossHp <= 0;
 
-      // Actualizar vida del Boss
+      // Actualizar vida del Boss en DB
       await tx.worldBoss.update({
         where: { id: boss.id },
         data: {
@@ -435,9 +550,8 @@ export class BossService {
         },
       });
 
-      // Bonus de daño asignado para la Facción con Taunt
-      const effectiveLogDamage = actionType === 'TAUNT' ? Math.floor(damageDealt * 1.25) : damageDealt;
-
+      // Registro de daño acumulado
+      const effectiveLogDamage = actionType === 'FACTION_TAUNT' ? Math.floor(damageDealt * 1.25) : damageDealt;
       const existingLog = await tx.worldBossDamage.findUnique({
         where: { bossId_playerId: { bossId: boss.id, playerId } },
       });
@@ -463,54 +577,110 @@ export class BossService {
         });
       }
 
-      // Calcular contraataque del Boss
-      let baseCounter = Math.floor((10 + Math.random() * 10) * phaseCounterMult);
-      if (boss.type === 'GENERAL_VANCE' && actionType !== 'COVER') {
+      // 7. Contraataque del Boss (Distribuido a las 6 Partes Corporales)
+      let baseCounter = Math.floor((12 + Math.random() * 12) * phaseCounterMult);
+      if (boss.type === 'GENERAL_VANCE' && actionType !== 'TACTICAL_COVER') {
         baseCounter += 10;
       }
 
-      // Si usó Cobertura Táctica, reduce el contraataque un 50%
-      if (actionType === 'COVER') {
-        baseCounter = Math.floor(baseCounter * 0.5);
+      // Reducción por Cobertura Táctica
+      if (actionType === 'TACTICAL_COVER') {
+        baseCounter = Math.floor(baseCounter * 0.40);
       }
 
+      // Selección de Parte Corporal Objetivo del Jugador (Ponderada)
+      const partRoll = Math.random();
+      let targetPartKey: 'headHp' | 'torsoHp' | 'leftArmHp' | 'rightArmHp' | 'leftLegHp' | 'rightLegHp' = 'torsoHp';
+      let targetPartName = '🫀 Torso';
+      let partMultiplier = 1.0;
+
+      if (partRoll < 0.40) {
+        targetPartKey = 'torsoHp';
+        targetPartName = '🫀 Torso';
+        partMultiplier = 1.0;
+      } else if (partRoll < 0.55) {
+        targetPartKey = 'headHp';
+        targetPartName = '🧠 Cabeza';
+        partMultiplier = 1.3;
+      } else if (partRoll < 0.68) {
+        targetPartKey = 'leftArmHp';
+        targetPartName = '💪 Brazo Izquierdo';
+        partMultiplier = 0.8;
+      } else if (partRoll < 0.80) {
+        targetPartKey = 'rightArmHp';
+        targetPartName = '💪 Brazo Derecho';
+        partMultiplier = 0.8;
+      } else if (partRoll < 0.90) {
+        targetPartKey = 'leftLegHp';
+        targetPartName = '🦵 Pierna Izquierda';
+        partMultiplier = 0.8;
+      } else {
+        targetPartKey = 'rightLegHp';
+        targetPartName = '🦵 Pierna Derecha';
+        partMultiplier = 0.8;
+      }
+
+      // Si está en cobertura, desviar impactos críticos de cabeza/torso
+      if (actionType === 'TACTICAL_COVER' && (targetPartKey === 'headHp' || targetPartKey === 'torsoHp')) {
+        targetPartKey = 'leftArmHp';
+        targetPartName = '🛡️ Cobertura (Brazo Izq)';
+        partMultiplier = 0.5;
+      }
+
+      const bodyPartDamage = Math.max(Math.floor(baseCounter * partMultiplier), 4);
+      currentBody[targetPartKey] = Math.max(0, currentBody[targetPartKey] - bodyPartDamage);
+
+      // Efectos adicionales de habilidades de jefes
       let extraEffectNote = '';
-
-      if (isTrippedByClown) {
-        baseCounter += 15;
-        extraEffectNote = '🤡 **¡Te tropezaste con el pastel de Pepino!** Fallaste el ataque y sufriste **15 HP** de auto-daño.';
+      if (bossNegatedDamage) {
+        extraEffectNote = '🤡 **¡Resbalaste con un globo de agua de Pepino y fallaste el golpe!**';
       }
 
-      // Habilidad de Chen El Fileteador (Tajazo Desangrante)
-      if (boss.type === 'CHEN_CARNICERO' && actionType !== 'COVER' && Math.random() < 0.15) {
-        baseCounter += 5;
-        extraEffectNote = '🥩 **¡Chen te asestó un Tajazo Desangrante!** Sufriste +5 HP de sangrado extra.';
+      if (boss.type === 'CHEN_CARNICERO' && actionType !== 'TACTICAL_COVER' && Math.random() < 0.15) {
+        currentBody.torsoHp = Math.max(0, currentBody.torsoHp - 5);
+        extraEffectNote = (extraEffectNote ? extraEffectNote + '\n' : '') + '🥩 **¡Chen te asestó un Tajazo Desangrante!** (+5 HP de sangrado extra al torso).';
       }
 
-      // Habilidad de Capitana Ibarra (Extorsión Policial)
-      if (boss.type === 'CAPITANA_IBARRA' && actionType !== 'COVER' && Math.random() < 0.15 && player.wallet.cash >= 1000n) {
+      if (boss.type === 'CAPITANA_IBARRA' && actionType !== 'TACTICAL_COVER' && Math.random() < 0.15 && player.wallet.cash >= 1000n) {
         await tx.wallet.update({
           where: { playerId },
           data: { cash: player.wallet.cash - 1000n },
         });
-        extraEffectNote = '👮‍♀️ **¡Capitana Ibarra te cobró un "Impuesto de Tránsito"!** Perdiste **$1,000** de efectivo.';
+        extraEffectNote = (extraEffectNote ? extraEffectNote + '\n' : '') + '👮‍♀️ **¡Capitana Ibarra te cobró un "Impuesto de Tránsito"!** Perdiste **$1,000** en efectivo.';
       }
 
-      // Habilidad de Don Carbone (Pagaré Mafioso)
-      if (boss.type === 'DON_CARBONE' && actionType !== 'COVER' && player.wallet.cash >= 500n) {
+      if (boss.type === 'DON_CARBONE' && actionType !== 'TACTICAL_COVER' && player.wallet.cash >= 500n) {
         await tx.wallet.update({
           where: { playerId },
           data: { cash: player.wallet.cash - 500n },
         });
-        extraEffectNote = '🎩 **¡Don Carbone te cobró extorsión mafiosa!** Te sustrajo **$500** en efectivo.';
+        extraEffectNote = (extraEffectNote ? extraEffectNote + '\n' : '') + '🎩 **¡Don Carbone te cobró extorsión mafiosa!** Perdiste **$500** en efectivo.';
       }
 
-      const currentTorso = actionType === 'ITEM' ? player.bodyParts.torsoHp + healedHp : player.bodyParts.torsoHp;
-      const newTorsoHp = Math.max(0, currentTorso - baseCounter);
+      // 8. Verificar Estado de Noqueo / Hospitalización Justa
+      const isKnockedOut = currentBody.torsoHp <= 0 || currentBody.headHp <= 0;
+      let hospitalMinutes = 0;
 
+      if (isKnockedOut) {
+        hospitalMinutes = 5; // Triage corto de 5 minutos
+        const hospitalUntil = new Date(Date.now() + hospitalMinutes * 60 * 1000);
+        await tx.player.update({
+          where: { id: playerId },
+          data: { hospitalUntil },
+        });
+      }
+
+      // Guardar salud corporal actualizada
       await tx.bodyParts.update({
         where: { playerId },
-        data: { torsoHp: newTorsoHp },
+        data: {
+          headHp: currentBody.headHp,
+          torsoHp: currentBody.torsoHp,
+          leftArmHp: currentBody.leftArmHp,
+          rightArmHp: currentBody.rightArmHp,
+          leftLegHp: currentBody.leftLegHp,
+          rightLegHp: currentBody.rightLegHp,
+        },
       });
 
       const quote = this.getRandomBossQuote(boss.type, phaseInfo.phase);
@@ -519,17 +689,140 @@ export class BossService {
         bossName: boss.name,
         bossType: boss.type,
         actionType,
+        weaponName: chosenWeapon.name,
+        isHit,
         damageDealt,
         isCrit,
         remainingBossHp: newBossHp,
+        bossMaxHp: boss.maxHp,
         isDefeated,
         counterDamage: baseCounter,
+        bodyPartStruck: targetPartName,
+        bodyPartDamage,
+        updatedPlayerBody: currentBody,
+        isKnockedOut,
+        hospitalMinutes,
+        energyUsed: energyCost,
+        remainingEnergy,
         phaseTitle: phaseInfo.title,
         phaseEmoji: phaseInfo.emoji,
         healedHp,
         usedMedicalItemName,
         extraEffectNote,
         quote,
+      };
+    });
+  }
+
+  // Curación Rápida con Botiquín desde el Combate o Hospital
+  static async quickMedicalHeal(playerId: string) {
+    return prisma.$transaction(async (tx) => {
+      const player = await tx.player.findUnique({
+        where: { id: playerId },
+        include: { bodyParts: true, inventory: { include: { item: true } } },
+      });
+
+      if (!player || !player.bodyParts) throw new Error('Jugador no encontrado.');
+
+      const medItem = player.inventory.find((i) => i.item.type === 'MEDICAL' && i.quantity > 0);
+      if (!medItem) {
+        throw new Error('💊 No tienes ningún objeto médico en tu inventario.');
+      }
+
+      // Curar 40 HP a Torso y Cabeza, y 25 HP al resto
+      const newTorso = Math.min(100, player.bodyParts.torsoHp + 40);
+      const newHead = Math.min(100, player.bodyParts.headHp + 40);
+      const newLeftArm = Math.min(100, player.bodyParts.leftArmHp + 25);
+      const newRightArm = Math.min(100, player.bodyParts.rightArmHp + 25);
+      const newLeftLeg = Math.min(100, player.bodyParts.leftLegHp + 25);
+      const newRightLeg = Math.min(100, player.bodyParts.rightLegHp + 25);
+
+      await tx.bodyParts.update({
+        where: { playerId },
+        data: {
+          torsoHp: newTorso,
+          headHp: newHead,
+          leftArmHp: newLeftArm,
+          rightArmHp: newRightArm,
+          leftLegHp: newLeftLeg,
+          rightLegHp: newRightLeg,
+        },
+      });
+
+      // Si estaba hospitalizado, darle el alta médica inmediata si torso/cabeza están estabilizados
+      if (player.hospitalUntil && newTorso >= 30 && newHead >= 30) {
+        await tx.player.update({
+          where: { id: playerId },
+          data: { hospitalUntil: null },
+        });
+      }
+
+      // Restar 1 unidad
+      if (medItem.quantity > 1) {
+        await tx.inventoryItem.update({
+          where: { id: medItem.id },
+          data: { quantity: medItem.quantity - 1 },
+        });
+      } else {
+        await tx.inventoryItem.delete({ where: { id: medItem.id } });
+      }
+
+      return {
+        itemName: medItem.item.name,
+        torsoHp: newTorso,
+        headHp: newHead,
+      };
+    });
+  }
+
+  // Recarga Rápida de Energía desde el Combate
+  static async quickEnergyDrink(playerId: string) {
+    return prisma.$transaction(async (tx) => {
+      const player = await tx.player.findUnique({
+        where: { id: playerId },
+        include: { stats: true, inventory: { include: { item: true } } },
+      });
+
+      if (!player || !player.stats) throw new Error('Jugador no encontrado.');
+
+      // Buscar consumible energético (efecto addEnergy)
+      const energyItem = player.inventory.find((i) => {
+        if (i.quantity <= 0) return false;
+        if (!i.item.effect) return false;
+        try {
+          const eff = JSON.parse(i.item.effect);
+          return !!eff.addEnergy;
+        } catch {
+          return false;
+        }
+      });
+
+      if (!energyItem) {
+        throw new Error('🔋 No tienes ningún energizante o consumible de energía en tu inventario.');
+      }
+
+      const eff = JSON.parse(energyItem.item.effect!);
+      const addEnergy = eff.addEnergy || 25;
+      const newEnergy = Math.min(player.stats.energy + addEnergy, player.stats.maxEnergy + 100);
+
+      await tx.stats.update({
+        where: { playerId },
+        data: { energy: newEnergy },
+      });
+
+      if (energyItem.quantity > 1) {
+        await tx.inventoryItem.update({
+          where: { id: energyItem.id },
+          data: { quantity: energyItem.quantity - 1 },
+        });
+      } else {
+        await tx.inventoryItem.delete({ where: { id: energyItem.id } });
+      }
+
+      return {
+        itemName: energyItem.item.name,
+        addEnergy,
+        currentEnergy: newEnergy,
       };
     });
   }
@@ -580,3 +873,4 @@ export class BossService {
     });
   }
 }
+

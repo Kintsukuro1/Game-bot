@@ -10,9 +10,13 @@ import { NPCService } from '../services/npcService.js';
 import { BossService, BOSS_DEFINITIONS, getBossPhase } from '../services/bossService.js';
 import { BlackMarketService } from '../services/blackMarketService.js';
 import { PROFESSIONS } from '../services/professionService.js';
+import { DESTINATIONS } from '../services/travelService.js';
+import { TRACKS } from '../services/racingService.js';
+import { COMPANY_TYPES } from '../services/companyService.js';
 import {
   renderProgressBar,
   renderHealthBar,
+  renderAnatomicalDoll,
   translateItemType,
   translateWeaponType,
   translateSlot,
@@ -122,7 +126,7 @@ export function createGameHubButtons(playerLevel: number = 1) {
       : new ButtonBuilder().setCustomId('locked_secret').setLabel('🔒 Nv. 15').setStyle(ButtonStyle.Secondary).setDisabled(true)
   );
 
-  // Fila 4: Boss Diario (Nv. 1), Raid de Facción (Nv. 10), Mercado Negro (Nv. 5), Profesiones (Nv. 10)
+  // Fila 4: Boss Diario (Nv. 1), Raid de Facción (Nv. 10), Mercado Negro (Nv. 5), Profesiones (Nv. 10), Viajes (Nv. 5)
   const row4 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setCustomId('act_boss_daily').setLabel('Boss Diario (Chen 🥩)').setStyle(ButtonStyle.Danger),
     playerLevel >= 10
@@ -133,10 +137,23 @@ export function createGameHubButtons(playerLevel: number = 1) {
       : new ButtonBuilder().setCustomId('locked_bm').setLabel('🔒 Nv. 5').setStyle(ButtonStyle.Secondary).setDisabled(true),
     playerLevel >= 10
       ? new ButtonBuilder().setCustomId('act_professions').setLabel('Profesión').setEmoji('🎭').setStyle(ButtonStyle.Primary)
-      : new ButtonBuilder().setCustomId('locked_prof').setLabel('🔒 Nv. 10').setStyle(ButtonStyle.Secondary).setDisabled(true)
+      : new ButtonBuilder().setCustomId('locked_prof').setLabel('🔒 Nv. 10').setStyle(ButtonStyle.Secondary).setDisabled(true),
+    playerLevel >= 5
+      ? new ButtonBuilder().setCustomId('act_travel').setLabel('Viajes').setEmoji('✈️').setStyle(ButtonStyle.Primary)
+      : new ButtonBuilder().setCustomId('locked_travel').setLabel('🔒 Nv. 5').setStyle(ButtonStyle.Secondary).setDisabled(true)
   );
 
-  return [row1, row2, row3, row4];
+  // Fila 5: Carreras Clandestinas (Nv. 5), Empresas (Nv. 10)
+  const row5 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    playerLevel >= 5
+      ? new ButtonBuilder().setCustomId('act_racing').setLabel('Carreras').setEmoji('🏎️').setStyle(ButtonStyle.Success)
+      : new ButtonBuilder().setCustomId('locked_racing').setLabel('🔒 Nv. 5').setStyle(ButtonStyle.Secondary).setDisabled(true),
+    playerLevel >= 10
+      ? new ButtonBuilder().setCustomId('act_company').setLabel('Empresa').setEmoji('🏢').setStyle(ButtonStyle.Success)
+      : new ButtonBuilder().setCustomId('locked_company').setLabel('🔒 Nv. 10').setStyle(ButtonStyle.Secondary).setDisabled(true)
+  );
+
+  return [row1, row2, row3, row4, row5];
 }
 
 // Vista del Lugar Secreto Descubierto: El Callejón del Sapo (Nivel 15+)
@@ -164,6 +181,13 @@ export function createProfileViewEmbed(player: any) {
   const createdDate = new Date(player.createdAt).toLocaleDateString('es-ES');
   const rankTitle = PlayerService.getPlayerRankTitle(player.level);
   const maxHp = PlayerService.getMaxHpForLevel(player.level);
+  const addictionLevel = player.addiction?.level || 0;
+  const mastery = player.mastery;
+  const combatLvl = Math.floor((mastery?.combatExp || 0) / 500) + 1;
+  const crimeLvl = Math.floor((mastery?.crimeExp || 0) / 500) + 1;
+  const bizLvl = Math.floor((mastery?.businessExp || 0) / 500) + 1;
+  const facLvl = Math.floor((mastery?.factionExp || 0) / 500) + 1;
+  const perkPoints = mastery?.perkPoints || 0;
 
   return new EmbedBuilder()
     .setColor(0x8b0000)
@@ -184,9 +208,17 @@ export function createProfileViewEmbed(player: any) {
         inline: true,
       },
       {
-        name: '⚡ Vitalidad y Recursos',
-        value: `Energía: **${stats.energy}/${stats.maxEnergy}** ⚡\nNerve: **${stats.nerve}/${stats.maxNerve}** 🧠\nFelicidad: **${stats.happy}/${stats.maxHappy}** 😊`,
+        name: '⚡ Vitalidad & Adicción',
+        value: `Energía: **${stats.energy}/${stats.maxEnergy}** ⚡\nNerve: **${stats.nerve}/${stats.maxNerve}** 🧠\nFelicidad: **${stats.happy}/${stats.maxHappy}** 😊\n💊 Adicción: **${addictionLevel}%**`,
         inline: true,
+      },
+      {
+        name: '🏆 Maestrías de Jugador (Builds)',
+        value:
+          `⚔️ **Combate:** Nivel ${combatLvl} | 🕵️ **Crimen:** Nivel ${crimeLvl}\n` +
+          `💼 **Negocios:** Nivel ${bizLvl} | 🏴 **Facción:** Nivel ${facLvl}\n` +
+          `🎯 Puntos de Perk Disponibles: **${perkPoints} Puntos**`,
+        inline: false,
       },
       {
         name: `🏥 Salud Corporal (HP Máx: ${maxHp} HP)`,
@@ -200,7 +232,7 @@ export function createProfileViewEmbed(player: any) {
         inline: false,
       }
     )
-    .setFooter({ text: 'Pantalla de Perfil General • Torn City Standard' });
+    .setFooter({ text: 'Pantalla de Perfil General • Sinford Underworld' });
 }
 
 // 3. Vista de Guerras y Rankings de Facciones
@@ -765,8 +797,8 @@ export function createBackButtonRow() {
   );
 }
 
-// 19. Vista de Boss Diario (Individual)
-export function createDailyBossViewEmbed(boss: any, playerDamageLog?: any) {
+// 19. Vista de Boss Diario (Consola de Combate Táctico)
+export function createDailyBossViewEmbed(boss: any, playerDamageLog?: any, player?: any) {
   const phaseInfo = getBossPhase(boss.currentHp, boss.maxHp);
   const def = BOSS_DEFINITIONS[boss.type] || {
     abilityName: '⚔️ Habilidad Desconocida',
@@ -776,25 +808,36 @@ export function createDailyBossViewEmbed(boss: any, playerDamageLog?: any) {
   const playerDamage = playerDamageLog ? playerDamageLog.damageDealt : 0;
   const quote = BossService.getRandomBossQuote(boss.type, phaseInfo.phase);
 
-  return new EmbedBuilder()
+  const stats = player?.stats;
+  const energyText = stats ? `⚡ **Energía Disponible:** \`${stats.energy} / ${stats.maxEnergy}⚡\`` : '';
+  const anatomicalDoll = player?.bodyParts ? renderAnatomicalDoll(player.bodyParts) : '';
+
+  const embed = new EmbedBuilder()
     .setColor(phaseInfo.phase === 'DESPERATE' ? 0xff0000 : phaseInfo.phase === 'ENRAGED' ? 0xff5500 : 0xd32f2f)
     .setTitle(`${phaseInfo.emoji} WORLD BOSS DIARIO — ${boss.name}`)
     .setDescription(
       `**Estado del Combate:** ${phaseInfo.title}\n` +
-      `❤️ Salud Colectiva: ${hpBar} (**${boss.currentHp.toLocaleString()} / ${boss.maxHp.toLocaleString()} HP**)\n\n` +
-      `⚡ **Pasiva del Boss:** **${def.abilityName}**\n` +
+      `❤️ **Salud del Jefe:** ${hpBar} (**${boss.currentHp.toLocaleString()} / ${boss.maxHp.toLocaleString()} HP**)\n\n` +
+      `⚡ **Pasiva del Jefe:** **${def.abilityName}**\n` +
       `*${def.abilityDescription}*\n\n` +
       `💬 **Frase del Jefe:**\n> ${quote}\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🫀 **Tu Estado Físico y Recursos:**\n` +
+      `${energyText}\n` +
+      `${anatomicalDoll}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
       `🎯 **Tu Daño Acumulado:** **${playerDamage.toLocaleString()} HP**\n` +
       `• Hito 1 (5k HP): $2,500 + 100 XP ${playerDamage >= 5000 ? '✅' : '🔒'}\n` +
       `• Hito 2 (15k HP): $7,500 + 250 XP ${playerDamage >= 15000 ? '✅' : '🔒'}\n` +
       `• Hito 3 (35k HP Épico): $15,000 + 500 XP ${playerDamage >= 35000 ? '✅' : '🔒'}`
     )
-    .setFooter({ text: 'Usa las Acciones Tácticas abajo para maximizar tu supervivencia' });
+    .setFooter({ text: 'Consola de Combate Táctico • Elige tu arma o táctica abajo' });
+
+  return embed;
 }
 
-// 20. Vista de Boss Semanal (Raid de Facción)
-export function createWeeklyBossViewEmbed(boss: any, damageLogs: any[]) {
+// 20. Vista de Boss Semanal (Raid de Facción Táctico)
+export function createWeeklyBossViewEmbed(boss: any, damageLogs: any[], player?: any) {
   const phaseInfo = getBossPhase(boss.currentHp, boss.maxHp);
   const def = BOSS_DEFINITIONS[boss.type] || {
     abilityName: '⚔️ Habilidad Desconocida',
@@ -803,15 +846,23 @@ export function createWeeklyBossViewEmbed(boss: any, damageLogs: any[]) {
   const hpBar = renderProgressBar(boss.currentHp, boss.maxHp, 12, '🟪', '░');
   const quote = BossService.getRandomBossQuote(boss.type, phaseInfo.phase);
 
+  const stats = player?.stats;
+  const energyText = stats ? `⚡ **Energía Disponible:** \`${stats.energy} / ${stats.maxEnergy}⚡\`` : '';
+  const anatomicalDoll = player?.bodyParts ? renderAnatomicalDoll(player.bodyParts) : '';
+
   const embed = new EmbedBuilder()
     .setColor(phaseInfo.phase === 'DESPERATE' ? 0x9900cc : phaseInfo.phase === 'ENRAGED' ? 0xaa00aa : 0x8e24aa)
     .setTitle(`${phaseInfo.emoji} RAID DE FACCIÓN SEMANAL — ${boss.name}`)
     .setDescription(
       `**Estado de Incursión:** ${phaseInfo.title}\n` +
-      `💜 Salud de la Fortaleza: ${hpBar} (**${boss.currentHp.toLocaleString()} / ${boss.maxHp.toLocaleString()} HP**)\n\n` +
+      `💜 **Salud de la Fortaleza:** ${hpBar} (**${boss.currentHp.toLocaleString()} / ${boss.maxHp.toLocaleString()} HP**)\n\n` +
       `⚡ **Pasiva de Fortaleza:** **${def.abilityName}**\n` +
       `*${def.abilityDescription}*\n\n` +
-      `💬 **Desafío del Jefe:**\n> ${quote}`
+      `💬 **Desafío del Jefe:**\n> ${quote}\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🫀 **Tu Estado Físico y Recursos:**\n` +
+      `${energyText}\n` +
+      `${anatomicalDoll}`
     );
 
   if (!damageLogs || damageLogs.length === 0) {
@@ -832,37 +883,93 @@ export function createWeeklyBossViewEmbed(boss: any, damageLogs: any[]) {
   return embed;
 }
 
-export function createBossActionButtons(category: 'DAILY' | 'WEEKLY_FACTION') {
+export function createBossActionButtons(category: 'DAILY' | 'WEEKLY_FACTION', player?: any) {
+  const inventory = player?.inventory || [];
+  const primaryWep = inventory.find((i: any) => i.isEquipped && i.slot === 'PRIMARY')?.item;
+  const secondaryWep = inventory.find((i: any) => i.isEquipped && i.slot === 'SECONDARY')?.item;
+  const meleeWep = inventory.find((i: any) => i.isEquipped && i.slot === 'MELEE')?.item;
+
+  const medCount = inventory
+    .filter((i: any) => i.item.type === 'MEDICAL' && i.quantity > 0)
+    .reduce((sum: number, i: any) => sum + i.quantity, 0);
+
+  const throwCount = inventory
+    .filter((i: any) => i.item.type === 'WEAPON' && (i.slot === 'TEMPORARY' || i.item.weaponType === 'Debuff' || i.item.weaponType === 'Heavy Artillery') && i.quantity > 0)
+    .reduce((sum: number, i: any) => sum + i.quantity, 0);
+
+  const hasEnergyItems = inventory.some((i: any) => {
+    if (i.quantity <= 0 || !i.item.effect) return false;
+    try {
+      const eff = JSON.parse(i.item.effect);
+      return !!eff.addEnergy;
+    } catch {
+      return false;
+    }
+  });
+
+  const playerEnergy = player?.stats?.energy ?? 100;
+
+  // Fila 1: Selección de Armamento
   const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
-      .setCustomId(`boss_atk_FRONTAL_${category}`)
-      .setLabel('Ataque Frontal (25⚡)')
-      .setEmoji('⚔️')
-      .setStyle(ButtonStyle.Danger),
+      .setCustomId(`boss_act_ATK_PRIMARY_${category}`)
+      .setLabel(primaryWep ? `🔫 ${primaryWep.name.substring(0, 15)} (25⚡)` : '🔫 Primaria (25⚡)')
+      .setStyle(ButtonStyle.Danger)
+      .setDisabled(playerEnergy < 25),
     new ButtonBuilder()
-      .setCustomId(`boss_atk_COVER_${category}`)
-      .setLabel('Cobertura Táctica (30⚡)')
-      .setEmoji('🛡️')
-      .setStyle(ButtonStyle.Primary),
+      .setCustomId(`boss_act_ATK_SECONDARY_${category}`)
+      .setLabel(secondaryWep ? `🎯 ${secondaryWep.name.substring(0, 15)} (15⚡)` : '🎯 Secundaria (15⚡)')
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(playerEnergy < 15),
     new ButtonBuilder()
-      .setCustomId(`boss_atk_ITEM_${category}`)
-      .setLabel('Inyección Médica (20⚡)')
-      .setEmoji('💉')
-      .setStyle(ButtonStyle.Success)
+      .setCustomId(`boss_act_ATK_MELEE_${category}`)
+      .setLabel(meleeWep ? `🗡️ ${meleeWep.name.substring(0, 15)} (15⚡)` : '🗡️ Puños/Melee (15⚡)')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(playerEnergy < 15)
   );
 
-  const row2 = new ActionRowBuilder<ButtonBuilder>();
+  // Fila 2: Tácticas y Recursos de Apoyo
+  const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`boss_act_TACTICAL_COVER_${category}`)
+      .setLabel('🛡️ Cobertura (10⚡)')
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(playerEnergy < 10),
+    new ButtonBuilder()
+      .setCustomId(`boss_act_TACTICAL_MED_${category}`)
+      .setLabel(`💉 Botiquín (${medCount}) (15⚡)`)
+      .setStyle(ButtonStyle.Success)
+      .setDisabled(playerEnergy < 15 || medCount === 0),
+    new ButtonBuilder()
+      .setCustomId(`boss_act_TACTICAL_THROWABLE_${category}`)
+      .setLabel(`💣 Granada (${throwCount}) (20⚡)`)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(playerEnergy < 20 || throwCount === 0)
+  );
+
   if (category === 'WEEKLY_FACTION') {
     row2.addComponents(
       new ButtonBuilder()
-        .setCustomId(`boss_atk_TAUNT_${category}`)
-        .setLabel('Provocar / Taunt (15⚡)')
-        .setEmoji('📢')
+        .setCustomId(`boss_act_FACTION_TAUNT_${category}`)
+        .setLabel('📢 Provocar (15⚡)')
         .setStyle(ButtonStyle.Primary)
+        .setDisabled(playerEnergy < 15)
     );
   }
 
-  row2.addComponents(
+  // Fila 3: Reclamos, Energía Rápida y Retirada
+  const row3 = new ActionRowBuilder<ButtonBuilder>();
+
+  if (playerEnergy < 15 && hasEnergyItems) {
+    row3.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`boss_quick_energy_${category}`)
+        .setLabel('🔋 Tomar Energizante')
+        .setStyle(ButtonStyle.Success)
+    );
+  }
+
+  row3.addComponents(
     new ButtonBuilder()
       .setCustomId(`boss_claim_${category}`)
       .setLabel('Reclamar Hitos')
@@ -870,12 +977,12 @@ export function createBossActionButtons(category: 'DAILY' | 'WEEKLY_FACTION') {
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setCustomId('nav_back_hub')
-      .setLabel('Volver al Hub')
+      .setLabel('Retirada / Hub')
       .setEmoji('🏙️')
       .setStyle(ButtonStyle.Secondary)
   );
 
-  return [row1, row2];
+  return [row1, row2, row3];
 }
 
 // 21. Vista de Mercado Negro (C.26)
@@ -977,4 +1084,252 @@ export function createProfessionsSelectRow(hasProfession: boolean) {
 
   select.addOptions(options);
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
+}
+
+// 23. Vista de Viajes Internacionales
+export function createTravelViewEmbed(player: any, travelState: any) {
+  const embed = new EmbedBuilder()
+    .setColor(0x0288d1)
+    .setTitle('✈️ AEROPUERTO INTERNACIONAL DE SINFORD');
+
+  if (travelState.isTraveling) {
+    const dest = DESTINATIONS.find((d) => d.id === travelState.destination);
+    const destName = dest ? dest.name : travelState.destination;
+    const msLeft = new Date(travelState.arrivesAt).getTime() - Date.now();
+    const minLeft = Math.max(1, Math.ceil(msLeft / (1000 * 60)));
+
+    embed.setDescription(
+      `✈️ **¡Estás a bordo de un vuelo internacional!**\n\n` +
+      `📍 **Destino:** ${destName}\n` +
+      `⏳ **Tiempo restante estimado:** ~${minLeft} minuto(s).\n\n` +
+      `*Relájate con los cacahuates rancios de la aerolínea mientras cruzas el espacio aéreo.*`
+    );
+    embed.setFooter({ text: 'En Vuelo • Los controles de Sinford están bloqueados hasta aterrizar' });
+    return embed;
+  }
+
+  if (travelState.destination !== 'Home') {
+    const dest = DESTINATIONS.find((d) => d.id === travelState.destination);
+    const destName = dest ? dest.name : travelState.destination;
+
+    embed.setDescription(
+      `🛬 **Te encuentras actualmente en:** ${destName}\n\n` +
+      `Estás fuera de Sinford City. Disfruta del aire extranjero o toma el vuelo de regreso a casa cuando estés listo.\n\n` +
+      `💵 **Efectivo en mano:** $${player.wallet.cash.toLocaleString()}`
+    );
+    embed.setFooter({ text: 'Extranjero • Haz clic en Regresar a Sinford para volver' });
+    return embed;
+  }
+
+  // En Casa (Home)
+  const destList = DESTINATIONS.map(
+    (d) => `• **${d.name}**: $${d.cost.toLocaleString()} • ⏱️ ${d.durationMinutes} min de vuelo`
+  ).join('\n');
+
+  embed.setDescription(
+    `Bienvenido a la terminal de vuelos de Sinford.\n\n` +
+    `💵 **Tu Efectivo disponible:** $${player.wallet.cash.toLocaleString()}\n\n` +
+    `🌍 **Destinos Internacionales Disponibles:**\n${destList}\n\n` +
+    `*Selecciona tu destino en el menú desplegable de abajo para comprar tu boleto y despegar.*`
+  );
+  embed.setFooter({ text: 'Agencia de Viajes de Sinford • Sal de la ciudad para expandir tus horizontes' });
+  return embed;
+}
+
+export function createTravelDestinationSelect() {
+  const select = new StringSelectMenuBuilder()
+    .setCustomId('select_travel_destination')
+    .setPlaceholder('✈️ Selecciona un destino internacional para viajar...');
+
+  const options = DESTINATIONS.map((d) =>
+    new StringSelectMenuOptionBuilder()
+      .setLabel(d.name)
+      .setValue(d.id)
+      .setDescription(`Costo: $${d.cost.toLocaleString()} • Vuelo: ${d.durationMinutes} min`)
+  );
+
+  select.addOptions(options);
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
+}
+
+export function createTravelButtons(travelState: any) {
+  const buttons: ButtonBuilder[] = [];
+
+  if (!travelState.isTraveling && travelState.destination !== 'Home') {
+    buttons.push(
+      new ButtonBuilder()
+        .setCustomId('travel_return_home')
+        .setLabel('Regresar a Sinford (Home)')
+        .setEmoji('🏠')
+        .setStyle(ButtonStyle.Primary)
+    );
+  }
+
+  buttons.push(
+    new ButtonBuilder()
+      .setCustomId('nav_back_hub')
+      .setLabel('Volver al Hub')
+      .setEmoji('🏙️')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  return [new ActionRowBuilder<ButtonBuilder>().addComponents(buttons)];
+}
+
+// 24. Vista de Carreras Clandestinas
+export function createRacingViewEmbed(player: any) {
+  const speed = player.stats?.speed || 1.0;
+  const cash = player.wallet?.cash || 0n;
+
+  const trackList = TRACKS.map(
+    (t) => `• 🏁 **${t.name}**: ${t.distanceKm} km • Inscripción: **$${t.entryFee.toLocaleString()}**`
+  ).join('\n');
+
+  return new EmbedBuilder()
+    .setColor(0xd84315)
+    .setTitle('🏎️ PISTAS DE CARRERAS CLANDESTINAS DE SINFORD')
+    .setDescription(
+      `El asfalto está caliente y el olor a neumático quemado inunda las calles.\n\n` +
+      `📊 **Tu Velocidad (Speed):** ${speed.toFixed(2)} pts *(a mayor velocidad, menor tiempo de vuelta)*\n` +
+      `💵 **Efectivo disponible:** $${cash.toLocaleString()}\n\n` +
+      `🏁 **Pistas Oficiales Disponibles:**\n${trackList}\n\n` +
+      `*Selecciona una pista en el menú de abajo para pagar la inscripción y correr de inmediato.*`
+    )
+    .setFooter({ text: 'Carreras Clandestinas • Conduce rápido o termina en el desguace' });
+}
+
+export function createRacingTrackSelect() {
+  const select = new StringSelectMenuBuilder()
+    .setCustomId('select_racing_track')
+    .setPlaceholder('🏎️ Selecciona una pista para competir...');
+
+  const options = TRACKS.map((t) =>
+    new StringSelectMenuOptionBuilder()
+      .setLabel(t.name)
+      .setValue(t.id)
+      .setDescription(`Distancia: ${t.distanceKm} km • Inscripción: $${t.entryFee.toLocaleString()}`)
+      .setEmoji('🏁')
+  );
+
+  select.addOptions(options);
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
+}
+
+export function createRacingResultEmbed(player: any, result: { trackName: string; timeSeconds: number }) {
+  const timeFormatted = result.timeSeconds.toFixed(2);
+  let commentary = '';
+
+  if (result.timeSeconds < 40) {
+    commentary = '🔥 ¡Volaste sobre el asfalto! Casi dejas el motor en la última curva, pero marcaste un tiempazo.';
+  } else if (result.timeSeconds < 80) {
+    commentary = '💨 Vuelta respetable. Los mecánicos dicen que el auto huele a embrague quemado, pero cruzaste la meta entero.';
+  } else {
+    commentary = '🐢 Tardaste tanto que los espectadores pensaron que te habías parado a comprar empanadas, pero completaste la pista.';
+  }
+
+  return new EmbedBuilder()
+    .setColor(0xff6f00)
+    .setTitle('🏁 RESULTADO DE CARRERA — Cronometraje Oficial')
+    .setDescription(
+      `📍 **Pista:** ${result.trackName}\n` +
+      `⏱️ **Tiempo Registrado:** **${timeFormatted} segundos**\n\n` +
+      `${commentary}\n\n` +
+      `*El resultado ha sido registrado en los archivos del circuito clandestino.*`
+    )
+    .setFooter({ text: 'Cronometraje Oficial • Speedway Sinford' });
+}
+
+export function createRacingButtons() {
+  const retryBtn = new ButtonBuilder()
+    .setCustomId('act_racing')
+    .setLabel('Correr de Nuevo')
+    .setEmoji('🏁')
+    .setStyle(ButtonStyle.Success);
+
+  const backBtn = new ButtonBuilder()
+    .setCustomId('nav_back_hub')
+    .setLabel('Volver al Hub')
+    .setEmoji('🏙️')
+    .setStyle(ButtonStyle.Secondary);
+
+  return [new ActionRowBuilder<ButtonBuilder>().addComponents(retryBtn, backBtn)];
+}
+
+// 25. Vista de Empresas Privadas
+export function createCompanyViewEmbed(player: any, company: any) {
+  const embed = new EmbedBuilder()
+    .setColor(0x1b5e20)
+    .setTitle('🏢 REGISTRO DE EMPRESAS PRIVADAS DE SINFORD');
+
+  if (company) {
+    const def = COMPANY_TYPES.find((c) => c.type === company.type);
+    const empCount = company.employees?.length || 0;
+    const dailyRev = def ? def.dailyRevenue : 0;
+
+    embed.setDescription(
+      `**Nombre Comercial:** 🏢 **${company.name}**\n` +
+      `**Giro de Negocio:** ${company.type}\n` +
+      `**Ingresos Base:** $${dailyRev.toLocaleString()} / día *(acumula $${Math.floor(dailyRev / 24).toLocaleString()} cada hora)*\n\n` +
+      `💰 **Ganancias Acumuladas Pendientes:** **$${company.revenue.toLocaleString()}**\n` +
+      `👥 **Plantilla de Empleados:** ${empCount} empleado(s)\n\n` +
+      `*Puedes cobrar las ganancias acumuladas con el botón de abajo o contratar empleados con el comando \`/empresa contratar\`.*`
+    );
+    embed.setFooter({ text: 'Gestión Corporativa • Sinford Commerce & Mafia' });
+    return embed;
+  }
+
+  const typeList = COMPANY_TYPES.map(
+    (c) => `• 🏢 **${c.name}** (${c.type}):\n  💵 Precio: **$${c.price.toLocaleString()}** • 📈 Ingresos: **$${c.dailyRevenue.toLocaleString()}/día**`
+  ).join('\n\n');
+
+  embed.setDescription(
+    `Bienvenido a la Cámara de Comercio Clandestina de Sinford.\n` +
+    `Funda tu propia empresa para generar ingresos pasivos recurrentes cada hora.\n\n` +
+    `💵 **Tu Efectivo disponible:** $${player.wallet.cash.toLocaleString()}\n\n` +
+    `🏢 **Empresas Disponibles para Adquisición:**\n${typeList}\n\n` +
+    `*Selecciona un rubro en el menú desplegable para comprar tu empresa.*`
+  );
+  embed.setFooter({ text: 'Inversión Empresarial • Los negocios legales son la mejor tapadera' });
+  return embed;
+}
+
+export function createCompanyBuySelect() {
+  const select = new StringSelectMenuBuilder()
+    .setCustomId('select_company_buy')
+    .setPlaceholder('🏢 Selecciona un tipo de empresa para fundar...');
+
+  const options = COMPANY_TYPES.map((c) =>
+    new StringSelectMenuOptionBuilder()
+      .setLabel(c.name)
+      .setValue(c.type)
+      .setDescription(`Precio: $${c.price.toLocaleString()} • Ingreso: $${c.dailyRevenue.toLocaleString()}/día`)
+      .setEmoji('🏢')
+  );
+
+  select.addOptions(options);
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
+}
+
+export function createCompanyButtons(hasCompany: boolean) {
+  const buttons: ButtonBuilder[] = [];
+
+  if (hasCompany) {
+    buttons.push(
+      new ButtonBuilder()
+        .setCustomId('company_collect_revenue')
+        .setLabel('Cobrar Ganancias')
+        .setEmoji('💰')
+        .setStyle(ButtonStyle.Success)
+    );
+  }
+
+  buttons.push(
+    new ButtonBuilder()
+      .setCustomId('nav_back_hub')
+      .setLabel('Volver al Hub')
+      .setEmoji('🏙️')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  return [new ActionRowBuilder<ButtonBuilder>().addComponents(buttons)];
 }

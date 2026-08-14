@@ -6,6 +6,9 @@ import { empezarCommand } from './commands/general/empezar.js';
 import { gameCommand } from './commands/general/game.js';
 import { atacarCommand } from './commands/general/atacar.js';
 import { adminCommand } from './commands/general/admin.js';
+import { profileCommand } from './commands/general/profile.js';
+import { empresaCommand } from './commands/general/empresa.js';
+import { dueloCommand } from './commands/general/duelo.js';
 
 dotenv.config();
 
@@ -34,6 +37,9 @@ client.once(Events.ClientReady, async () => {
         gameCommand.data.toJSON(),
         atacarCommand.data.toJSON(),
         adminCommand.data.toJSON(),
+        profileCommand.data.toJSON(),
+        empresaCommand.data.toJSON(),
+        dueloCommand.data.toJSON(),
       ];
 
       console.log(`🔄 [Global Sync] Sincronizando ${commandList.length} comandos Slash globales...`);

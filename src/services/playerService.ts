@@ -1,4 +1,5 @@
 import { prisma } from '../db/prisma.js';
+import { AchievementService } from './achievementService.js';
 
 export class PlayerService {
   static async getPlayerByDiscordId(discordId: string, guildId: string = 'GLOBAL') {
@@ -13,6 +14,8 @@ export class PlayerService {
         wallet: true,
         stats: true,
         bodyParts: true,
+        mastery: true,
+        addiction: true,
         inventory: {
           include: { item: true },
         },
@@ -24,7 +27,7 @@ export class PlayerService {
     const existing = await this.getPlayerByDiscordId(discordId, guildId);
     if (existing) return existing;
 
-    return prisma.player.create({
+    const newPlayer = await prisma.player.create({
       data: {
         guildId,
         discordId,
@@ -64,9 +67,17 @@ export class PlayerService {
         wallet: true,
         stats: true,
         bodyParts: true,
+        mastery: true,
+        addiction: true,
         inventory: { include: { item: true } },
       },
     });
+
+    try {
+      await AchievementService.checkAndUnlock(newPlayer.id);
+    } catch {}
+
+    return newPlayer;
   }
 
   // Cálculo de Experiencia requerida por Nivel: 100 * (Level ^ 2)

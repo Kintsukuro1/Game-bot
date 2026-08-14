@@ -160,4 +160,63 @@ export class InvestmentService {
       return { playerStock, totalCost };
     });
   }
+
+  /**
+   * Cobro de Dividendos Semanales por Bloque de 10,000 Acciones
+   */
+  static async claimWeeklyStockDividend(playerId: string, symbol: string) {
+    return prisma.$transaction(async (tx) => {
+      const playerStock = await tx.playerStock.findUnique({
+        where: { playerId_symbol: { playerId, symbol } },
+      });
+
+      if (!playerStock || playerStock.shares < 10000) {
+        throw new Error(`📊 Requiere mantener un bloque de al menos 10,000 acciones de **${symbol}** para recibir dividendos.`);
+      }
+
+      // Verificar cooldown de dividendo de 7 días
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const recentDividend = await tx.cooldown.findFirst({
+        where: {
+          playerId,
+          type: `STOCK_DIVIDEND_${symbol}`,
+          createdAt: { gte: sevenDaysAgo },
+        },
+      });
+
+      if (recentDividend) {
+        const remainingDays = Math.ceil((recentDividend.expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        throw new Error(`⏳ Ya cobraste el dividendo de **${symbol}** esta semana. Vuelve en **${remainingDays} días**.`);
+      }
+
+      let rewardMsg = '';
+      if (symbol === 'TNC') {
+        await tx.wallet.update({
+          where: { playerId },
+          data: { cash: { increment: 50000n } },
+        });
+        rewardMsg = '💵 ¡Recibiste un dividendo bancario pasivo de **$50,000 en efectivo**!';
+      } else if (symbol === 'MED') {
+        rewardMsg = '📦 ¡Recibiste un dividendo de **5x Botiquines Médicos** entregados a tu inventario!';
+      } else if (symbol === 'OIL') {
+        await tx.stats.update({
+          where: { playerId },
+          data: { energy: { increment: 100 } },
+        });
+        rewardMsg = '⚡ ¡Recibiste un dividendo energético de **+100⚡ de Energía**!';
+      } else {
+        rewardMsg = '✈️ ¡Recibiste un cupon de **Vuelo Internacional Gratuito**!';
+      }
+
+      await tx.cooldown.create({
+        data: {
+          playerId,
+          type: `STOCK_DIVIDEND_${symbol}`,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+      });
+
+      return { symbol, rewardMsg };
+    });
+  }
 }

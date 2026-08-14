@@ -125,4 +125,18 @@ export class CompanyService {
       return { revenueCollected: revenueToCollect, companyName: company.name };
     });
   }
+
+  // Generación periódica de ingresos por hora (1/24 del ingreso diario)
+  static async accrueHourlyRevenue() {
+    const companies = await prisma.company.findMany();
+    for (const company of companies) {
+      const def = COMPANY_TYPES.find((c) => c.type === company.type);
+      if (!def) continue;
+      const hourlyAmount = BigInt(Math.floor(def.dailyRevenue / 24));
+      await prisma.company.update({
+        where: { id: company.id },
+        data: { revenue: { increment: hourlyAmount } },
+      });
+    }
+  }
 }

@@ -3075,3 +3075,73 @@ No empezar todavía a programar.
     - 💻 **Hacker**: Acceso a la mecánica de Hacking Bancario contra otros jugadores (bajo % de éxito, alto riesgo de condenas de prisión prolongadas, pero botín bancario directo).
     - 📦 **Contrabandista**: Reduce los tiempos de viaje internacional (Fase 13) y aumenta la capacidad de carga de ítems traídos del extranjero.
     - 🎯 **Sicario**: Duplica las recompensas obtenidas al cobrar Bounties y otorga un +10% de probabilidad de asestar golpes críticos en combate PvP.
+
+---
+
+## Anexo D: Avances Recientes e Implementación de Coherencia Sistémica (Agosto 2026)
+
+### 📌 D.1 Esquema de Base de Datos y Modelos Independientes (`prisma/schema.prisma`)
+* **`PlayerMastery`**: Registra la experiencia acumulada por uso en cada una de las 4 ramas (`combatExp`, `crimeExp`, `businessExp`, `factionExp`) y los `perkPoints` disponibles.
+* **`CityDistrict`**: Controla el dominio de los 4 distritos urbanos (`DOCKS`, `FINANCIAL`, `INDUSTRIAL`, `RED_LIGHT`), la facción dominante y los puntos de dominio acumulados.
+* **`PlayerAddiction`**: Rastrea el nivel de adicción a sustancias (0–100) y la fecha de última sobredosis.
+
+---
+
+### 🏋️ D.2 Servicio de Maestría Orgánica por Uso (`src/services/masteryService.ts`)
+* **Mecánica**: El uso orgánico otorga experiencia a la rama correspondiente. Entrenar en el Gimnasio da experiencia de Combate (`combatExp`).
+* **Puntos de Perk**: Cada 500 EXP acumulados en cualquier rama otorgan 1 Punto de Perk pasivo para invertir en bonificaciones.
+
+---
+
+### 🛡️ D.3 Reglas Anti-Farm y Anti-Exploit (`src/services/combatService.ts`)
+* **Límite de Mug (24h)**: Restricción transaccional que impide realizar más de 2 asaltos exitosos (`MUG`) a la misma víctima dentro de un lapso de 24 horas.
+* **Atención Anti-Farm de XP**: Atacar al mismo jugador objetivo en menos de 60 minutos otorga **0 XP** (anulación atómica de ganancia de experiencia).
+* **Maestría en PvP**: Cada combate victorioso otorga +25 EXP de Maestría de Combate.
+
+---
+
+### 🌆 D.4 Control de 4 Distritos Urbanos (`src/services/districtService.ts`)
+* **Distritos y Perks**:
+  1. 🚢 **Docks / Zona Portuaria**: -15% en costos de vuelos internacionales y contrabando.
+  2. 🏦 **Centro Financiero**: 3% de impuesto sobre los depósitos bancarios de la ciudad dirigidos a la tesorería de la facción.
+  3. 🏭 **Distrito Industrial**: +10% de daño en guerras y descuento en armas pesadas.
+  4. 🍷 **Barrio Rojo / Mercado Negro**: 5% de comisión sobre todas las transacciones del Mercado Negro.
+* **Dominio**: Acumulación de Puntos de Dominio por facción. El mayor acumulador reclama el control del distrito.
+
+---
+
+### 💊 D.5 Adicción a Drogas y Desintoxicación en Suiza (`src/services/drugAndBoosterService.ts`)
+* **Adicción**: Consumir sustancias (Xanax, Ecstasy, Cannabis) suma +15% de adicción.
+* **Sobredosis (5%)**: Envia al jugador al hospital por 60 minutos y vacía la energía y felicidad a 0.
+* **Clínica Suiza**: Método `detoxifyInSwitzerland` permite pagar \$25,000 en efectivo para limpiar la adicción al 0%.
+
+---
+
+### 📊 D.6 Paquetes Dividendos de Acciones (`src/services/investmentService.ts`)
+* **Mecánica de Bloque**: Mantener 10,000 acciones de una empresa permite cobrar un dividendo semanal pasivo:
+  * **TNC** (Torn National Bank): \$50,000 en efectivo.
+  * **MED** (PharmaCorp Meds): 5x Botiquines Médicos.
+  * **OIL** (Underworld Energy): +100⚡ de Energía.
+  * **SYS** (Sinford Systems): Cupón de Vuelo Internacional Gratuito.
+* **Cooldown**: Verificación atómica de 7 días entre cobros por símbolo de acción.
+
+---
+
+### 🎨 D.7 Integración Visual de UI y PlayerService (`src/ui/embeds.ts` & `src/services/playerService.ts`)
+* **Consultas Relacionadas en `playerService.ts`**: Se integraron `mastery: true` y `addiction: true` en los métodos de consulta y registro para cargar siempre el estado de maestría y adicción del jugador.
+* **Muestra Visual en Embed de Perfil (`src/ui/embeds.ts`)**:
+  * **💊 Nivel de Adicción**: Despliegue en porcentaje `addictionLevel%`.
+  * **🏆 Maestrías de Jugador (Builds)**: Muestra explícita de niveles individuales por rama (Combate, Crimen, Negocios, Facción) y cantidad de Puntos de Perk pasivos disponibles.
+
+---
+
+## 🔍 Evaluación Preventiva de Errores y Casos de Borde (Pre-Flight Review)
+
+Se evaluaron y blindaron preventivamente los siguientes 4 escenarios de falla antes de su ocurrencia:
+
+| Escenario de Riesgo | Riesgo Potencial | Solución y Blindaje Aplicado |
+| :--- | :--- | :--- |
+| **1. Bucle de Energía por Sobredosis** | Que un jugador conserve energía acumulada al colapsar por sobredosis de drogas. | En `drugAndBoosterService.ts` se resetean atómicamente `energy: 0` y `happy: 0` junto a la hospitalización. |
+| **2. Farm de Dinero con Cuentas Alts via Mug** | Que un jugador cree cuentas alts para asaltarlas indefinidamente. | Se implementó la verificación previa en la tabla `Transaction`, impidiendo más de 2 Mugs exitosos por día a la misma víctima. |
+| **3. Reclamación Infinita de Dividendos en Bolsa** | Que un jugador reclame dividendos de acciones múltiples veces seguidas. | Se implementó el registro en la tabla `Cooldown` (`STOCK_DIVIDEND_${symbol}`) con duración de 7 días exactos. |
+| **4. Inflatrón de XP por PvP Repetido** | Farmear XP atacando sin parar a un usuario novato o AFK. | Se valida la tabla `Cooldown` (`ATTACK_${defenderId}`). Si atacó en la última hora, `xpGain` se fuerza a 0. |

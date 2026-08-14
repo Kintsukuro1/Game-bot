@@ -1,4 +1,5 @@
 import { prisma } from '../db/prisma.js';
+import { MasteryService } from './masteryService.js';
 
 export interface GymInfo {
   tier: number;
@@ -114,6 +115,9 @@ export class GymService {
         where: { id: playerId },
         data: { gymExp: newGymExp },
       });
+
+      // Otorgar Experiencia de Maestría de Combate
+      await MasteryService.addMasteryExp(playerId, 'combat', totalEnergyCost * 5);
 
       return {
         statName,

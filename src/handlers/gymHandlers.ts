@@ -2,6 +2,7 @@ import { ButtonInteraction, StringSelectMenuInteraction } from 'discord.js';
 import { PlayerService } from '../services/playerService.js';
 import { GymService } from '../services/gymService.js';
 import { MissionService } from '../services/missionService.js';
+import { AchievementService } from '../services/achievementService.js';
 import { NPCService } from '../services/npcService.js';
 import { createGymViewEmbed, createGymButtons } from '../ui/embeds.js';
 import { appendActionLog } from '../ui/visualComponents.js';
@@ -38,12 +39,20 @@ export async function handleGymTrain(
     const result = await GymService.trainStat(player.id, statName, 1);
     await MissionService.progressMission(player.id, 'TRAINING', 1);
 
+    let achMsg = '';
+    try {
+      const unlockedAchs = await AchievementService.checkAndUnlock(player.id);
+      for (const ach of unlockedAchs) {
+        achMsg += `\n🏆 **¡Logro desbloqueado: ${ach.title}!** ${ach.description} (+$${ach.rewardCash.toLocaleString()} recompensa)`;
+      }
+    } catch {}
+
     const updated = await PlayerService.getPlayerByDiscordId(interaction.user.id, guildId);
     const embed = createGymViewEmbed(updated);
     const gymButtons = createGymButtons();
     const reaction = NPCService.getReaction('tony', 'success');
 
-    const msg = `🏋️ **¡Entrenamiento exitoso en ${result.gymName}!** Aumentaste **+${result.gain.toFixed(3)}** de **${result.statName.toUpperCase()}**.`;
+    const msg = `🏋️ **¡Entrenamiento exitoso en ${result.gymName}!** Aumentaste **+${result.gain.toFixed(3)}** de **${result.statName.toUpperCase()}**.\n${achMsg}`.trim();
     const newContent = appendActionLog(interaction.message?.content, [msg, reaction], 5);
 
     await interaction.update({

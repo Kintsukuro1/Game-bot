@@ -3,6 +3,7 @@ import { CombatService } from '../services/combatService.js';
 import { WarfareService } from '../services/warfareService.js';
 import { BountyService } from '../services/bountyService.js';
 import { MissionService } from '../services/missionService.js';
+import { AchievementService } from '../services/achievementService.js';
 import { createBackButtonRow } from '../ui/embeds.js';
 import { appendActionLog } from '../ui/visualComponents.js';
 import { PlayerWithRelations } from './registry.js';
@@ -32,6 +33,14 @@ export async function handlePostCombatAction(
   const actionEnum = actionMap[actionType];
   const res = await CombatService.resolvePostCombatAction(winnerId, loserId, actionEnum);
   await MissionService.progressMission(winnerId, 'ATTACKS', 1);
+
+  let achBonusStr = '';
+  try {
+    const unlockedAchs = await AchievementService.checkAndUnlock(winnerId);
+    for (const ach of unlockedAchs) {
+      achBonusStr += `\n🏆 **¡Logro desbloqueado: ${ach.title}!** ${ach.description} (+$${ach.rewardCash.toLocaleString()} recompensa)`;
+    }
+  } catch {}
 
   const warRes = await WarfareService.recordWarHit(winnerId, loserId);
   let warBonusStr = '';

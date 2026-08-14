@@ -1,6 +1,7 @@
 import { ButtonInteraction, StringSelectMenuInteraction } from 'discord.js';
 import { InventoryService } from '../services/inventoryService.js';
 import { MissionService } from '../services/missionService.js';
+import { AchievementService } from '../services/achievementService.js';
 import {
   createInventoryViewEmbed,
   createInventoryItemSelectRow,
@@ -60,8 +61,16 @@ export async function handleSelectInvItem(
       ephemeral: true,
     });
   } else {
-    const useMsg = await InventoryService.useItem(player.id, invItemId);
+    let useMsg = await InventoryService.useItem(player.id, invItemId);
     await MissionService.progressMission(player.id, 'ITEMS', 1);
+
+    try {
+      const unlockedAchs = await AchievementService.checkAndUnlock(player.id);
+      for (const ach of unlockedAchs) {
+        useMsg += `\n🏆 **¡Logro desbloqueado: ${ach.title}!** ${ach.description} (+$${ach.rewardCash.toLocaleString()} recompensa)`;
+      }
+    } catch {}
+
     await interaction.reply({ content: useMsg, ephemeral: true });
   }
 }

@@ -1,31 +1,62 @@
-# ⚡ 02_CORE_RULES.md — Reglas Fundamentales y Recursos Base
+# ⚡ 02_CORE_RULES.md — Reglas Fundamentales del Juego
 
-## 1. Recursos Vitales Iniciales
-| Recurso | Icono | Máximo Inicial | Regeneración | Propósito |
+## 1. Recursos Base y Regeneración
+
+| Recurso | Icono | Máximo Inicial | Regeneración Base | Propósito Principal |
 | :--- | :---: | :---: | :--- | :--- |
-| **Energía** | ⚡ | 100 | +5 cada 5 min | Combate PvP/NPC, entrenamiento en gimnasio |
-| **Nerve** | 🧠 | 100 | +1 cada 5 min | Ejecutar crímenes e ilegalidades |
-| **Happiness** | 😊 | 100 | Vía consumibles/casas | Multiplicador de ganancias en el Gimnasio |
-| **Dinero** | 💰 | $100 | Vía crímenes/trabajo | Economía principal (efectivo y banco) |
-| **XP / Nivel** | ⭐ | Dinámico | Vía acciones exitosas | Desbloqueo de zonas y sistemas |
+| **Energía** | ⚡ | 100 | +5 cada 5 min | Combate PvP/NPC, entrenamiento en Gimnasio |
+| **Nerve** | 🧠 | 100 | +1 cada 5 min | Ejecución de crímenes e ilegalidades |
+| **Happiness** | 😊 | 100 | Vía propiedades y consumibles | Multiplicador de efectividad en entrenamiento |
+| **Dinero (Cash)** | 💰 | \$500 | Vía crímenes, trabajo, empresas | Transacciones en mano y comercio |
+| **Dinero (Bank)** | 🏦 | \$0 | Interés compuesto | Almacenamiento seguro contra robos PvP |
 
-## 2. Sistema de Vida Corporal (6 Partes)
-En lugar de una única barra de vida genérica, el jugador tiene vida distribuida por zona corporal (100 HP base cada una):
-- 🧠 **Cabeza (100 HP)**: Daño crítico puede causar coma/hospitalización inmediata o penalización a percepción.
-- 🫀 **Torso (100 HP)**: Zona de supervivencia principal. Si llega a 0 HP, el personaje cae inconsciente.
-- 💪 **Brazo Izquierdo (100 HP)**: Afecta defensa con escudo o precisión de armas secundarias.
-- 💪 **Brazo Derecho (100 HP)**: Afecta daño y velocidad con arma principal. A 0 HP no se puede usar el arma derecha.
-- 🦵 **Pierna Izquierda (100 HP)** / 🦵 **Pierna Derecha (100 HP)**: Afectan movilidad y evasión. A 0 HP, la evasión cae drásticamente.
+---
 
-## 3. Estadísticas de Combate (Battle Stats)
-- **Fuerza (Strength):** Incrementa el daño base infringido por ataque.
-- **Defensa (Defense):** Reduce el daño recibido al encajar un golpe.
-- **Velocidad (Speed):** Aumenta la probabilidad de acertar el golpe (*Hit rate*).
-- **Destreza (Dexterity):** Aumenta la probabilidad de esquivar ataques enemigos (*Evasion rate*).
+## 2. Sistema de Combate Corporal (6 Partes)
 
-## 4. Subida de Nivel: XP + Requisitos
-Llegar al XP máximo necesario **no sube de nivel automáticamente**. Desbloquea la prueba de nivel:
+El combate calcula el daño de forma localizada sobre 6 partes corporales independientes (100 HP cada una):
+
 ```text
-[ XP Necesario Alcanzado ] ➔ [ Cumplir Requisitos (ej: 2 victorias PvP, 1 crimen) ] ➔ [ Subida de Nivel ]
+               [ 🧠 Cabeza (100 HP) ]
+                         │
+     ┌───────────────────┼───────────────────┐
+     │                   │                   │
+[ 💪 Brazo Izq ]   [ 🫀 Torso (100 HP) ]   [ 💪 Brazo Der ]
+  (100 HP)               │                     (100 HP)
+             ┌───────────┴───────────┐
+             │                       │
+     [ 🦵 Pierna Izq ]       [ 🦵 Pierna Der ]
+         (100 HP)                (100 HP)
 ```
-Los requisitos cumplidos antes de alcanzar el XP cuentan retroactivamente.
+
+* **🧠 Cabeza (1.5x Multiplicador de Daño):** Golpe crítico en cabeza provoca incapacitación inmediata y mayor tiempo de hospitalización.
+* **🫀 Torso (1.0x Multiplicador):** Centro vital. Si el HP del torso o la suma total del cuerpo cae a 0, el defensor queda fuera de combate.
+* **💪 Brazos (0.8x Multiplicador):** Sufrir daño reduce la precisión y el daño causado con armas equipadas.
+* **🦵 Piernas (0.8x Multiplicador):** Sufrir daño drásticamente reduce la probabilidad de evasión (*Dexterity*).
+
+---
+
+## 3. Fórmulas de Combate PvP (Estilo Torn)
+
+### 3.1 Probabilidad de Acierto (Hit Rate)
+$$\text{HitChance} = \text{clamp}\left(0.5 \times \frac{\text{AttackerSpeed}}{\max(\text{DefenderDexterity}, 0.1)} \times \frac{\text{WeaponAccuracy}}{50}, 0.1, 0.95\right)$$
+
+### 3.2 Daño Final (Damage Formula)
+$$\text{RawDamage} = \text{WeaponDamage} \times \sqrt{\frac{\text{AttackerStrength}}{\max(\text{DefenderDefense}, 0.1)}} \times \text{PartMultiplier} \times \text{CritMultiplier} \times \text{Random}(0.85, 1.15)$$
+
+---
+
+## 4. Opciones Post-Victoria y Hospitalización Rápida
+
+Cuando un atacante vence en un combate PvP, consume **25⚡ de Energía** y debe elegir 1 de 3 decisiones post-combate:
+
+| Opción | XP Ganada | Efectivo Robado (Mug) | Tiempo de Hospital de la Víctima |
+| :--- | :---: | :---: | :---: |
+| **🚪 LEAVE (Dejar)** | **+100 XP** (Máxima) | \$0 | 15 minutos |
+| **💸 MUG (Asaltar)** | **+40 XP** | **5% a 15% del Cash en mano** | 20 minutos |
+| **🚑 HOSPITALIZE (Hospitalizar)** | **+20 XP** | \$0 | **60 minutos** |
+
+### Reglas de Hospitalización (Tipo Torn):
+1. **Sin Perma-death:** El hospital es un estado temporal que bloquea al jugador de realizar crímenes, entrenar o iniciar ataques PvP.
+2. **Alta Médica Inmediata:** La hospitalización se puede cancelar instantáneamente consumiendo ítems médicos (ej. *Botiquín Rápido*, *Morfina*).
+3. **Protección de Novatos:** Jugadores de nivel menor a 2 no pueden ser atacados ni hospitalizados.

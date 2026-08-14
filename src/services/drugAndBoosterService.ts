@@ -7,8 +7,14 @@ export class DrugAndBoosterService {
       const stats = await tx.stats.findUnique({ where: { playerId } });
       if (!stats) throw new Error('Estadísticas no encontradas.');
 
-      // Probabilidad de Sobredosis (2%)
-      const isOverdose = Math.random() < 0.02;
+      // Acumular nivel de adicción
+      let addiction = await tx.playerAddiction.findUnique({ where: { playerId } });
+      if (!addiction) {
+        addiction = await tx.playerAddiction.create({ data: { playerId, level: 0 } });
+      }
+
+      // Probabilidad de Sobredosis (5% según diseño)
+      const isOverdose = Math.random() < 0.05;
 
       if (isOverdose) {
         // Enviar al hospital por 60 minutos y reducir Happy a 0
@@ -20,6 +26,11 @@ export class DrugAndBoosterService {
           },
         });
 
+        await tx.playerAddiction.update({
+          where: { playerId },
+          data: { lastOverdoseAt: new Date() },
+        });
+
         await tx.stats.update({
           where: { playerId },
           data: { happy: 0, energy: 0 },
@@ -28,13 +39,19 @@ export class DrugAndBoosterService {
         throw new Error('💀 **¡SOBREDOSIS!** Has colapsado y fuiste ingresado de urgencia al hospital por 60 minutos. Tu energía y felicidad cayeron a 0.');
       }
 
+      // Incrementar adicción en +15 puntos
+      await tx.playerAddiction.update({
+        where: { playerId },
+        data: { level: Math.min(100, addiction.level + 15) },
+      });
+
       if (drugId === 'XANAX') {
         const newEnergy = Math.min(1000, stats.energy + 250);
         await tx.stats.update({
           where: { playerId },
           data: { energy: newEnergy },
         });
-        return { drugName: 'Xanax 💊', effectMsg: '¡Ganaste **+250⚡ de Energía** extra!' };
+        return { drugName: 'Xanax 💊', effectMsg: '¡Ganaste **+250⚡ de Energía** extra! (Adicción +15%)' };
       }
 
       if (drugId === 'ECSTASY') {
@@ -43,7 +60,7 @@ export class DrugAndBoosterService {
           where: { playerId },
           data: { happy: newHappy },
         });
-        return { drugName: 'Éxtasis 🍬', effectMsg: '¡Tu Felicidad se ha **DUPLICADO**!' };
+        return { drugName: 'Éxtasis 🍬', effectMsg: '¡Tu Felicidad se ha **DUPLICADO**! (Adicción +15%)' };
       }
 
       if (drugId === 'CANNABIS') {
@@ -52,10 +69,35 @@ export class DrugAndBoosterService {
           where: { playerId },
           data: { nerve: newNerve },
         });
-        return { drugName: 'Cannabis 🌿', effectMsg: '¡Ganaste **+3🧠 de Nerve**!' };
+        return { drugName: 'Cannabis 🌿', effectMsg: '¡Ganaste **+3🧠 de Nerve**! (Adicción +15%)' };
       }
 
       throw new Error('Droga no válida.');
+    });
+  }
+
+  /**
+   * Rehabilitación y Desintoxicación Médica en Suiza ($25,000)
+   */
+  static async detoxifyInSwitzerland(playerId: string) {
+    return prisma.$transaction(async (tx) => {
+      const wallet = await tx.wallet.findUnique({ where: { playerId } });
+      if (!wallet || wallet.cash < 25000n) {
+        throw new Error('💸 Requiere $25,000 en efectivo para realizar el tratamiento de desintoxicación.');
+      }
+
+      await tx.wallet.update({
+        where: { playerId },
+        data: { cash: { decrement: 25000n } },
+      });
+
+      await tx.playerAddiction.upsert({
+        where: { playerId },
+        update: { level: 0 },
+        create: { playerId, level: 0 },
+      });
+
+      return { message: '🏥 **¡TRATAMIENTO EXITOSO!** Tu nivel de adicción se ha limpiado a 0% en la clínica suiza.' };
     });
   }
 

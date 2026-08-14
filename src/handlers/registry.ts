@@ -15,9 +15,20 @@ import { handleActWar } from './warfareHandlers.js';
 import { handlePostCombatAction } from './combatHandlers.js';
 import { handleActBounties } from './bountyHandlers.js';
 import { handleActMissions } from './missionHandlers.js';
-import { handleActBossDaily, handleActBossWeekly, handleBossAttack, handleBossClaimDaily } from './bossHandlers.js';
+import {
+  handleActBossDaily,
+  handleActBossWeekly,
+  handleBossAttack,
+  handleBossClaimDaily,
+  handleBossQuickMedical,
+  handleBossQuickEnergy,
+} from './bossHandlers.js';
 import { handleActBlackMarket, handleBmBuy } from './blackMarketHandlers.js';
 import { handleActProfessions, handleSelectProfession } from './professionHandlers.js';
+import { handleActTravel, handleSelectTravelDestination, handleTravelReturnHome } from './travelHandlers.js';
+import { handleActRacing, handleSelectRacingTrack } from './racingHandlers.js';
+import { handleActCompany, handleSelectCompanyBuy, handleCompanyCollectRevenue } from './companyHandlers.js';
+import { handleDuelAccept, handleDuelDecline } from './duelHandlers.js';
 
 export type PlayerWithRelations = NonNullable<Awaited<ReturnType<typeof PlayerService.getPlayerByDiscordId>>>;
 
@@ -40,6 +51,9 @@ const exactHandlers = new Map<string, HandlerFn>([
   ['select_crime', handleSelectCrime],
   ['select_shop_item', handleSelectShopItem],
   ['select_inv_item', handleSelectInvItem],
+  ['select_travel_destination', handleSelectTravelDestination],
+  ['select_racing_track', handleSelectRacingTrack],
+  ['select_company_buy', handleSelectCompanyBuy],
 
   // Buttons - Hub & Perfil
   ['hub_profile', handleHubProfile],
@@ -47,6 +61,17 @@ const exactHandlers = new Map<string, HandlerFn>([
   ['act_secret_alley', handleActSecretAlley],
   ['act_tx_history', handleActTxHistory],
   ['nav_back_hub', handleNavBackHub],
+
+  // Buttons - Viajes
+  ['act_travel', handleActTravel],
+  ['travel_return_home', handleTravelReturnHome],
+
+  // Buttons - Carreras
+  ['act_racing', handleActRacing],
+
+  // Buttons - Empresas
+  ['act_company', handleActCompany],
+  ['company_collect_revenue', handleCompanyCollectRevenue],
 
   // Buttons - Gimnasio
   ['act_gym', handleActGym],
@@ -102,6 +127,7 @@ const exactHandlers = new Map<string, HandlerFn>([
   ['boss_attack_DAILY', handleBossAttack],
   ['boss_attack_WEEKLY_FACTION', handleBossAttack],
   ['boss_claim_DAILY', handleBossClaimDaily],
+  ['boss_claim_WEEKLY_FACTION', handleBossClaimDaily],
 
   // Buttons - Mercado Negro
   ['act_black_market', handleActBlackMarket],
@@ -123,8 +149,32 @@ const prefixRules: PrefixRule[] = [
     exclude: ['shop_cat_info'],
   },
   {
+    prefix: 'boss_act_',
+    handler: handleBossAttack,
+  },
+  {
     prefix: 'boss_atk_',
     handler: handleBossAttack,
+  },
+  {
+    prefix: 'boss_quick_energy_',
+    handler: handleBossQuickEnergy,
+  },
+  {
+    prefix: 'boss_quick_med_',
+    handler: handleBossQuickMedical,
+  },
+  {
+    prefix: 'boss_claim_',
+    handler: handleBossClaimDaily,
+  },
+  {
+    prefix: 'duel_accept_',
+    handler: handleDuelAccept,
+  },
+  {
+    prefix: 'duel_decline_',
+    handler: handleDuelDecline,
   },
 ];
 

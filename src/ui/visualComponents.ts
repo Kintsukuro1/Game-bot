@@ -72,6 +72,32 @@ export function renderHealthBar(currentHp: number, maxHp: number = 100): string 
   return `${char.repeat(filled)}${'⬛'.repeat(empty)} **${currentHp}/${maxHp} HP**`;
 }
 
+// 3.1 Muñeco Anatómico Compacto (6 Zonas Corporales)
+export function renderAnatomicalDoll(bodyParts?: {
+  headHp: number;
+  torsoHp: number;
+  leftArmHp: number;
+  rightArmHp: number;
+  leftLegHp: number;
+  rightLegHp: number;
+} | null): string {
+  if (!bodyParts) return '🩺 *Estado corporal no disponible*';
+
+  const getStatusEmoji = (hp: number) => {
+    if (hp <= 0) return '💀';
+    if (hp < 30) return '🔴';
+    if (hp < 70) return '🟡';
+    return '🟢';
+  };
+
+  const head = `🧠 **Cabeza:** \`${bodyParts.headHp}/100\` ${getStatusEmoji(bodyParts.headHp)}`;
+  const torso = `🫀 **Torso:** \`${bodyParts.torsoHp}/100\` ${getStatusEmoji(bodyParts.torsoHp)}`;
+  const arms = `💪 **Brazos:** [Izq: \`${bodyParts.leftArmHp}\` ${getStatusEmoji(bodyParts.leftArmHp)} | Der: \`${bodyParts.rightArmHp}\` ${getStatusEmoji(bodyParts.rightArmHp)}]`;
+  const legs = `🦵 **Piernas:** [Izq: \`${bodyParts.leftLegHp}\` ${getStatusEmoji(bodyParts.leftLegHp)} | Der: \`${bodyParts.rightLegHp}\` ${getStatusEmoji(bodyParts.rightLegHp)}]`;
+
+  return `${head}  •  ${torso}\n${arms}\n${legs}`;
+}
+
 // 4. Generador de Paginación Interactiva con Botones
 export function createPaginationRow(currentPage: number, totalPages: number, actionPrefix: string) {
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(

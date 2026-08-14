@@ -1,5 +1,6 @@
 import { ButtonInteraction, StringSelectMenuInteraction } from 'discord.js';
 import { FactionService } from '../services/factionService.js';
+import { AchievementService } from '../services/achievementService.js';
 import { prisma } from '../db/prisma.js';
 import { createFactionViewEmbed, createFactionButtons } from '../ui/embeds.js';
 import { appendActionLog } from '../ui/visualComponents.js';
@@ -32,9 +33,18 @@ export async function handleFactionCreate(
   try {
     const factionName = `Facción de ${player.username}`;
     const faction = await FactionService.createFaction(player.id, factionName, 'Facción creada desde el Hub', guildId);
+
+    let achMsg = '';
+    try {
+      const unlockedAchs = await AchievementService.checkAndUnlock(player.id);
+      for (const ach of unlockedAchs) {
+        achMsg += `\n🏆 **¡Logro desbloqueado: ${ach.title}!** ${ach.description} (+$${ach.rewardCash.toLocaleString()} recompensa)`;
+      }
+    } catch {}
+
     const embed = createFactionViewEmbed(faction);
     const factionBtns = createFactionButtons(true);
-    const msg = `🎉 **¡Facción Creada!** Fundaste la facción **${faction.name}**.`;
+    const msg = `🎉 **¡Facción Creada!** Fundaste la facción **${faction.name}**.\n${achMsg}`.trim();
     const newContent = appendActionLog(interaction.message?.content, [msg], 5);
 
     await interaction.update({

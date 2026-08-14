@@ -31,6 +31,8 @@ model Player {
   auditLogs     AuditLog[]      @relation("TargetPlayer")
   adminLogs     AuditLog[]      @relation("AdminPlayer")
   bossDamages   WorldBossDamage[]
+  mastery       PlayerMastery?
+  addiction     PlayerAddiction?
 
   @@unique([guildId, discordId])
 }
@@ -437,3 +439,49 @@ model BlackMarketEvent {
 
   @@index([guildId, isActive])
 }
+
+model DuelChallenge {
+  id            String   @id @default(uuid())
+  guildId       String   @default("GLOBAL")
+  challengerId  String   // Player.id de quien reta
+  challengedId  String   // Player.id de quien es retado
+  wagerAmount   BigInt
+  status        String   @default("PENDING") // PENDING, ACCEPTED, DECLINED, EXPIRED, CANCELLED
+  createdAt     DateTime @default(now())
+  expiresAt     DateTime
+
+  @@index([challengedId, status])
+}
+
+model PlayerMastery {
+  id           String   @id @default(uuid())
+  playerId     String   @unique
+  player       Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  combatExp    Int      @default(0)
+  crimeExp     Int      @default(0)
+  businessExp  Int      @default(0)
+  factionExp   Int      @default(0)
+  perkPoints   Int      @default(0)
+  updatedAt    DateTime @updatedAt
+}
+
+model CityDistrict {
+  id                   String   @id @default(uuid())
+  guildId              String   @default("GLOBAL")
+  districtId           String   // DOCKS, FINANCIAL, INDUSTRIAL, RED_LIGHT
+  controllingFactionId String?
+  domainPoints         Int      @default(0)
+  updatedAt            DateTime @updatedAt
+
+  @@unique([guildId, districtId])
+}
+
+model PlayerAddiction {
+  id             String    @id @default(uuid())
+  playerId       String    @unique
+  player         Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  level          Int       @default(0)
+  lastOverdoseAt DateTime?
+  updatedAt      DateTime  @updatedAt
+}
+

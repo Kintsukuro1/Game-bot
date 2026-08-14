@@ -1,5 +1,6 @@
 import { prisma } from '../db/prisma.js';
 import { PlayerService } from './playerService.js';
+import { MasteryService } from './masteryService.js';
 
 export interface CombatTurn {
   turnNumber: number;
@@ -219,6 +220,21 @@ export class CombatService {
           break;
         }
         case 'MUG': {
+          // Anti-Farm: Verificar si ya asaltó a esta persona 2 veces en las últimas 24 horas
+          const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+          const recentMugsCount = await tx.transaction.count({
+            where: {
+              playerId: attackerId,
+              source: defenderId,
+              type: 'MUG_REWARD',
+              timestamp: { gte: twentyFourHoursAgo },
+            },
+          });
+
+          if (recentMugsCount >= 2) {
+            throw new Error(`❌ Has alcanzado el límite máximo de 2 asaltos (Mug) diarios a **${defender.username}**.`);
+          }
+
           xpGain = 40;
           hospitalMinutes = 20;
           // Robar entre 5% y 15% del dinero en efectivo del perdedor
@@ -270,11 +286,39 @@ export class CombatService {
         data: { hospitalUntil },
       });
 
-      // Otorgar XP al atacante
-      await tx.player.update({
-        where: { id: attackerId },
-        data: { xp: attacker.xp + xpGain },
+      // Anti-Farm: Verificar si atacó a la misma persona en menos de 1 hora para anular XP
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      const recentAttacksCount = await tx.cooldown.count({
+        where: {
+          playerId: attackerId,
+          type: `ATTACK_${defenderId}`,
+          createdAt: { gte: oneHourAgo },
+        },
       });
+
+      if (recentAttacksCount > 0) {
+        xpGain = 0; // Se anula la XP por farmear al mismo objetivo
+      }
+
+      // Registrar cooldown de ataque
+      await tx.cooldown.create({
+        data: {
+          playerId: attackerId,
+          type: `ATTACK_${defenderId}`,
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+
+      // Otorgar XP al atacante
+      if (xpGain > 0) {
+        await tx.player.update({
+          where: { id: attackerId },
+          data: { xp: attacker.xp + xpGain },
+        });
+      }
+
+      // Otorgar Experiencia de Maestría de Combate (+25 EXP)
+      await MasteryService.addMasteryExp(attackerId, 'combat', 25);
 
       return { resultMessage, xpGain, stolenCash, hospitalMinutes };
     });
