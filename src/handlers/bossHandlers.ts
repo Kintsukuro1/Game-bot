@@ -16,6 +16,11 @@ export async function handleActBossDaily(
   player: PlayerWithRelations,
   guildId: string
 ): Promise<void> {
+  if (player.level < 5) {
+    await interaction.reply({ content: '🔒 El Boss Diario requiere **Nivel 5** o superior.', ephemeral: true });
+    return;
+  }
+
   const boss = await BossService.getOrCreateActiveBoss(guildId, 'DAILY');
   const freshPlayer = await PlayerService.getPlayerByDiscordId(player.discordId, guildId);
   const damageLog = await prisma.worldBossDamage.findUnique({
@@ -35,6 +40,10 @@ export async function handleActBossWeekly(
   player: PlayerWithRelations,
   guildId: string
 ): Promise<void> {
+  if (player.level < 10) {
+    await interaction.reply({ content: '🔒 La Raid de Facción requiere **Nivel 10** o superior.', ephemeral: true });
+    return;
+  }
   const boss = await BossService.getOrCreateActiveBoss(guildId, 'WEEKLY_FACTION');
   const freshPlayer = await PlayerService.getPlayerByDiscordId(player.discordId, guildId);
   const damageLogs = await prisma.worldBossDamage.findMany({

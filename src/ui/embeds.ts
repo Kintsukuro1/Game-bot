@@ -45,11 +45,11 @@ export function createGameHubEmbed(player: any) {
 
   if (level >= 5) {
     unlockedList.push('• **🎓 Universidad & 🏦 Banco:** Cursos pasivos e interés bancario.');
-    unlockedList.push('• **🎒 Inventario & ⚔️ Armería:** Equipamiento y armas de fuego balísticas.');
+    unlockedList.push('• **🎒 Inventario & 🥩 Boss Diario:** Equipamiento y desafíos diarios.');
   }
 
   if (level >= 10) {
-    unlockedList.push('• **🏴 Facción, ⚔️ Guerras & 🎯 Bounties:** Duelos de pandilla y recompensas PvP.');
+    unlockedList.push('• **🏴 Facción, ⚔️ Guerras & 🏴 Raids:** Duelos de pandilla y bosses comunitarios.');
   }
 
   if (level >= 15) {
@@ -126,12 +126,14 @@ export function createGameHubButtons(playerLevel: number = 1) {
       : new ButtonBuilder().setCustomId('locked_secret').setLabel('🔒 Nv. 15').setStyle(ButtonStyle.Secondary).setDisabled(true)
   );
 
-  // Fila 4: Boss Diario (Nv. 1), Raid de Facción (Nv. 10), Mercado Negro (Nv. 5), Profesiones (Nv. 10), Viajes (Nv. 5)
+  // Fila 4: Boss Diario (Nv. 5), Raid de Facción (Nv. 10), Mercado Negro (Nv. 5), Profesiones (Nv. 10), Viajes (Nv. 5)
   const row4 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId('act_boss_daily').setLabel('Boss Diario (Chen 🥩)').setStyle(ButtonStyle.Danger),
+    playerLevel >= 5
+      ? new ButtonBuilder().setCustomId('act_boss_daily').setLabel('Boss Diario (Chen 🥩)').setStyle(ButtonStyle.Danger)
+      : new ButtonBuilder().setCustomId('locked_boss_daily').setLabel('🔒 Nv. 5').setStyle(ButtonStyle.Secondary).setDisabled(true),
     playerLevel >= 10
       ? new ButtonBuilder().setCustomId('act_boss_weekly').setLabel('Raid de Facción (🏴)').setStyle(ButtonStyle.Danger)
-      : new ButtonBuilder().setCustomId('locked_boss_weekly').setLabel('🔒 Raid Nv. 10').setStyle(ButtonStyle.Secondary).setDisabled(true),
+      : new ButtonBuilder().setCustomId('locked_boss_weekly').setLabel('🔒 Nv. 10').setStyle(ButtonStyle.Secondary).setDisabled(true),
     playerLevel >= 5
       ? new ButtonBuilder().setCustomId('act_black_market').setLabel('Mercado Negro').setEmoji('🕵️').setStyle(ButtonStyle.Secondary)
       : new ButtonBuilder().setCustomId('locked_bm').setLabel('🔒 Nv. 5').setStyle(ButtonStyle.Secondary).setDisabled(true),
