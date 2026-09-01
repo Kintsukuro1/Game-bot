@@ -116,7 +116,7 @@ export class MissionService {
           }
 
           if (mission.rewardXp > 0) {
-            await PlayerService.addXp(playerId, mission.rewardXp);
+            await PlayerService.addXp(playerId, mission.rewardXp, tx);
           }
         });
       } else {

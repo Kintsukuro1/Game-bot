@@ -58,6 +58,14 @@ export class PlayerService {
       }
     }
 
+    // Auto-nivelar si el jugador ya acumuló XP suficiente para el siguiente nivel
+    if (player && player.xp >= this.getRequiredXpForNextLevel(player.level)) {
+      const levelUpRes = await this.addXp(player.id, 0);
+      if (levelUpRes?.updated) {
+        player = levelUpRes.updated;
+      }
+    }
+
     return player;
   }
 
@@ -154,8 +162,8 @@ export class PlayerService {
   }
 
   // Otorgar XP y verificar Subida de Nivel con Recompensas y Restauración Total
-  static async addXp(playerId: string, xpGained: number) {
-    const player = await prisma.player.findUnique({
+  static async addXp(playerId: string, xpGained: number, db: any = prisma) {
+    const player = await db.player.findUnique({
       where: { id: playerId },
       include: { wallet: true, stats: true },
     });
@@ -173,7 +181,7 @@ export class PlayerService {
     }
 
     if (!leveledUp) {
-      const updated = await prisma.player.update({
+      const updated = await db.player.update({
         where: { id: playerId },
         data: { xp: newXp },
         include: { wallet: true, stats: true, bodyParts: true, inventory: true },
@@ -193,17 +201,17 @@ export class PlayerService {
     const newMaxNerve = this.getMaxNerveForLevel(newLevel);
     const rankTitle = this.getPlayerRankTitle(newLevel);
 
-    return prisma.$transaction(async (tx) => {
-      // 1. Actualizar Cartera y crear registro contable
-      const balanceBefore = player.wallet?.cash || 0n;
-      const balanceAfter = balanceBefore + cashBonus;
+    // 1. Actualizar Cartera y crear registro contable
+    const balanceBefore = player.wallet?.cash || 0n;
+    const balanceAfter = balanceBefore + cashBonus;
 
-      await tx.wallet.update({
+    if (player.wallet) {
+      await db.wallet.update({
         where: { playerId },
         data: { cash: balanceAfter },
       });
 
-      await tx.transaction.create({
+      await db.transaction.create({
         data: {
           playerId,
           amount: cashBonus,
@@ -214,50 +222,52 @@ export class PlayerService {
           metadata: JSON.stringify({ oldLevel: player.level, newLevel, cashBonus: Number(cashBonus) }),
         },
       });
+    }
 
-      // 2. Restauración Total de Energía, Nerve y Happy
-      await tx.stats.update({
+    // 2. Restauración Total de Energía, Nerve y Happy
+    if (player.stats) {
+      await db.stats.update({
         where: { playerId },
         data: {
-          energy: player.stats?.maxEnergy || 100,
+          energy: player.stats.maxEnergy || 100,
           maxNerve: newMaxNerve,
           nerve: newMaxNerve,
-          happy: player.stats?.maxHappy || 100,
+          happy: player.stats.maxHappy || 100,
         },
       });
+    }
 
-      // 3. Curación completa de extremidades corporales
-      await tx.bodyParts.update({
-        where: { playerId },
-        data: {
-          headHp: 100,
-          torsoHp: 100,
-          leftArmHp: 100,
-          rightArmHp: 100,
-          leftLegHp: 100,
-          rightLegHp: 100,
-        },
-      });
-
-      // 4. Actualizar XP y Nivel en el Jugador
-      const updated = await tx.player.update({
-        where: { id: playerId },
-        data: {
-          xp: newXp,
-          level: newLevel,
-        },
-        include: { wallet: true, stats: true, bodyParts: true, inventory: true },
-      });
-
-      return {
-        updated,
-        leveledUp: true,
-        oldLevel: player.level,
-        newLevel,
-        cashBonus,
-        rankTitle,
-      };
+    // 3. Curación completa de extremidades corporales
+    await db.bodyParts.updateMany({
+      where: { playerId },
+      data: {
+        headHp: 100,
+        torsoHp: 100,
+        leftArmHp: 100,
+        rightArmHp: 100,
+        leftLegHp: 100,
+        rightLegHp: 100,
+      },
     });
+
+    // 4. Actualizar XP y Nivel en el Jugador
+    const updated = await db.player.update({
+      where: { id: playerId },
+      data: {
+        xp: newXp,
+        level: newLevel,
+      },
+      include: { wallet: true, stats: true, bodyParts: true, inventory: true },
+    });
+
+    return {
+      updated,
+      leveledUp: true,
+      oldLevel: player.level,
+      newLevel,
+      cashBonus,
+      rankTitle,
+    };
   }
 
   // Regeneración periódica completa (Energía, Nerve, Happy, Partes Corporales y Hospital/Cárcel)

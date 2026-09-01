@@ -102,7 +102,7 @@ export class GymService {
 
       // Otorgar Experiencia de Maestría de Combate y XP de Cuenta
       await MasteryService.addMasteryExp(playerId, 'combat', totalEnergyCost * 5, tx);
-      await PlayerService.addXp(playerId, totalEnergyCost * 2);
+      await PlayerService.addXp(playerId, totalEnergyCost * 2, tx);
 
       return {
         statName,

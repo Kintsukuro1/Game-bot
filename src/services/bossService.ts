@@ -686,7 +686,7 @@ export class BossService {
 
       const quote = this.getRandomBossQuote(boss.type, phaseInfo.phase);
 
-      await PlayerService.addXp(playerId, 25);
+      await PlayerService.addXp(playerId, 25, tx);
 
       return {
         bossName: boss.name,

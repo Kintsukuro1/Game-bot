@@ -88,7 +88,7 @@ export class CrimeService {
         });
 
         await MasteryService.addMasteryExp(playerId, 'crime', crime.crimeExpReward, tx);
-        await PlayerService.addXp(playerId, crime.crimeExpReward);
+        await PlayerService.addXp(playerId, crime.crimeExpReward, tx);
 
         return {
           success: true,
