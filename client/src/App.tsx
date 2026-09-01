@@ -140,7 +140,7 @@ export function App() {
           className={isActive ? 'text-slate-950' : isLocked ? 'text-slate-500' : colorClass}
         />
         <div className="flex flex-col flex-1 min-w-0">
-          <span className={`font-mono text-xs font-bold truncate ${isLocked ? 'text-slate-400' : ''}`}>
+          <span className={`font-bebas text-sm tracking-wider truncate ${isLocked ? 'text-slate-400' : ''}`}>
             {t(tabId as any) || tabId}
           </span>
         </div>
