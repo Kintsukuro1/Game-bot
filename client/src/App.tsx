@@ -450,14 +450,27 @@ export function App() {
                 ))}
               </div>
 
-              <div className="flex flex-col items-end">
-                <span className="font-mono text-xs font-bold text-slate-100">
-                  {user?.username || 'Cargando...'}
-                </span>
-                <span className="font-mono text-[10px] text-amber-400 font-bold">
-                  {t('level')} {playerData?.level || 1} • ${Number(playerData?.wallet?.cash ?? 0).toLocaleString()}
-                </span>
-              </div>
+              {(() => {
+                const reqXp = 100 * ((playerData?.level || 1) ** 2);
+                const currentXp = playerData?.xp || 0;
+                const xpPercent = Math.min(100, Math.max(0, (currentXp / reqXp) * 100));
+                return (
+                  <div className="flex flex-col items-end">
+                    <span className="font-mono text-xs font-bold text-slate-100">
+                      {user?.username || 'Cargando...'}
+                    </span>
+                    <span className="font-mono text-[10px] text-amber-400 font-bold">
+                      {t('level')} {playerData?.level || 1} • ${Number(playerData?.wallet?.cash ?? 0).toLocaleString()}
+                    </span>
+                    <div className="w-28 sm:w-36 h-1.5 bg-slate-900 rounded-full overflow-hidden mt-0.5 border border-white/10 relative" title={`Experiencia de Cuenta: ${currentXp}/${reqXp} XP (${xpPercent.toFixed(0)}%)`}>
+                      <div className="h-full bg-gradient-to-r from-amber-400 via-emerald-400 to-cyan-400 rounded-full transition-all" style={{ width: `${xpPercent}%` }}></div>
+                    </div>
+                    <span className="font-mono text-[9px] text-slate-400 font-semibold mt-0.5">
+                      ⭐ {currentXp.toLocaleString()} / {reqXp.toLocaleString()} XP ({xpPercent.toFixed(0)}%)
+                    </span>
+                  </div>
+                );
+              })()}
               {user?.avatar ? (
                 <img
                   src={`https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`}

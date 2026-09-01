@@ -277,8 +277,11 @@ export class CombatService {
       });
     }
 
+    const winnerId = attackerWon ? attacker.id : defender.id;
+    await PlayerService.addXp(winnerId, 40);
+
     return {
-      winnerId: attackerWon ? attacker.id : defender.id,
+      winnerId,
       loserId: attackerWon ? defender.id : attacker.id,
       winnerUsername: attackerWon ? attacker.username : defender.username,
       loserUsername: attackerWon ? defender.username : attacker.username,

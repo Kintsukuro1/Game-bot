@@ -1,5 +1,6 @@
 import { prisma } from '../db/prisma.js';
 import { MasteryService } from './masteryService.js';
+import { PlayerService } from './playerService.js';
 import { CrimeDefinition, CRIMES } from '../config/gameData.js';
 export { CrimeDefinition, CRIMES };
 
@@ -87,6 +88,7 @@ export class CrimeService {
         });
 
         await MasteryService.addMasteryExp(playerId, 'crime', crime.crimeExpReward, tx);
+        await PlayerService.addXp(playerId, crime.crimeExpReward);
 
         return {
           success: true,

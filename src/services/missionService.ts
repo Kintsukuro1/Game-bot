@@ -1,4 +1,5 @@
 import { prisma } from '../db/prisma.js';
+import { PlayerService } from './playerService.js';
 
 export interface MissionTemplate {
   title: string;
@@ -115,13 +116,7 @@ export class MissionService {
           }
 
           if (mission.rewardXp > 0) {
-            const player = await tx.player.findUnique({ where: { id: playerId } });
-            if (player) {
-              await tx.player.update({
-                where: { id: playerId },
-                data: { xp: player.xp + mission.rewardXp },
-              });
-            }
+            await PlayerService.addXp(playerId, mission.rewardXp);
           }
         });
       } else {

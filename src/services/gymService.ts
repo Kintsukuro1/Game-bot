@@ -1,5 +1,6 @@
 import { prisma } from '../db/prisma.js';
 import { MasteryService } from './masteryService.js';
+import { PlayerService } from './playerService.js';
 import { GymInfo, GYMS } from '../config/gameData.js';
 export { GymInfo, GYMS };
 
@@ -99,8 +100,9 @@ export class GymService {
         data: { gymExp: newGymExp },
       });
 
-      // Otorgar Experiencia de Maestría de Combate
+      // Otorgar Experiencia de Maestría de Combate y XP de Cuenta
       await MasteryService.addMasteryExp(playerId, 'combat', totalEnergyCost * 5, tx);
+      await PlayerService.addXp(playerId, totalEnergyCost * 2);
 
       return {
         statName,

@@ -1,4 +1,5 @@
 import { prisma } from '../db/prisma.js';
+import { PlayerService } from './playerService.js';
 import { DEFAULT_GUILD_ID } from '../config/constants.js';
 import { InsufficientFundsError } from '../errors/gameErrors.js';
 
@@ -684,6 +685,8 @@ export class BossService {
       });
 
       const quote = this.getRandomBossQuote(boss.type, phaseInfo.phase);
+
+      await PlayerService.addXp(playerId, 25);
 
       return {
         bossName: boss.name,
