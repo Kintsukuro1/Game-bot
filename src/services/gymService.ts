@@ -159,12 +159,17 @@ export class GymService {
         },
       });
 
+      const newGymExp = Math.max(0, player.gymExp - nextGym.requiredExp);
+
       await tx.player.update({
         where: { id: playerId },
-        data: { gymTier: nextTier },
+        data: {
+          gymTier: nextTier,
+          gymExp: newGymExp,
+        },
       });
 
-      return nextGym;
+      return { ...nextGym, gymExp: newGymExp };
     });
   }
 }
