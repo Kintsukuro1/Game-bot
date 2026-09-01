@@ -1,6 +1,5 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { PlayerService } from '../../services/playerService.js';
-import { createProfileViewEmbed } from '../../ui/embeds.js';
 
 export const profileCommand = {
   data: new SlashCommandBuilder()
@@ -17,7 +16,19 @@ export const profileCommand = {
       });
     }
 
-    const embed = createProfileViewEmbed(player);
+    const embed = new EmbedBuilder()
+      .setColor(0x00f0ff)
+      .setTitle(`👤 Perfil de ${player.username}`)
+      .setDescription(
+        `• **Nivel:** ${player.level}\n` +
+        `• **Efectivo:** $${player.wallet?.cash.toLocaleString() || 0}\n` +
+        `• **Banco:** $${player.wallet?.bank.toLocaleString() || 0}\n` +
+        `• **Energía:** ${player.stats?.energy}/${player.stats?.maxEnergy} ⚡\n` +
+        `• **Nerve:** ${player.stats?.nerve}/${player.stats?.maxNerve} 🧠\n\n` +
+        `📱 *Abre la Discord Activity para ver tu estado de salud anatómico y gestionar tu equipamiento.*`
+      )
+      .setFooter({ text: 'Sinford Underworld' });
+
     return interaction.reply({ embeds: [embed], ephemeral: true });
   },
 };

@@ -1,33 +1,33 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { PlayerService } from '../../services/playerService.js';
-import { createGameHubEmbed, createGameHubButtons } from '../../ui/embeds.js';
 
 export const empezarCommand = {
   data: new SlashCommandBuilder()
     .setName('empezar')
-    .setDescription('Comando único de registro e inicio de tu aventura en Sinford Underworld'),
+    .setDescription('Comando de inicio y registro en Sinford Underworld'),
   async execute(interaction: ChatInputCommandInteraction) {
     const discordId = interaction.user.id;
     const username = interaction.user.username;
-    const guildId = interaction.guildId || 'GLOBAL';
 
-    let player = await PlayerService.getPlayerByDiscordId(discordId, guildId);
-    let messagePrefix = '';
+    let player = await PlayerService.getPlayerByDiscordId(discordId);
+    let isNew = false;
 
     if (!player) {
-      player = await PlayerService.registerPlayer(discordId, username, guildId);
-      messagePrefix = `🎉 **¡Registro Completado!** Bienvenido a Sinford, **${username}**. Se han acreditado **$100** de efectivo inicial a tu cuenta en este servidor.\n\n`;
-    } else {
-      messagePrefix = `ℹ️ Ya estás registrado en este servidor de Sinford Underworld. Cargando tu Hub central...\n\n`;
+      player = await PlayerService.registerPlayer(discordId, username);
+      isNew = true;
     }
 
-    const embed = createGameHubEmbed(player);
-    const buttons = createGameHubButtons(player.level);
+    const embed = new EmbedBuilder()
+      .setColor(0x00f0ff)
+      .setTitle(isNew ? '🎉 ¡BIENVENIDO A SINFORD!' : '🏙️ PERFIL SINCRONIZADO')
+      .setDescription(
+        `${isNew ? `Se han acreditado **$100** de efectivo inicial a tu cuenta, **${username}**.\n\n` : `Ya estabas registrado en Sinford Underworld, **${username}**.\n\n`}` +
+        `📱 *Abre la Discord Activity para jugar en vivo desde la aplicación gráfica.*`
+      )
+      .setFooter({ text: 'Sinford Underworld • Discord Activity Application' });
 
     return interaction.reply({
-      content: messagePrefix,
       embeds: [embed],
-      components: buttons as any,
     });
   },
 };

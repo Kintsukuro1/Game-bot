@@ -1,11 +1,10 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, ApplicationIntegrationType, InteractionContextType } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, ApplicationIntegrationType, InteractionContextType, EmbedBuilder } from 'discord.js';
 import { PlayerService } from '../../services/playerService.js';
-import { createGameHubEmbed, createGameHubButtons } from '../../ui/embeds.js';
 
 export const gameCommand = {
   data: new SlashCommandBuilder()
     .setName('game')
-    .setDescription('Abre la interfaz principal del Hub de la Ciudad de Sinford')
+    .setDescription('Abre la interfaz interactiva de la Ciudad de Sinford')
     .setIntegrationTypes(ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall)
     .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM, InteractionContextType.PrivateChannel),
   async execute(interaction: ChatInputCommandInteraction) {
@@ -16,12 +15,18 @@ export const gameCommand = {
       player = await PlayerService.registerPlayer(discordId, interaction.user.username);
     }
 
-    const embed = createGameHubEmbed(player);
-    const buttons = createGameHubButtons(player.level);
+    const embed = new EmbedBuilder()
+      .setColor(0x00f0ff)
+      .setTitle('🏙️ SINFORD UNDERWORLD — ACTIVIDAD WEB')
+      .setDescription(
+        `Bienvenido a **Sinford Underworld**, **${player.username}**.\n\n` +
+        `**Rango:** Nivel ${player.level} | 💰 **Efectivo:** $${player.wallet?.cash.toLocaleString() || 0}\n\n` +
+        `📱 *Abre la Discord Activity desde el botón de la sala para acceder al mapa interactivo y todos los módulos.*`
+      )
+      .setFooter({ text: 'Sinford Underworld • Discord Activity Application' });
 
     return interaction.reply({
       embeds: [embed],
-      components: buttons as any,
     });
   },
 };

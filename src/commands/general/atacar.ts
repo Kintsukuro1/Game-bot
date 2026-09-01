@@ -1,11 +1,10 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { CombatService } from '../../services/combatService.js';
-import { createCombatResultEmbed, createPostCombatActionButtons } from '../../ui/embeds.js';
 
 export const atacarCommand = {
   data: new SlashCommandBuilder()
     .setName('atacar')
-    .setDescription('Inicia un combate PvP atómico contra otro jugador (Consume 25⚡)')
+    .setDescription('Inicia un combate PvP contra otro jugador (Consume 25⚡)')
     .addUserOption((option) =>
       option.setName('usuario').setDescription('El jugador al que deseas atacar').setRequired(true)
     ),
@@ -13,20 +12,21 @@ export const atacarCommand = {
     const targetUser = interaction.options.getUser('usuario', true);
     const attackerDiscordId = interaction.user.id;
     const defenderDiscordId = targetUser.id;
-    const guildId = interaction.guildId || 'GLOBAL';
 
     try {
       await interaction.deferReply();
 
-      // Ejecutar combate PvP aislado por servidor (guildId)
-      const combatResult = await CombatService.executePvPCombat(attackerDiscordId, defenderDiscordId, guildId);
-      const embed = createCombatResultEmbed(combatResult);
-      const postActionButtons = createPostCombatActionButtons(combatResult.winnerId, combatResult.loserId);
+      const result = await CombatService.executePvPCombat(attackerDiscordId, defenderDiscordId);
+      const embed = new EmbedBuilder()
+        .setColor(0xdc143c)
+        .setTitle(`⚔️ COMBATE PvP — GANADOR: ${result.winnerUsername}`)
+        .setDescription(
+          `**Daño total infligido:** ${result.totalDamageDealt} HP\n\n` +
+          `📱 *Para ver el combate en tiempo real y batallas avanzadas, abre la Discord Activity.*`
+        )
+        .setFooter({ text: 'Sinford Underworld Combat Engine' });
 
-      return interaction.editReply({
-        embeds: [embed],
-        components: postActionButtons as any,
-      });
+      return interaction.editReply({ embeds: [embed] });
     } catch (err: any) {
       if (interaction.deferred) {
         return interaction.editReply({ content: `❌ ${err.message}` });
