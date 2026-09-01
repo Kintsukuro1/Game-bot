@@ -1,19 +1,8 @@
 import { prisma } from '../db/prisma.js';
 import { MAX_INVESTMENT_CAP, INVESTMENT_INTEREST_RATE_28_DAYS } from '../config/constants.js';
 import { InsufficientFundsError, InvalidAmountError } from '../errors/gameErrors.js';
-
-export interface StockDefinition {
-  symbol: string;
-  name: string;
-  price: number;
-}
-
-export const INITIAL_STOCKS: StockDefinition[] = [
-  { symbol: 'TNC', name: 'Torn National Bank', price: 150 },
-  { symbol: 'SYS', name: 'Sinford Systems', price: 420 },
-  { symbol: 'MED', name: 'PharmaCorp Meds', price: 890 },
-  { symbol: 'OIL', name: 'Underworld Energy', price: 1250 },
-];
+import { StockDefinition, INITIAL_STOCKS } from '../config/gameData.js';
+export { StockDefinition, INITIAL_STOCKS };
 
 export class InvestmentService {
   // 1. Inversiones Billetera Bancaria a Plazo Fijo Rebalanceadas
@@ -161,6 +150,62 @@ export class InvestmentService {
     });
   }
 
+  // Venta de Acciones (Stock Market)
+  static async sellStockShares(playerId: string, symbol: string, sharesCount: number) {
+    if (sharesCount <= 0) throw new InvalidAmountError('La cantidad de acciones a vender debe ser un valor entero estrictamente mayor a 0.');
+
+    const stock = INITIAL_STOCKS.find((s) => s.symbol === symbol);
+    if (!stock) throw new Error('Acción no encontrada en la bolsa.');
+
+    return prisma.$transaction(async (tx) => {
+      const playerStock = await tx.playerStock.findUnique({
+        where: { playerId_symbol: { playerId, symbol } },
+      });
+
+      if (!playerStock || playerStock.shares < sharesCount) {
+        throw new Error(`No posees suficientes acciones de **${symbol}** para vender (Tienes: ${playerStock?.shares || 0}).`);
+      }
+
+      const totalRevenue = BigInt(stock.price * sharesCount);
+      const wallet = await tx.wallet.findUnique({ where: { playerId } });
+      if (!wallet) throw new Error('Cartera no encontrada.');
+
+      const balanceBefore = wallet.cash;
+      const balanceAfter = wallet.cash + totalRevenue;
+
+      await tx.wallet.update({
+        where: { playerId },
+        data: { cash: { increment: totalRevenue } },
+      });
+
+      const updatedShares = playerStock.shares - sharesCount;
+      if (updatedShares === 0) {
+        await tx.playerStock.delete({
+          where: { playerId_symbol: { playerId, symbol } },
+        });
+      } else {
+        await tx.playerStock.update({
+          where: { playerId_symbol: { playerId, symbol } },
+          data: { shares: updatedShares },
+        });
+      }
+
+      await tx.transaction.create({
+        data: {
+          playerId,
+          amount: totalRevenue,
+          balanceBefore,
+          balanceAfter,
+          type: 'STOCK_SALE',
+          source: 'STOCK_MARKET',
+          metadata: JSON.stringify({ symbol, shares: sharesCount }),
+        },
+      });
+
+      return { totalRevenue, remainingShares: updatedShares };
+    });
+  }
+
   /**
    * Cobro de Dividendos Semanales por Bloque de 10,000 Acciones
    */
@@ -197,7 +242,23 @@ export class InvestmentService {
         });
         rewardMsg = '💵 ¡Recibiste un dividendo bancario pasivo de **$50,000 en efectivo**!';
       } else if (symbol === 'MED') {
-        rewardMsg = '📦 ¡Recibiste un dividendo de **5x Botiquines Médicos** entregados a tu inventario!';
+        const medItem = await tx.item.findFirst({ where: { name: 'First Aid Kit' } });
+        if (medItem) {
+          const existingInv = await tx.inventoryItem.findFirst({
+            where: { playerId, itemId: medItem.id, slot: null },
+          });
+          if (existingInv) {
+            await tx.inventoryItem.update({
+              where: { id: existingInv.id },
+              data: { quantity: existingInv.quantity + 5 },
+            });
+          } else {
+            await tx.inventoryItem.create({
+              data: { playerId, itemId: medItem.id, quantity: 5 },
+            });
+          }
+        }
+        rewardMsg = '📦 ¡Recibiste un dividendo de **5x First Aid Kit** entregados a tu inventario!';
       } else if (symbol === 'OIL') {
         await tx.stats.update({
           where: { playerId },
@@ -205,7 +266,11 @@ export class InvestmentService {
         });
         rewardMsg = '⚡ ¡Recibiste un dividendo energético de **+100⚡ de Energía**!';
       } else {
-        rewardMsg = '✈️ ¡Recibiste un cupon de **Vuelo Internacional Gratuito**!';
+        await tx.wallet.update({
+          where: { playerId },
+          data: { cash: { increment: 25000n } },
+        });
+        rewardMsg = '✈️ ¡Recibiste un bono de transporte de **$25,000** en efectivo!';
       }
 
       await tx.cooldown.create({

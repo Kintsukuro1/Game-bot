@@ -1,6 +1,7 @@
 import { prisma } from '../db/prisma.js';
 import { PlayerService } from './playerService.js';
 import { MasteryService } from './masteryService.js';
+import { COMBAT_ENERGY_COST, NEWBIE_LEVEL_PROTECTION } from '../config/constants.js';
 
 export interface CombatTurn {
   turnNumber: number;
@@ -24,8 +25,8 @@ export interface CombatResult {
 
 export class CombatService {
   // Constantes de combate
-  static ENERGY_COST = 25;
-  static NEWBIE_LEVEL_PROTECTION = 2;
+  static ENERGY_COST = COMBAT_ENERGY_COST;
+  static NEWBIE_LEVEL_PROTECTION = NEWBIE_LEVEL_PROTECTION;
 
   // 1. Validaciones previas al combate
   static async validateCombat(attackerDiscordId: string, defenderDiscordId: string, guildId: string = 'GLOBAL') {
@@ -69,7 +70,7 @@ export class CombatService {
     return { attacker, defender };
   }
 
-  // 2. Motor de combate turno por turno (Fórmulas de Torn Wiki)
+  // 2. Motor de combate turno por turno bidireccional (Fórmulas de Torn Wiki)
   static async executePvPCombat(attackerDiscordId: string, defenderDiscordId: string, guildId: string = 'GLOBAL'): Promise<CombatResult> {
     const { attacker, defender } = await this.validateCombat(attackerDiscordId, defenderDiscordId, guildId);
 
@@ -79,21 +80,38 @@ export class CombatService {
       data: { energy: attacker.stats!.energy - this.ENERGY_COST },
     });
 
-    // Obtener armas equipadas
+    // Obtener armas equipadas del atacante
     const attackerWeapons = attacker.inventory.filter((i) => i.isEquipped && i.item.type === 'WEAPON');
-    const primaryWeapon = attackerWeapons.find((i) => i.slot === 'PRIMARY')?.item;
-    const secondaryWeapon = attackerWeapons.find((i) => i.slot === 'SECONDARY')?.item;
-    const meleeWeapon = attackerWeapons.find((i) => i.slot === 'MELEE')?.item;
+    const attackerWeapon = attackerWeapons.find((i) => i.slot === 'PRIMARY')?.item ||
+      attackerWeapons.find((i) => i.slot === 'SECONDARY')?.item ||
+      attackerWeapons.find((i) => i.slot === 'MELEE')?.item || {
+        name: 'Puños desnudos',
+        damage: 15,
+        accuracy: 50.0,
+        slot: 'MELEE',
+      };
 
-    const activeWeapon = primaryWeapon || secondaryWeapon || meleeWeapon || {
-      name: 'Puños desnudos',
-      damage: 15,
-      accuracy: 50.0,
-      slot: 'MELEE',
-    };
+    // Obtener armas equipadas del defensor
+    const defenderWeapons = defender.inventory.filter((i) => i.isEquipped && i.item.type === 'WEAPON');
+    const defenderWeapon = defenderWeapons.find((i) => i.slot === 'PRIMARY')?.item ||
+      defenderWeapons.find((i) => i.slot === 'SECONDARY')?.item ||
+      defenderWeapons.find((i) => i.slot === 'MELEE')?.item || {
+        name: 'Puños desnudos',
+        damage: 15,
+        accuracy: 50.0,
+        slot: 'MELEE',
+      };
 
+    const attackerBody = { ...attacker.bodyParts! };
     const defenderBody = { ...defender.bodyParts! };
-    let defenderTotalHp = defenderBody.headHp + defenderBody.torsoHp + defenderBody.leftArmHp + defenderBody.rightArmHp + defenderBody.leftLegHp + defenderBody.rightLegHp;
+
+    const calcTotalHp = (body: typeof attackerBody) =>
+      body.headHp + body.torsoHp + body.leftArmHp + body.rightArmHp + body.leftLegHp + body.rightLegHp;
+
+    const attackerInitialHp = calcTotalHp(attackerBody);
+    const defenderInitialHp = calcTotalHp(defenderBody);
+    let attackerTotalHp = attackerInitialHp;
+    let defenderTotalHp = defenderInitialHp;
 
     const turns: CombatTurn[] = [];
     const bodyPartList = ['headHp', 'torsoHp', 'leftArmHp', 'rightArmHp', 'leftLegHp', 'rightLegHp'] as const;
@@ -107,81 +125,157 @@ export class CombatService {
     };
 
     let turnCount = 1;
-    let totalDamageDealt = 0;
+    let totalDamageDealtByAttacker = 0;
 
-    // Simular hasta 10 turnos de combate
-    while (turnCount <= 10 && defenderTotalHp > 0) {
-      const attackerSpeed = attacker.stats!.speed;
-      const defenderDex = defender.stats!.dexterity;
-      const weaponAcc = activeWeapon.accuracy || 50.0;
+    // Simular hasta 10 rondas de combate bidireccional
+    while (turnCount <= 10 && defenderTotalHp > 0 && attackerTotalHp > 0) {
+      // --- FASE A: Golpe del Atacante ---
+      const atkSpeed = attacker.stats!.speed;
+      const defDex = defender.stats!.dexterity;
+      const atkWeaponAcc = attackerWeapon.accuracy || 50.0;
 
-      // Hit chance fórmula: 0.5 * (AttackerSpeed / DefenderDexterity) * (WeaponAccuracy / 50)
-      const hitChance = Math.min(Math.max(0.5 * (attackerSpeed / Math.max(defenderDex, 0.1)) * (weaponAcc / 50), 0.1), 0.95);
-      const isHit = Math.random() <= hitChance;
+      const atkHitChance = Math.min(Math.max(0.5 * (atkSpeed / Math.max(defDex, 0.1)) * (atkWeaponAcc / 50), 0.1), 0.95);
+      const isAtkHit = Math.random() <= atkHitChance;
 
-      if (!isHit) {
+      if (!isAtkHit) {
         turns.push({
           turnNumber: turnCount,
           attackerName: attacker.username,
-          weaponName: activeWeapon.name,
-          bodyPart: 'Ninguna',
+          weaponName: attackerWeapon.name,
+          bodyPart: 'Ninguna (Fallo)',
           isHit: false,
           isCritical: false,
           damage: 0,
           remainingHp: defenderTotalHp,
         });
-        turnCount++;
-        continue;
+      } else {
+        const targetPart = bodyPartList[Math.floor(Math.random() * bodyPartList.length)];
+        const partMultiplier = targetPart === 'headHp' ? 1.5 : targetPart === 'torsoHp' ? 1.0 : 0.8;
+        const statRatio = Math.sqrt(attacker.stats!.strength / Math.max(defender.stats!.defense, 0.1));
+        const isCrit = Math.random() < 0.15;
+        const critMultiplier = isCrit ? 1.75 : 1.0;
+        const randomFactor = 0.85 + Math.random() * 0.3;
+
+        const rawDmg = attackerWeapon.damage * statRatio * partMultiplier * critMultiplier * randomFactor;
+        const finalDmg = Math.max(Math.round(rawDmg), 5);
+
+        defenderBody[targetPart] = Math.max(defenderBody[targetPart] - finalDmg, 0);
+        defenderTotalHp = calcTotalHp(defenderBody);
+        totalDamageDealtByAttacker += finalDmg;
+
+        turns.push({
+          turnNumber: turnCount,
+          attackerName: attacker.username,
+          weaponName: attackerWeapon.name,
+          bodyPart: bodyPartNames[targetPart],
+          isHit: true,
+          isCritical: isCrit,
+          damage: finalDmg,
+          remainingHp: defenderTotalHp,
+        });
       }
 
-      // Selección aleatoria de parte del cuerpo objetivo
-      const targetPart = bodyPartList[Math.floor(Math.random() * bodyPartList.length)];
-      const partMultiplier = targetPart === 'headHp' ? 1.5 : targetPart === 'torsoHp' ? 1.0 : 0.8;
+      // Si el defensor fue noqueado, termina el combate
+      if (defenderTotalHp <= 0) break;
 
-      // Damage fórmula: WeaponDamage * sqrt(AttackerStrength / DefenderDefense) * Multiplier * Random(0.85, 1.15)
-      const attackerStr = attacker.stats!.strength;
-      const defenderDef = defender.stats!.defense;
-      const statRatio = Math.sqrt(attackerStr / Math.max(defenderDef, 0.1));
-      const isCritical = Math.random() < 0.15; // 15% crit chance
-      const critMultiplier = isCritical ? 1.75 : 1.0;
+      // --- FASE B: Contraataque del Defensor ---
+      const defSpeed = defender.stats!.speed;
+      const atkDex = attacker.stats!.dexterity;
+      const defWeaponAcc = defenderWeapon.accuracy || 50.0;
 
-      const randomFactor = 0.85 + Math.random() * 0.3;
-      const rawDamage = activeWeapon.damage * statRatio * partMultiplier * critMultiplier * randomFactor;
-      const finalDamage = Math.max(Math.round(rawDamage), 5);
+      const defHitChance = Math.min(Math.max(0.5 * (defSpeed / Math.max(atkDex, 0.1)) * (defWeaponAcc / 50), 0.1), 0.95);
+      const isDefHit = Math.random() <= defHitChance;
 
-      // Aplicar daño a la zona del cuerpo
-      defenderBody[targetPart] = Math.max(defenderBody[targetPart] - finalDamage, 0);
-      defenderTotalHp = defenderBody.headHp + defenderBody.torsoHp + defenderBody.leftArmHp + defenderBody.rightArmHp + defenderBody.leftLegHp + defenderBody.rightLegHp;
-      totalDamageDealt += finalDamage;
+      if (!isDefHit) {
+        turns.push({
+          turnNumber: turnCount,
+          attackerName: defender.username,
+          weaponName: defenderWeapon.name,
+          bodyPart: 'Ninguna (Fallo)',
+          isHit: false,
+          isCritical: false,
+          damage: 0,
+          remainingHp: attackerTotalHp,
+        });
+      } else {
+        const targetPart = bodyPartList[Math.floor(Math.random() * bodyPartList.length)];
+        const partMultiplier = targetPart === 'headHp' ? 1.5 : targetPart === 'torsoHp' ? 1.0 : 0.8;
+        const statRatio = Math.sqrt(defender.stats!.strength / Math.max(attacker.stats!.defense, 0.1));
+        const isCrit = Math.random() < 0.15;
+        const critMultiplier = isCrit ? 1.75 : 1.0;
+        const randomFactor = 0.85 + Math.random() * 0.3;
 
-      turns.push({
-        turnNumber: turnCount,
-        attackerName: attacker.username,
-        weaponName: activeWeapon.name,
-        bodyPart: bodyPartNames[targetPart],
-        isHit: true,
-        isCritical,
-        damage: finalDamage,
-        remainingHp: defenderTotalHp,
-      });
+        const rawDmg = defenderWeapon.damage * statRatio * partMultiplier * critMultiplier * randomFactor;
+        const finalDmg = Math.max(Math.round(rawDmg), 5);
+
+        attackerBody[targetPart] = Math.max(attackerBody[targetPart] - finalDmg, 0);
+        attackerTotalHp = calcTotalHp(attackerBody);
+
+        turns.push({
+          turnNumber: turnCount,
+          attackerName: defender.username,
+          weaponName: defenderWeapon.name,
+          bodyPart: bodyPartNames[targetPart],
+          isHit: true,
+          isCritical: isCrit,
+          damage: finalDmg,
+          remainingHp: attackerTotalHp,
+        });
+      }
+
+      // Si el atacante fue noqueado, termina el combate
+      if (attackerTotalHp <= 0) break;
 
       turnCount++;
     }
 
-    // Actualizar salud corporal en la base de datos
-    await prisma.bodyParts.update({
-      where: { playerId: defender.id },
-      data: {
-        headHp: defenderBody.headHp,
-        torsoHp: defenderBody.torsoHp,
-        leftArmHp: defenderBody.leftArmHp,
-        rightArmHp: defenderBody.rightArmHp,
-        leftLegHp: defenderBody.leftLegHp,
-        rightLegHp: defenderBody.rightLegHp,
-      },
-    });
+    // Actualizar salud corporal de ambos combatientes en base de datos
+    await prisma.$transaction([
+      prisma.bodyParts.update({
+        where: { playerId: defender.id },
+        data: {
+          headHp: defenderBody.headHp,
+          torsoHp: defenderBody.torsoHp,
+          leftArmHp: defenderBody.leftArmHp,
+          rightArmHp: defenderBody.rightArmHp,
+          leftLegHp: defenderBody.leftLegHp,
+          rightLegHp: defenderBody.rightLegHp,
+        },
+      }),
+      prisma.bodyParts.update({
+        where: { playerId: attacker.id },
+        data: {
+          headHp: attackerBody.headHp,
+          torsoHp: attackerBody.torsoHp,
+          leftArmHp: attackerBody.leftArmHp,
+          rightArmHp: attackerBody.rightArmHp,
+          leftLegHp: attackerBody.leftLegHp,
+          rightLegHp: attackerBody.rightLegHp,
+        },
+      }),
+    ]);
 
-    const attackerWon = defenderTotalHp <= 0 || totalDamageDealt > 50;
+    // Determinación de la victoria
+    let attackerWon: boolean;
+    if (defenderTotalHp <= 0) {
+      attackerWon = true;
+    } else if (attackerTotalHp <= 0) {
+      attackerWon = false;
+    } else {
+      // Comparar porcentaje de vida restante
+      const atkPct = attackerTotalHp / Math.max(attackerInitialHp, 1);
+      const defPct = defenderTotalHp / Math.max(defenderInitialHp, 1);
+      attackerWon = atkPct >= defPct;
+    }
+
+    // Si el atacante perdió (fue noqueado), se le hospitaliza 15 minutos automáticamente
+    if (!attackerWon) {
+      const hospitalUntil = new Date(Date.now() + 15 * 60 * 1000);
+      await prisma.player.update({
+        where: { id: attacker.id },
+        data: { hospitalUntil },
+      });
+    }
 
     return {
       winnerId: attackerWon ? attacker.id : defender.id,
@@ -189,7 +283,7 @@ export class CombatService {
       winnerUsername: attackerWon ? attacker.username : defender.username,
       loserUsername: attackerWon ? defender.username : attacker.username,
       turns,
-      totalDamageDealt,
+      totalDamageDealt: totalDamageDealtByAttacker,
     };
   }
 
@@ -318,7 +412,7 @@ export class CombatService {
       }
 
       // Otorgar Experiencia de Maestría de Combate (+25 EXP)
-      await MasteryService.addMasteryExp(attackerId, 'combat', 25);
+      await MasteryService.addMasteryExp(attackerId, 'combat', 25, tx);
 
       return { resultMessage, xpGain, stolenCash, hospitalMinutes };
     });

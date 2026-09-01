@@ -95,12 +95,12 @@ export class EconomyService {
       }
 
       const receiver = await tx.player.findFirst({
-        where: { discordId: receiverDiscordId, guildId: senderWallet.player.guildId },
+        where: { discordId: receiverDiscordId },
         include: { wallet: true },
       });
 
       if (!receiver || !receiver.wallet) {
-        throw new Error('El jugador destinatario no existe o no se ha registrado en este servidor.');
+        throw new Error('El jugador destinatario no existe o no se ha registrado en el juego.');
       }
 
       if (receiver.id === senderId) {

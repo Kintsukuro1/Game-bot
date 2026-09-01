@@ -14,7 +14,16 @@ export async function handlePostCombatAction(
   _guildId: string
 ): Promise<void> {
   const backRow = createBackButtonRow();
-  const [_, actionType, winnerId, loserId] = interaction.customId.split('_');
+  const match = interaction.customId.match(/^post_combat_(leave|mug|hosp)_(.+?)_(.+)$/);
+  if (!match) {
+    await interaction.reply({
+      content: '❌ Identificador de acción no válido.',
+      ephemeral: true,
+    });
+    return;
+  }
+
+  const [, actionType, winnerId, loserId] = match;
 
   if (player.id !== winnerId) {
     await interaction.reply({
@@ -31,6 +40,11 @@ export async function handlePostCombatAction(
   };
 
   const actionEnum = actionMap[actionType];
+  if (!actionEnum) {
+    await interaction.reply({ content: '❌ Tipo de acción no reconocido.', ephemeral: true });
+    return;
+  }
+
   const res = await CombatService.resolvePostCombatAction(winnerId, loserId, actionEnum);
   await MissionService.progressMission(winnerId, 'ATTACKS', 1);
 

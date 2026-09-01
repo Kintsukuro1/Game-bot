@@ -1,48 +1,6 @@
 import { prisma } from '../db/prisma.js';
-
-export interface CourseDefinition {
-  id: string;
-  name: string;
-  category: string;
-  cost: number;
-  durationHours: number;
-  bonusDescription: string;
-}
-
-export const COURSES: CourseDefinition[] = [
-  {
-    id: 'BIO101',
-    name: 'Introducción a la Biología',
-    category: 'Biology',
-    cost: 500,
-    durationHours: 1,
-    bonusDescription: '+10% curación de botiquines médicos y menor tiempo de hospital.',
-  },
-  {
-    id: 'LAW101',
-    name: 'Derecho Comunitario (Common Law)',
-    category: 'Law',
-    cost: 1000,
-    durationHours: 2,
-    bonusDescription: 'Descuento del 20% en costos de fianza (Bail) y permiso para comprar libertad.',
-  },
-  {
-    id: 'BUS101',
-    name: 'Gestión Comercial (Business Mgmt)',
-    category: 'Business',
-    cost: 1500,
-    durationHours: 3,
-    bonusDescription: '+10% ganancias en salario de trabajo e interés bancario.',
-  },
-  {
-    id: 'COMBAT101',
-    name: 'Tácticas de Combate Urbano',
-    category: 'Combat',
-    cost: 2500,
-    durationHours: 4,
-    bonusDescription: '+5% daño extra con armas de fuego y cuerpo a cuerpo.',
-  },
-];
+import { CourseDefinition, COURSES } from '../config/gameData.js';
+export { CourseDefinition, COURSES };
 
 export class EducationService {
   static async enrollCourse(playerId: string, courseId: string) {

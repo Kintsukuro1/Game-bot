@@ -1,17 +1,6 @@
 import { prisma } from '../db/prisma.js';
-
-export interface RaceTrack {
-  id: string;
-  name: string;
-  distanceKm: number;
-  entryFee: number;
-}
-
-export const TRACKS: RaceTrack[] = [
-  { id: 'Industrial Ring', name: 'Anillo Industrial', distanceKm: 1.5, entryFee: 100 },
-  { id: 'Downtown Highway', name: 'Autopista Central', distanceKm: 3.2, entryFee: 500 },
-  { id: 'Speedway', name: 'Autódromo de Sinford', distanceKm: 5.0, entryFee: 2000 },
-];
+import { RaceTrack, TRACKS } from '../config/gameData.js';
+export { RaceTrack, TRACKS };
 
 export class RacingService {
   static async startRace(playerId: string, trackId: string) {

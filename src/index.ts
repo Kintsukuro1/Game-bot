@@ -1,7 +1,8 @@
-import { Client, Events, GatewayIntentBits, REST, Routes } from 'discord.js';
+import { Client, Events, GatewayIntentBits, REST, Routes, Partials } from 'discord.js';
 import dotenv from 'dotenv';
 import { handleInteraction } from './events/interactionCreate.js';
 import { startScheduler } from './services/scheduler.js';
+import { createServer } from './server.js';
 import { empezarCommand } from './commands/general/empezar.js';
 import { gameCommand } from './commands/general/game.js';
 import { atacarCommand } from './commands/general/atacar.js';
@@ -14,13 +15,22 @@ dotenv.config();
 
 const token = process.env.DISCORD_TOKEN;
 const clientId = process.env.DISCORD_CLIENT_ID;
+const PORT = process.env.PORT || 3000;
+
+// Iniciar Servidor Express API + WebSockets para la Discord Activity
+const { server } = createServer();
+server.listen(PORT, () => {
+  console.log(`🌐 [Activity API] Servidor Express & WebSockets escuchando en el puerto ${PORT}`);
+  console.log(`📡 API Endpoints listos en http://localhost:${PORT}/api/ e en /.proxy/api/`);
+});
 
 if (!token || token === 'your_bot_token_here') {
   console.warn('⚠️ Token de Discord no configurado en .env. Modifica el archivo .env con tus credenciales.');
 }
 
 export const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages],
+  partials: [Partials.Channel],
 });
 
 client.once(Events.ClientReady, async () => {
@@ -43,13 +53,27 @@ client.once(Events.ClientReady, async () => {
       ];
 
       console.log(`🔄 [Global Sync] Sincronizando ${commandList.length} comandos Slash globales...`);
-      await rest.put(Routes.applicationCommands(botClientId), { body: commandList });
-      console.log(`🌐 [Global Sync] ¡Comandos registrados globalmente!`);
+      try {
+        const existingGlobal = (await rest.get(Routes.applicationCommands(botClientId))) as any[];
+        const entryPointCmds = existingGlobal.filter((cmd) => cmd.type === 4);
+        const fullGlobalList = [...commandList, ...entryPointCmds];
+        await rest.put(Routes.applicationCommands(botClientId), { body: fullGlobalList });
+        console.log(`🌐 [Global Sync] ¡Comandos registrados globalmente con éxito!`);
+      } catch (err: any) {
+        await rest.put(Routes.applicationCommands(botClientId), { body: commandList }).catch(() => {});
+      }
 
       // Sincronización INSTANTÁNEA en los servidores donde está presente el bot
       for (const [guildId, guild] of client.guilds.cache) {
         console.log(`⚡ [Instant Guild Sync] Sincronizando comandos en el servidor: ${guild.name} (${guildId})...`);
-        await rest.put(Routes.applicationGuildCommands(botClientId, guildId), { body: commandList });
+        try {
+          const existingGuild = (await rest.get(Routes.applicationGuildCommands(botClientId, guildId))) as any[];
+          const guildEntryPoints = existingGuild.filter((cmd) => cmd.type === 4);
+          const fullGuildList = [...commandList, ...guildEntryPoints];
+          await rest.put(Routes.applicationGuildCommands(botClientId, guildId), { body: fullGuildList });
+        } catch (err: any) {
+          await rest.put(Routes.applicationGuildCommands(botClientId, guildId), { body: commandList }).catch(() => {});
+        }
       }
       console.log(`✅ [Instant Guild Sync] ¡Comandos desplegados al instante!`);
     } catch (error: any) {
@@ -68,5 +92,6 @@ if (token && token !== 'your_bot_token_here') {
     console.error('❌ Error de login en Discord:', err.message);
   });
 } else {
-  console.log('ℹ️ Modo sin conexión de Discord (Para pruebas locales de BD/Servicios).');
+  console.log('ℹ️ Modo sin conexión de Discord (Servidor API Express + Servicios BD activos en puerto ' + PORT + ').');
 }
+

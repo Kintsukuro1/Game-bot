@@ -1,4 +1,4 @@
-import { ButtonInteraction, StringSelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, StringSelectMenuInteraction, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { PlayerService } from '../services/playerService.js';
 import { EconomyService } from '../services/economyService.js';
 import {
@@ -17,12 +17,17 @@ export async function handleHubProfile(
   player: PlayerWithRelations,
   _guildId: string
 ): Promise<void> {
-  const backRow = createBackButtonRow();
   const embed = createProfileViewEmbed(player);
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId('act_mastery').setLabel('Maestrías & Perks').setEmoji('🌟').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('act_tx_history').setLabel('Historial $').setEmoji('📜').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('nav_back_hub').setLabel('Volver al Hub').setEmoji('🏙️').setStyle(ButtonStyle.Secondary)
+  );
+
   await interaction.update({
     content: null,
     embeds: [embed],
-    components: [backRow as any],
+    components: [row as any],
   });
 }
 

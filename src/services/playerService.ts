@@ -2,14 +2,9 @@ import { prisma } from '../db/prisma.js';
 import { AchievementService } from './achievementService.js';
 
 export class PlayerService {
-  static async getPlayerByDiscordId(discordId: string, guildId: string = 'GLOBAL') {
-    return prisma.player.findUnique({
-      where: {
-        guildId_discordId: {
-          guildId,
-          discordId,
-        },
-      },
+  static async getPlayerByDiscordId(discordId: string, _guildId: string = 'GLOBAL') {
+    let player = await prisma.player.findFirst({
+      where: { discordId },
       include: {
         wallet: true,
         stats: true,
@@ -21,15 +16,42 @@ export class PlayerService {
         },
       },
     });
+
+    if (player && player.guildId !== 'GLOBAL') {
+      player = await prisma.player.update({
+        where: { id: player.id },
+        data: { guildId: 'GLOBAL' },
+        include: {
+          wallet: true,
+          stats: true,
+          bodyParts: true,
+          mastery: true,
+          addiction: true,
+          inventory: {
+            include: { item: true },
+          },
+        },
+      });
+    }
+
+    return player;
   }
 
-  static async registerPlayer(discordId: string, username: string, guildId: string = 'GLOBAL') {
-    const existing = await this.getPlayerByDiscordId(discordId, guildId);
-    if (existing) return existing;
+  static async registerPlayer(discordId: string, username: string, _guildId: string = 'GLOBAL') {
+    const existing = await this.getPlayerByDiscordId(discordId, 'GLOBAL');
+    if (existing) {
+      if (existing.username !== username) {
+        await prisma.player.update({
+          where: { id: existing.id },
+          data: { username },
+        });
+      }
+      return existing;
+    }
 
     const newPlayer = await prisma.player.create({
       data: {
-        guildId,
+        guildId: 'GLOBAL',
         discordId,
         username,
         wallet: {
@@ -214,25 +236,75 @@ export class PlayerService {
     });
   }
 
-  // Regeneración periódica de Energía y Nerve
+  // Regeneración periódica completa (Energía, Nerve, Happy, Partes Corporales y Hospital/Cárcel)
   static async regenerateStats() {
+    const now = new Date();
     const players = await prisma.player.findMany({
-      include: { stats: true },
+      include: { stats: true, bodyParts: true },
     });
 
     for (const player of players) {
-      if (!player.stats) continue;
+      if (!player.stats || !player.bodyParts) continue;
 
+      // 1. Regenerar Energía, Nerve y Happy
       const newEnergy = Math.min(player.stats.energy + 5, player.stats.maxEnergy);
       const newNerve = Math.min(player.stats.nerve + 1, player.stats.maxNerve);
+      const newHappy = Math.min(player.stats.happy + 5, player.stats.maxHappy);
 
-      if (newEnergy !== player.stats.energy || newNerve !== player.stats.nerve) {
+      if (newEnergy !== player.stats.energy || newNerve !== player.stats.nerve || newHappy !== player.stats.happy) {
         await prisma.stats.update({
           where: { playerId: player.id },
           data: {
             energy: newEnergy,
             nerve: newNerve,
+            happy: newHappy,
           },
+        });
+      }
+
+      // 2. Regeneración gradual de Partes Corporales (+5 HP por tick hasta 100)
+      const b = player.bodyParts;
+      const newHead = Math.min(b.headHp + 5, 100);
+      const newTorso = Math.min(b.torsoHp + 5, 100);
+      const newLArm = Math.min(b.leftArmHp + 5, 100);
+      const newRArm = Math.min(b.rightArmHp + 5, 100);
+      const newLLeg = Math.min(b.leftLegHp + 5, 100);
+      const newRLeg = Math.min(b.rightLegHp + 5, 100);
+
+      if (
+        newHead !== b.headHp ||
+        newTorso !== b.torsoHp ||
+        newLArm !== b.leftArmHp ||
+        newRArm !== b.rightArmHp ||
+        newLLeg !== b.leftLegHp ||
+        newRLeg !== b.rightLegHp
+      ) {
+        await prisma.bodyParts.update({
+          where: { playerId: player.id },
+          data: {
+            headHp: newHead,
+            torsoHp: newTorso,
+            leftArmHp: newLArm,
+            rightArmHp: newRArm,
+            leftLegHp: newLLeg,
+            rightLegHp: newRLeg,
+          },
+        });
+      }
+
+      // 3. Limpieza de temporizadores de Hospital y Cárcel vencidos
+      let playerUpdates: any = {};
+      if (player.hospitalUntil && player.hospitalUntil <= now) {
+        playerUpdates.hospitalUntil = null;
+      }
+      if (player.jailUntil && player.jailUntil <= now) {
+        playerUpdates.jailUntil = null;
+      }
+
+      if (Object.keys(playerUpdates).length > 0) {
+        await prisma.player.update({
+          where: { id: player.id },
+          data: playerUpdates,
         });
       }
     }

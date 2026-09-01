@@ -1,4 +1,5 @@
 import { prisma } from '../db/prisma.js';
+import { SWITZERLAND_DETOX_COST } from '../config/constants.js';
 
 export class DrugAndBoosterService {
   // 1. Consumo de Drogas (Xanax, Ecstasy, Cannabis)
@@ -82,13 +83,13 @@ export class DrugAndBoosterService {
   static async detoxifyInSwitzerland(playerId: string) {
     return prisma.$transaction(async (tx) => {
       const wallet = await tx.wallet.findUnique({ where: { playerId } });
-      if (!wallet || wallet.cash < 25000n) {
+      if (!wallet || wallet.cash < SWITZERLAND_DETOX_COST) {
         throw new Error('💸 Requiere $25,000 en efectivo para realizar el tratamiento de desintoxicación.');
       }
 
       await tx.wallet.update({
         where: { playerId },
-        data: { cash: { decrement: 25000n } },
+        data: { cash: { decrement: SWITZERLAND_DETOX_COST } },
       });
 
       await tx.playerAddiction.upsert({

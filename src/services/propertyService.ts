@@ -1,18 +1,6 @@
 import { prisma } from '../db/prisma.js';
-
-export interface PropertyDefinition {
-  type: string;
-  name: string;
-  price: number;
-  maxHappy: number;
-}
-
-export const PROPERTIES: PropertyDefinition[] = [
-  { type: 'Shack', name: 'Choza Inicial', price: 0, maxHappy: 100 },
-  { type: 'Apartment', name: 'Departamento Moderno', price: 25000, maxHappy: 500 },
-  { type: 'Penthouse', name: 'Penthouse de Lujo', price: 250000, maxHappy: 1500 },
-  { type: 'Private Island', name: 'Isla Privada', price: 2500000, maxHappy: 5000 },
-];
+import { PropertyDefinition, PROPERTIES } from '../config/gameData.js';
+export { PropertyDefinition, PROPERTIES };
 
 export class PropertyService {
   static async getPlayerProperty(playerId: string) {

@@ -13,6 +13,9 @@ import { PROFESSIONS } from '../services/professionService.js';
 import { DESTINATIONS } from '../services/travelService.js';
 import { TRACKS } from '../services/racingService.js';
 import { COMPANY_TYPES } from '../services/companyService.js';
+import { PROPERTIES } from '../services/propertyService.js';
+import { INITIAL_STOCKS } from '../services/investmentService.js';
+import { PERKS, MasteryService } from '../services/masteryService.js';
 import {
   renderProgressBar,
   renderHealthBar,
@@ -46,6 +49,7 @@ export function createGameHubEmbed(player: any) {
   if (level >= 5) {
     unlockedList.push('• **🎓 Universidad & 🏦 Banco:** Cursos pasivos e interés bancario.');
     unlockedList.push('• **🎒 Inventario & 🥩 Boss Diario:** Equipamiento y desafíos diarios.');
+    unlockedList.push('• **🎰 Casino, 🏠 Inmobiliaria & 📈 Bolsa:** Tragamonedas, penthouse y acciones.');
   }
 
   if (level >= 10) {
@@ -145,14 +149,23 @@ export function createGameHubButtons(playerLevel: number = 1) {
       : new ButtonBuilder().setCustomId('locked_travel').setLabel('🔒 Nv. 5').setStyle(ButtonStyle.Secondary).setDisabled(true)
   );
 
-  // Fila 5: Carreras Clandestinas (Nv. 5), Empresas (Nv. 10)
+  // Fila 5: Carreras (Nv. 5), Empresa (Nv. 10), Casino (Nv. 5), Propiedades (Nv. 5), Bolsa (Nv. 5)
   const row5 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     playerLevel >= 5
       ? new ButtonBuilder().setCustomId('act_racing').setLabel('Carreras').setEmoji('🏎️').setStyle(ButtonStyle.Success)
       : new ButtonBuilder().setCustomId('locked_racing').setLabel('🔒 Nv. 5').setStyle(ButtonStyle.Secondary).setDisabled(true),
     playerLevel >= 10
       ? new ButtonBuilder().setCustomId('act_company').setLabel('Empresa').setEmoji('🏢').setStyle(ButtonStyle.Success)
-      : new ButtonBuilder().setCustomId('locked_company').setLabel('🔒 Nv. 10').setStyle(ButtonStyle.Secondary).setDisabled(true)
+      : new ButtonBuilder().setCustomId('locked_company').setLabel('🔒 Nv. 10').setStyle(ButtonStyle.Secondary).setDisabled(true),
+    playerLevel >= 5
+      ? new ButtonBuilder().setCustomId('act_casino').setLabel('Casino').setEmoji('🎰').setStyle(ButtonStyle.Success)
+      : new ButtonBuilder().setCustomId('locked_casino').setLabel('🔒 Nv. 5').setStyle(ButtonStyle.Secondary).setDisabled(true),
+    playerLevel >= 5
+      ? new ButtonBuilder().setCustomId('act_properties').setLabel('Inmuebles').setEmoji('🏠').setStyle(ButtonStyle.Primary)
+      : new ButtonBuilder().setCustomId('locked_properties').setLabel('🔒 Nv. 5').setStyle(ButtonStyle.Secondary).setDisabled(true),
+    playerLevel >= 5
+      ? new ButtonBuilder().setCustomId('act_stocks').setLabel('Bolsa').setEmoji('📈').setStyle(ButtonStyle.Primary)
+      : new ButtonBuilder().setCustomId('locked_stocks').setLabel('🔒 Nv. 5').setStyle(ButtonStyle.Secondary).setDisabled(true)
   );
 
   return [row1, row2, row3, row4, row5];
@@ -745,7 +758,8 @@ export function createShopNavButtons(currentCatIndex: number = 0) {
     new ButtonBuilder().setCustomId(`shop_cat_${prevIndex}`).setLabel('Anterior').setEmoji('◀️').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('shop_cat_info').setLabel(`Sección ${currentCatIndex + 1}/${total}`).setStyle(ButtonStyle.Secondary).setDisabled(true),
     new ButtonBuilder().setCustomId(`shop_cat_${nextIndex}`).setLabel('Siguiente').setEmoji('▶️').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('nav_back_hub').setLabel('Volver al Hub').setEmoji('🔙').setStyle(ButtonStyle.Secondary)
+    new ButtonBuilder().setCustomId('act_market').setLabel('Mercado P2P').setEmoji('📦').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('nav_back_hub').setLabel('Volver').setEmoji('🔙').setStyle(ButtonStyle.Secondary)
   );
 
   return [row];
@@ -1334,4 +1348,236 @@ export function createCompanyButtons(hasCompany: boolean) {
   );
 
   return [new ActionRowBuilder<ButtonBuilder>().addComponents(buttons)];
+}
+
+// ==========================================
+// 17. CASINO DE SINFORD (Slots & Blackjack)
+// ==========================================
+export function createCasinoViewEmbed(player: any) {
+  const quote = NPCService.getRandomQuote('corleone', player?.level || 5);
+  return new EmbedBuilder()
+    .setColor(0xffd700)
+    .setTitle('🎰 CASINO CLANDESTINO "EL SAPO DORADO"')
+    .setDescription(
+      `${quote}\n\n` +
+      `Bienvenido a la sala de juegos clandestina de Sinford.\n` +
+      `Aquí el dinero cambia de manos rápido. Recuerda: la casa siempre tiene ventaja.\n\n` +
+      `💰 **Tu Efectivo disponible:** $${player.wallet.cash.toLocaleString()}\n` +
+      `🏦 **Tu Saldo Bancario:** $${player.wallet.bank.toLocaleString()}\n\n` +
+      `**Juegos Disponibles:**\n` +
+      `• 🎰 **Tragamonedas Clásica ($500 / $2,500 / $10,000):** Gira los 3 rodillos y busca el Jackpot 💎💎💎 (x50).\n` +
+      `• 🃏 **Blackjack / 21 ($1,000 / $5,000):** Enfréntate mano a mano a la casa sin pasarte de 21.\n`
+    )
+    .setFooter({ text: 'Casino Clandestino • Juega con cabeza' });
+}
+
+export function createCasinoButtons() {
+  const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId('casino_slots_500').setLabel('Slots ($500)').setEmoji('🎰').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('casino_slots_2500').setLabel('Slots ($2,500)').setEmoji('🎰').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('casino_slots_10000').setLabel('Slots ($10,000)').setEmoji('💎').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId('casino_bj_1000').setLabel('Blackjack ($1,000)').setEmoji('🃏').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('casino_bj_5000').setLabel('Blackjack ($5,000)').setEmoji('🃏').setStyle(ButtonStyle.Primary)
+  );
+
+  const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId('nav_back_hub').setLabel('Volver al Hub').setEmoji('🏙️').setStyle(ButtonStyle.Secondary)
+  );
+
+  return [row1, row2];
+}
+
+// ==========================================
+// 18. INMOBILIARIA & PROPIEDADES (Real Estate)
+// ==========================================
+export function createPropertyViewEmbed(prop: any, player: any) {
+  const currentPropDef = PROPERTIES.find((p) => p.type === prop.propertyType) || PROPERTIES[0];
+
+  const propList = PROPERTIES.map((p) => {
+    const isCurrent = p.type === prop.propertyType;
+    return `• **${p.name}** (${p.type}):\n  💵 Precio: **$${p.price.toLocaleString()}** • 😊 Max Happy: **${p.maxHappy.toLocaleString()}** ${isCurrent ? '✅ *(Tu propiedad actual)*' : ''}`;
+  }).join('\n\n');
+
+  return new EmbedBuilder()
+    .setColor(0x3498db)
+    .setTitle('🏠 INMOBILIARIA DE SINFORD — Propiedades & Viviendas')
+    .setDescription(
+      `Tener una mejor propiedad incrementa tu **Felicidad Máxima (Happy)**, lo que potencia exponencialmente tus ganancias en el Gimnasio.\n\n` +
+      `🏡 **Tu Propiedad Actual:** ${currentPropDef.name} (${prop.propertyType})\n` +
+      `😊 **Capacidad Máxima de Felicidad:** ${player.stats.maxHappy} Happy\n` +
+      `🤵 **Personal Contratado:** ${prop.hasStaff ? `Sí (${prop.staffType})` : 'Ninguno'}\n` +
+      `💰 **Tu Efectivo disponible:** $${player.wallet.cash.toLocaleString()}\n\n` +
+      `**Catálogo de Propiedades:**\n${propList}`
+    )
+    .setFooter({ text: 'Inmobiliaria Sinford • El estatus lo es todo' });
+}
+
+export function createPropertySelect() {
+  const select = new StringSelectMenuBuilder()
+    .setCustomId('select_property_buy')
+    .setPlaceholder('🏠 Selecciona una propiedad para comprar...');
+
+  const options = PROPERTIES.map((p) =>
+    new StringSelectMenuOptionBuilder()
+      .setLabel(p.name)
+      .setValue(p.type)
+      .setDescription(`$${p.price.toLocaleString()} • Max Happy: ${p.maxHappy}`)
+      .setEmoji('🏠')
+  );
+
+  select.addOptions(options);
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
+}
+
+export function createPropertyButtons() {
+  return [
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId('prop_hire_maid').setLabel('Mucama ($500)').setEmoji('🧹').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('prop_hire_butler').setLabel('Mayordomo ($1,500)').setEmoji('🤵').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('prop_hire_guard').setLabel('Guardia ($2,500)').setEmoji('🛡️').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('nav_back_hub').setLabel('Volver al Hub').setEmoji('🏙️').setStyle(ButtonStyle.Secondary)
+    ),
+  ];
+}
+
+// ==========================================
+// 19. BOLSA DE VALORES (Stock Market)
+// ==========================================
+export function createStockMarketEmbed(playerStocks: any[], player: any) {
+  const stockList = INITIAL_STOCKS.map((s) => {
+    const owned = playerStocks.find((ps) => ps.symbol === s.symbol)?.shares || 0;
+    return `• **[${s.symbol}] ${s.name}:**\n  💵 Precio por acción: **$${s.price.toLocaleString()}** • 📦 En posesión: **${owned.toLocaleString()} acciones**`;
+  }).join('\n\n');
+
+  return new EmbedBuilder()
+    .setColor(0x2ecc71)
+    .setTitle('📈 BOLSA DE VALORES DE SINFORD (Stock Market)')
+    .setDescription(
+      `Invierte en las corporaciones de Sinford. Acumular un bloque de **10,000 acciones** de una empresa te otorga dividendos pasivos semanales.\n\n` +
+      `💰 **Tu Efectivo disponible:** $${player.wallet.cash.toLocaleString()}\n\n` +
+      `**Cotizaciones de Mercado:**\n${stockList}\n\n` +
+      `**Beneficios de Dividendos Semanales (10,000+ Acciones):**\n` +
+      `• **TNC (Banco):** +$50,000 en efectivo directo.\n` +
+      `• **SYS (Sistemas):** +$25,000 bono de transporte.\n` +
+      `• **MED (Farma):** +5x Botiquines de Primeros Auxilios.\n` +
+      `• **OIL (Energía):** +100⚡ de Energía extra inmediata.\n`
+    )
+    .setFooter({ text: 'Bolsa de Valores • Pulsa los botones para operar' });
+}
+
+export function createStockBuySelect() {
+  const select = new StringSelectMenuBuilder()
+    .setCustomId('select_stock_buy')
+    .setPlaceholder('📈 Comprar paquete de 1,000 acciones...');
+
+  const options = INITIAL_STOCKS.map((s) =>
+    new StringSelectMenuOptionBuilder()
+      .setLabel(`${s.symbol} — 1,000 Acciones ($${(s.price * 1000).toLocaleString()})`)
+      .setValue(s.symbol)
+      .setDescription(s.name)
+      .setEmoji('📈')
+  );
+
+  select.addOptions(options);
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
+}
+
+export function createStockButtons() {
+  const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId('stock_claim_TNC').setLabel('Dividendo TNC').setEmoji('🏦').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('stock_claim_MED').setLabel('Dividendo MED').setEmoji('📦').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('stock_claim_OIL').setLabel('Dividendo OIL').setEmoji('⚡').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('stock_claim_SYS').setLabel('Dividendo SYS').setEmoji('✈️').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('nav_back_hub').setLabel('Volver').setEmoji('🏙️').setStyle(ButtonStyle.Secondary)
+  );
+
+  return [row1];
+}
+
+// ==========================================
+// 20. MERCADO ABIERTO ENTRE JUGADORES (Player Market)
+// ==========================================
+export function createPlayerMarketEmbed(items: any[], player: any) {
+  const list = items.length === 0
+    ? '*No hay ofertas de ítems listadas en el mercado en este momento.*'
+    : items.map((it, idx) => `**${idx + 1}.** ${it.item?.name || 'Ítem'} — Cantidad: x${it.quantity} • Precio: **$${it.price.toLocaleString()}** (Vendedor: <@${it.sellerId}>)`).join('\n');
+
+  return new EmbedBuilder()
+    .setColor(0xe67e22)
+    .setTitle('📦 MERCADO ABIERTO ENTRE JUGADORES')
+    .setDescription(
+      `Compra objetos publicados por otros ciudadanos de Sinford o adquiere excedentes de contrabando.\n\n` +
+      `💰 **Tu Efectivo disponible:** $${player.wallet.cash.toLocaleString()}\n\n` +
+      `**Ofertas Disponibles en Mercado:**\n${list}`
+    )
+    .setFooter({ text: 'Mercado Libre • Comercio P2P sin intermediarios' });
+}
+
+export function createPlayerMarketSelect(items: any[]) {
+  if (items.length === 0) return null;
+
+  const select = new StringSelectMenuBuilder()
+    .setCustomId('select_market_buy')
+    .setPlaceholder('🛒 Selecciona un ítem para comprar del mercado...');
+
+  const options = items.slice(0, 10).map((it) =>
+    new StringSelectMenuOptionBuilder()
+      .setLabel(`${it.item?.name || 'Ítem'} (x${it.quantity})`)
+      .setValue(it.id)
+      .setDescription(`Precio: $${it.price.toLocaleString()}`)
+      .setEmoji('📦')
+  );
+
+  select.addOptions(options);
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
+}
+
+// ==========================================
+// 21. ÁRBOL DE MAESTRÍAS & PERKS (Player Mastery)
+// ==========================================
+export function createMasteryViewEmbed(mastery: any, player: any) {
+  const levels = MasteryService.calculateMasteryLevels(mastery);
+  const perksList = PERKS.map((p) => `• ${p.emoji} **${p.name}** (${p.cost} Pt): ${p.description}`).join('\n');
+
+  return new EmbedBuilder()
+    .setColor(0x9b59b6)
+    .setTitle(`🌟 ÁRBOL DE MAESTRÍAS — ${player.username}`)
+    .setDescription(
+      `Gana experiencia de maestría al combatir, cometer crímenes, trabajar y participar en guerras. Cada 500 EXP acumulados obtienes **1 Punto de Perk** para mejorar tus atributos de forma permanente.\n\n` +
+      `✨ **Puntos de Perk Disponibles:** **${levels.perkPoints} Pts**\n\n` +
+      `**Niveles de Especialización:**\n` +
+      `• ⚔️ **Combate:** Nivel ${levels.combatLevel} (${mastery?.combatExp || 0} EXP)\n` +
+      `• 🕵️ **Crimen:** Nivel ${levels.crimeLevel} (${mastery?.crimeExp || 0} EXP)\n` +
+      `• 💼 **Negocios:** Nivel ${levels.businessLevel} (${mastery?.businessExp || 0} EXP)\n` +
+      `• 🏴 **Facción:** Nivel ${levels.factionLevel} (${mastery?.factionExp || 0} EXP)\n\n` +
+      `**Mejoras Permanentes Disponibles (Perks):**\n${perksList}`
+    )
+    .setFooter({ text: 'Maestrías de Sinford • Elige tu camino de especialización' });
+}
+
+export function createMasteryPerkSelect(perkPoints: number) {
+  if (perkPoints <= 0) return null;
+
+  const select = new StringSelectMenuBuilder()
+    .setCustomId('select_mastery_perk')
+    .setPlaceholder('🌟 Selecciona una mejora permanente para canjear (1 Pt)...');
+
+  const options = PERKS.map((p) =>
+    new StringSelectMenuOptionBuilder()
+      .setLabel(p.name)
+      .setValue(p.id)
+      .setDescription(p.description)
+      .setEmoji(p.emoji)
+  );
+
+  select.addOptions(options);
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
+}
+
+export function createMasteryButtons() {
+  return [
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId('nav_back_hub').setLabel('Volver al Hub').setEmoji('🏙️').setStyle(ButtonStyle.Secondary)
+    ),
+  ];
 }

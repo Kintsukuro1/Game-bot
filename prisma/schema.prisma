@@ -1,5 +1,5 @@
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -8,19 +8,20 @@ generator client {
 }
 
 model Player {
-  id            String          @id @default(uuid())
-  guildId       String          @default("GLOBAL")
-  discordId     String
-  username      String
-  level         Int             @default(1)
-  xp            Int             @default(0)
-  gymTier       Int             @default(1)
-  gymExp        Int             @default(0)
-  hospitalUntil DateTime?
-  jailUntil     DateTime?
-  profession    String?         // HACKER, CONTRABANDISTA, SICARIO
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  id                  String          @id @default(uuid())
+  guildId             String          @default("GLOBAL")
+  discordId           String
+  username            String
+  discordRefreshToken String?
+  level               Int             @default(1)
+  xp                  Int             @default(0)
+  gymTier             Int             @default(1)
+  gymExp              Int             @default(0)
+  hospitalUntil       DateTime?
+  jailUntil           DateTime?
+  profession          String?         // HACKER, CONTRABANDISTA, SICARIO
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
 
   wallet        Wallet?
   stats         Stats?

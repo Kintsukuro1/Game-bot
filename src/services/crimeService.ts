@@ -1,80 +1,7 @@
 import { prisma } from '../db/prisma.js';
-
-export interface CrimeDefinition {
-  id: string;
-  name: string;
-  category: string;
-  nerveCost: number;
-  minLevel: number;
-  baseSuccessRate: number; // 0.0 a 1.0
-  minReward: number;
-  maxReward: number;
-  crimeExpReward: number;
-  failJailMinutes: number;
-}
-
-export const CRIMES: CrimeDefinition[] = [
-  {
-    id: 'search_cash',
-    name: 'Buscar dinero tirado (Search for Cash)',
-    category: 'Basic',
-    nerveCost: 2,
-    minLevel: 1,
-    baseSuccessRate: 0.90,
-    minReward: 5,
-    maxReward: 40,
-    crimeExpReward: 10,
-    failJailMinutes: 0, // Fallo simple
-  },
-  {
-    id: 'shoplifting',
-    name: 'Hurto en tiendas (Shoplifting)',
-    category: 'Basic',
-    nerveCost: 3,
-    minLevel: 1,
-    baseSuccessRate: 0.80,
-    minReward: 25,
-    maxReward: 150,
-    crimeExpReward: 25,
-    failJailMinutes: 15,
-  },
-  {
-    id: 'pickpocketing',
-    name: 'Robo de carteras (Pickpocketing)',
-    category: 'Theft',
-    nerveCost: 4,
-    minLevel: 2,
-    baseSuccessRate: 0.70,
-    minReward: 80,
-    maxReward: 350,
-    crimeExpReward: 45,
-    failJailMinutes: 20,
-  },
-  {
-    id: 'larceny',
-    name: 'Robo a propiedad (Larceny)',
-    category: 'Theft',
-    nerveCost: 6,
-    minLevel: 3,
-    baseSuccessRate: 0.60,
-    minReward: 250,
-    maxReward: 1200,
-    crimeExpReward: 80,
-    failJailMinutes: 30,
-  },
-  {
-    id: 'armed_robbery',
-    name: 'Asalto a mano armada (Armed Robbery)',
-    category: 'Armed',
-    nerveCost: 10,
-    minLevel: 5,
-    baseSuccessRate: 0.45,
-    minReward: 1000,
-    maxReward: 4500,
-    crimeExpReward: 150,
-    failJailMinutes: 45,
-  },
-];
+import { MasteryService } from './masteryService.js';
+import { CrimeDefinition, CRIMES } from '../config/gameData.js';
+export { CrimeDefinition, CRIMES };
 
 export class CrimeService {
   // 1. Ejecución de un Crimen
@@ -158,6 +85,8 @@ export class CrimeService {
             crimeSkill: newCrimeSkill,
           },
         });
+
+        await MasteryService.addMasteryExp(playerId, 'crime', crime.crimeExpReward, tx);
 
         return {
           success: true,

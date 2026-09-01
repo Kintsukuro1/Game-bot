@@ -1,22 +1,6 @@
 import { prisma } from '../db/prisma.js';
-
-export interface DestinationDefinition {
-  id: string;
-  name: string;
-  cost: number;
-  durationMinutes: number;
-}
-
-export const DESTINATIONS: DestinationDefinition[] = [
-  { id: 'Mexico', name: 'México 🇲🇽', cost: 500, durationMinutes: 15 },
-  { id: 'Colombia', name: 'Colombia 🇨🇴', cost: 800, durationMinutes: 25 },
-  { id: 'United Kingdom', name: 'Reino Unido 🇬🇧', cost: 1500, durationMinutes: 45 },
-  { id: 'Russia', name: 'Rusia 🇷🇺', cost: 2200, durationMinutes: 60 },
-  { id: 'Japan', name: 'Japón 🇯🇵', cost: 3000, durationMinutes: 90 },
-  { id: 'South Africa', name: 'Sudáfrica 🇿🇦', cost: 3800, durationMinutes: 100 },
-  { id: 'Switzerland', name: 'Suiza 🇨🇭', cost: 5000, durationMinutes: 120 },
-  { id: 'United Arab Emirates', name: 'Emiratos Árabes Unidos 🇦🇪', cost: 7000, durationMinutes: 150 },
-];
+import { DestinationDefinition, DESTINATIONS } from '../config/gameData.js';
+export { DestinationDefinition, DESTINATIONS };
 
 export class TravelService {
   static async getTravelState(playerId: string) {

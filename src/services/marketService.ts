@@ -136,7 +136,37 @@ export class MarketService {
       }
 
       if (trade.senderConfirmed && trade.receiverConfirmed) {
-        // Ejecución atómica del intercambio
+        // Transferencia atómica de fondos
+        if (trade.senderCash > 0n) {
+          const senderWallet = await tx.wallet.findUnique({ where: { playerId: trade.senderId } });
+          if (!senderWallet || senderWallet.cash < trade.senderCash) {
+            throw new Error('El iniciador del intercambio no posee los fondos suficientes acordados.');
+          }
+          await tx.wallet.update({
+            where: { playerId: trade.senderId },
+            data: { cash: { decrement: trade.senderCash } },
+          });
+          await tx.wallet.update({
+            where: { playerId: trade.receiverId },
+            data: { cash: { increment: trade.senderCash } },
+          });
+        }
+
+        if (trade.receiverCash > 0n) {
+          const receiverWallet = await tx.wallet.findUnique({ where: { playerId: trade.receiverId } });
+          if (!receiverWallet || receiverWallet.cash < trade.receiverCash) {
+            throw new Error('El receptor del intercambio no posee los fondos suficientes acordados.');
+          }
+          await tx.wallet.update({
+            where: { playerId: trade.receiverId },
+            data: { cash: { decrement: trade.receiverCash } },
+          });
+          await tx.wallet.update({
+            where: { playerId: trade.senderId },
+            data: { cash: { increment: trade.receiverCash } },
+          });
+        }
+
         await tx.trade.update({
           where: { id: trade.id },
           data: { status: 'COMPLETED' },

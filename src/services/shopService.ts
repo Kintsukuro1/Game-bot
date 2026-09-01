@@ -81,7 +81,7 @@ export class ShopService {
     return 15;
   }
 
-  // Obtener catálogo filtrado por la categoría activa (0: Conveniencia, 1: Farmacia, 2: Drogas, 3: Armería)
+  // Obtener catálogo filtrado por la categoría activa
   static async getCatalogByCategory(catIndex: number) {
     const validIndex = ((catIndex % SHOP_CATEGORIES.length) + SHOP_CATEGORIES.length) % SHOP_CATEGORIES.length;
 
@@ -92,7 +92,7 @@ export class ShopService {
             OR: [
               { type: 'MISC' },
               { type: 'CONSUMABLE', weaponType: { in: ['Food', 'Candy', 'SupplyPack', 'Ticket'] } },
-              { price: { lte: 300 } },
+              { price: { lte: 1000 } },
             ],
           },
           orderBy: { price: 'asc' },
@@ -100,17 +100,29 @@ export class ShopService {
 
       case 1: // Farmacia & Suministros Médicos
         return prisma.item.findMany({
-          where: { type: 'MEDICAL' },
+          where: {
+            OR: [
+              { type: 'MEDICAL' },
+              { weaponType: 'Medical' },
+              { name: { contains: 'Kit' } },
+              { name: { contains: 'First Aid' } },
+              { name: { contains: 'Morphine' } },
+              { name: { contains: 'Blood' } },
+              { name: { contains: 'Suero' } },
+              { name: { contains: 'Bandage' } },
+            ],
+          },
           orderBy: { price: 'asc' },
         });
 
       case 2: // Drogas, Alcohol & Energéticas
         return prisma.item.findMany({
           where: {
-            type: 'CONSUMABLE',
             OR: [
+              { type: 'CONSUMABLE' },
+              { type: 'DRUG' },
+              { type: 'BOOSTER' },
               { weaponType: { in: ['Drug', 'EnergyDrink', 'Alcohol', 'Booster'] } },
-              { weaponType: null },
             ],
           },
           orderBy: { price: 'asc' },

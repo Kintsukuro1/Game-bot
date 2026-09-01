@@ -66,6 +66,53 @@ export class InventoryService {
 
       let message = `Consumiste **${item.name}**. `;
 
+      // Si es una Droga, procesar adicción y riesgo de sobredosis
+      const isDrug = item.weaponType === 'Drug' || effect.drugCooldownMin;
+      if (isDrug) {
+        let addiction = await tx.playerAddiction.findUnique({ where: { playerId } });
+        if (!addiction) {
+          addiction = await tx.playerAddiction.create({ data: { playerId, level: 0 } });
+        }
+
+        const isOverdose = Math.random() < 0.05; // 5% probabilidad de sobredosis
+        if (isOverdose) {
+          // Descontar ítem usado
+          if (invItem.quantity <= 1) {
+            await tx.inventoryItem.delete({ where: { id: inventoryItemId } });
+          } else {
+            await tx.inventoryItem.update({
+              where: { id: inventoryItemId },
+              data: { quantity: invItem.quantity - 1 },
+            });
+          }
+
+          const hospitalUntil = new Date(Date.now() + 60 * 60 * 1000);
+          await tx.player.update({
+            where: { id: playerId },
+            data: { hospitalUntil },
+          });
+
+          await tx.playerAddiction.update({
+            where: { playerId },
+            data: { lastOverdoseAt: new Date() },
+          });
+
+          await tx.stats.update({
+            where: { playerId },
+            data: { happy: 0, energy: 0 },
+          });
+
+          return `💀 **¡SOBREDOSIS CON ${item.name.toUpperCase()}!** Colapsaste en el suelo y fuiste trasladado de urgencia al hospital por 60 minutos. Tu energía y felicidad cayeron a 0.`;
+        }
+
+        // Incrementar nivel de adicción (+15%)
+        await tx.playerAddiction.update({
+          where: { playerId },
+          data: { level: Math.min(100, addiction.level + 15) },
+        });
+        message += `(💊 Adicción: ${Math.min(100, addiction.level + 15)}%). `;
+      }
+
       // Aplica efectos según categoría oficial de Torn Wiki
       if (effect.addEnergy) {
         const newEnergy = Math.min(stats.energy + effect.addEnergy, stats.maxEnergy + 250); // permite sobrecargar
@@ -89,6 +136,26 @@ export class InventoryService {
         const newHappy = Math.min(stats.happy * 2, stats.maxHappy * 2);
         await tx.stats.update({ where: { playerId }, data: { happy: newHappy } });
         message += `😊 ¡Felicidad duplicada! (Total: ${newHappy}). `;
+      }
+
+      if (effect.reduceHappyPercent) {
+        const happyLoss = Math.round(stats.happy * (effect.reduceHappyPercent / 100));
+        const newHappy = Math.max(stats.happy - happyLoss, 0);
+        await tx.stats.update({ where: { playerId }, data: { happy: newHappy } });
+        message += `😊 -${effect.reduceHappyPercent}% Happy (Total: ${newHappy}). `;
+      }
+
+      if (effect.reduceHospitalMin) {
+        const playerRec = await tx.player.findUnique({ where: { id: playerId } });
+        if (playerRec?.hospitalUntil && playerRec.hospitalUntil > new Date()) {
+          const newHospital = new Date(playerRec.hospitalUntil.getTime() - effect.reduceHospitalMin * 60 * 1000);
+          const finalHospital = newHospital <= new Date() ? null : newHospital;
+          await tx.player.update({
+            where: { id: playerId },
+            data: { hospitalUntil: finalHospital },
+          });
+          message += `🏥 -${effect.reduceHospitalMin} min de hospital. `;
+        }
       }
 
       if (effect.healHp) {

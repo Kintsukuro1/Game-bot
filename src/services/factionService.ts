@@ -1,5 +1,5 @@
 import { prisma } from '../db/prisma.js';
-import { DEFAULT_GUILD_ID } from '../config/constants.js';
+import { DEFAULT_GUILD_ID, FACTION_CREATION_FEE } from '../config/constants.js';
 import { InsufficientFundsError, InvalidAmountError } from '../errors/gameErrors.js';
 
 export class FactionService {
@@ -16,7 +16,7 @@ export class FactionService {
       }
 
       const wallet = await tx.wallet.findUnique({ where: { playerId: leaderId } });
-      const createCost = 50000n;
+      const createCost = FACTION_CREATION_FEE;
 
       if (!wallet || wallet.cash < createCost) {
         throw new InsufficientFundsError(createCost, wallet?.cash || 0n);

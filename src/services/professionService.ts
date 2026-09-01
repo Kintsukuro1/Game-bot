@@ -1,49 +1,7 @@
 import { prisma } from '../db/prisma.js';
 import { InsufficientFundsError, LevelRequirementError } from '../errors/gameErrors.js';
-
-export interface ProfessionInfo {
-  id: 'HACKER' | 'CONTRABANDISTA' | 'SICARIO';
-  name: string;
-  emoji: string;
-  description: string;
-  perks: string[];
-}
-
-export const PROFESSIONS: ProfessionInfo[] = [
-  {
-    id: 'HACKER',
-    name: 'Hacker Informático',
-    emoji: '💻',
-    description: 'Especialista en intrusión de sistemas y vulneración de cuentas bancarias.',
-    perks: [
-      'Acceso al comando de Hacking Bancario contra otros jugadores',
-      'Roba entre 3% y 8% del saldo en banco del objetivo',
-      'Tasa de éxito potenciada por tu estadística de Inteligencia',
-    ],
-  },
-  {
-    id: 'CONTRABANDISTA',
-    name: 'Contrabandista Internacional',
-    emoji: '📦',
-    description: 'Experto en logística clandestina y evasión de aduanas.',
-    perks: [
-      '10% de descuento automático en todas las compras del Mercado Negro',
-      '-50% de tiempo de espera en vuelos internacionales',
-      'Doble capacidad de carga de mercancías del extranjero',
-    ],
-  },
-  {
-    id: 'SICARIO',
-    name: 'Sicario & Cazador de Recompensas',
-    emoji: '🎯',
-    description: 'Asesino a sueldo implacable especializado en duelos de alto riesgo.',
-    perks: [
-      'Recompensas dobles (2x Cash) al cobrar cualquier Bounty',
-      '+10% de probabilidad de asestar golpes críticos en combate PvP',
-      'Mayor reputación ganada en guerras de facción',
-    ],
-  },
-];
+import { ProfessionInfo, PROFESSIONS } from '../config/gameData.js';
+export { ProfessionInfo, PROFESSIONS };
 
 export class ProfessionService {
   // Elegir profesión a Nivel 10+
@@ -97,12 +55,12 @@ export class ProfessionService {
       }
 
       const target = await tx.player.findFirst({
-        where: { discordId: targetDiscordId, guildId: hacker.guildId },
+        where: { discordId: targetDiscordId },
         include: { wallet: true },
       });
 
       if (!target || !target.wallet) {
-        throw new Error('El objetivo no existe o no está registrado en este servidor.');
+        throw new Error('El objetivo no existe o no está registrado en el juego.');
       }
 
       if (target.id === hackerId) {

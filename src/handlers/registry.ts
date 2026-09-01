@@ -29,6 +29,11 @@ import { handleActTravel, handleSelectTravelDestination, handleTravelReturnHome 
 import { handleActRacing, handleSelectRacingTrack } from './racingHandlers.js';
 import { handleActCompany, handleSelectCompanyBuy, handleCompanyCollectRevenue } from './companyHandlers.js';
 import { handleDuelAccept, handleDuelDecline } from './duelHandlers.js';
+import { handleActCasino, handleCasinoSlots, handleCasinoBlackjack } from './casinoHandlers.js';
+import { handleActProperties, handleSelectPropertyBuy, handlePropertyStaff } from './propertyHandlers.js';
+import { handleActStocks, handleSelectStockBuy, handleStockClaimDividend } from './stockHandlers.js';
+import { handleActMarket, handleSelectMarketBuy } from './marketHandlers.js';
+import { handleActMastery, handleSelectMasteryPerk } from './masteryHandlers.js';
 
 export type PlayerWithRelations = NonNullable<Awaited<ReturnType<typeof PlayerService.getPlayerByDiscordId>>>;
 
@@ -136,6 +141,25 @@ const exactHandlers = new Map<string, HandlerFn>([
 
   // Buttons - Profesiones
   ['act_professions', handleActProfessions],
+
+  // Buttons & Menús - Casino
+  ['act_casino', handleActCasino],
+
+  // Buttons & Menús - Inmobiliaria & Propiedades
+  ['act_properties', handleActProperties],
+  ['select_property_buy', handleSelectPropertyBuy],
+
+  // Buttons & Menús - Bolsa de Valores
+  ['act_stocks', handleActStocks],
+  ['select_stock_buy', handleSelectStockBuy],
+
+  // Buttons & Menús - Mercado Libre P2P
+  ['act_market', handleActMarket],
+  ['select_market_buy', handleSelectMarketBuy],
+
+  // Buttons & Menús - Árbol de Maestrías
+  ['act_mastery', handleActMastery],
+  ['select_mastery_perk', handleSelectMasteryPerk],
 ]);
 
 const prefixRules: PrefixRule[] = [
@@ -175,6 +199,22 @@ const prefixRules: PrefixRule[] = [
   {
     prefix: 'duel_decline_',
     handler: handleDuelDecline,
+  },
+  {
+    prefix: 'casino_slots_',
+    handler: handleCasinoSlots,
+  },
+  {
+    prefix: 'casino_bj_',
+    handler: handleCasinoBlackjack,
+  },
+  {
+    prefix: 'prop_hire_',
+    handler: handlePropertyStaff,
+  },
+  {
+    prefix: 'stock_claim_',
+    handler: handleStockClaimDividend,
   },
 ];
 

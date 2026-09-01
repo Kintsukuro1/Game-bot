@@ -1,24 +1,7 @@
 import { prisma } from '../db/prisma.js';
 import { MasteryService } from './masteryService.js';
-
-export interface GymInfo {
-  tier: number;
-  name: string;
-  cost: number;
-  energyPerTrain: number;
-  multiplier: number;
-  requiredExp: number;
-}
-
-export const GYMS: GymInfo[] = [
-  { tier: 1, name: 'Premier Fitness', cost: 0, energyPerTrain: 5, multiplier: 2.0, requiredExp: 0 },
-  { tier: 2, name: "Average Joe's", cost: 1000, energyPerTrain: 5, multiplier: 2.4, requiredExp: 200 },
-  { tier: 3, name: "Woody's Workout", cost: 5000, energyPerTrain: 5, multiplier: 2.8, requiredExp: 500 },
-  { tier: 4, name: 'Global Gym', cost: 15000, energyPerTrain: 5, multiplier: 3.2, requiredExp: 1000 },
-  { tier: 5, name: "Gold's Gym", cost: 50000, energyPerTrain: 10, multiplier: 4.5, requiredExp: 2500 },
-  { tier: 6, name: 'Anarchy Fitness', cost: 250000, energyPerTrain: 10, multiplier: 6.0, requiredExp: 6000 },
-  { tier: 7, name: 'The Asylum Heavy Weight', cost: 1000000, energyPerTrain: 10, multiplier: 8.5, requiredExp: 15000 },
-];
+import { GymInfo, GYMS } from '../config/gameData.js';
+export { GymInfo, GYMS };
 
 export class GymService {
   // Obtener gimnasio actual del jugador
@@ -117,7 +100,7 @@ export class GymService {
       });
 
       // Otorgar Experiencia de Maestría de Combate
-      await MasteryService.addMasteryExp(playerId, 'combat', totalEnergyCost * 5);
+      await MasteryService.addMasteryExp(playerId, 'combat', totalEnergyCost * 5, tx);
 
       return {
         statName,
@@ -125,7 +108,9 @@ export class GymService {
         newStatValue: newStatVal,
         energyRemaining: newEnergy,
         happyRemaining: newHappy,
+        gymTier: gym.tier,
         gymName: gym.name,
+        gymExp: newGymExp,
       };
     });
   }
