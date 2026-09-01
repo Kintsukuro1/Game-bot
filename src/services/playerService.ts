@@ -3,7 +3,25 @@ import { AchievementService } from './achievementService.js';
 
 export class PlayerService {
   static async getPlayerByDiscordId(discordId: string, _guildId: string = 'GLOBAL') {
+    // Buscar primero un registro GLOBAL (preferido)
     let player = await prisma.player.findFirst({
+      where: { discordId, guildId: 'GLOBAL' },
+      include: {
+        wallet: true,
+        stats: true,
+        bodyParts: true,
+        mastery: true,
+        addiction: true,
+        inventory: {
+          include: { item: true },
+        },
+      },
+    });
+
+    if (player) return player;
+
+    // Si no hay registro GLOBAL, buscar cualquier registro existente
+    player = await prisma.player.findFirst({
       where: { discordId },
       include: {
         wallet: true,
@@ -17,21 +35,27 @@ export class PlayerService {
       },
     });
 
+    // Migrar registro de servidor específico a GLOBAL
     if (player && player.guildId !== 'GLOBAL') {
-      player = await prisma.player.update({
-        where: { id: player.id },
-        data: { guildId: 'GLOBAL' },
-        include: {
-          wallet: true,
-          stats: true,
-          bodyParts: true,
-          mastery: true,
-          addiction: true,
-          inventory: {
-            include: { item: true },
+      try {
+        player = await prisma.player.update({
+          where: { id: player.id },
+          data: { guildId: 'GLOBAL' },
+          include: {
+            wallet: true,
+            stats: true,
+            bodyParts: true,
+            mastery: true,
+            addiction: true,
+            inventory: {
+              include: { item: true },
+            },
           },
-        },
-      });
+        });
+      } catch (err) {
+        // Si falla la migración (ej: unique constraint), devolver el registro tal cual
+        console.warn(`⚠️ No se pudo migrar jugador ${discordId} a GLOBAL:`, err);
+      }
     }
 
     return player;

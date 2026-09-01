@@ -99,11 +99,17 @@ async function _doAuth(onStep: (msg: string) => void): Promise<AuthResult> {
         headers: { Authorization: `Bearer ${savedToken}` },
       });
 
-      if (checkRes.data && (checkRes.data.discordId || checkRes.data.id)) {
-        addDiag(`⚡ Sesión previa válida para ${checkRes.data.username}. Autenticación instantánea sin modal.`);
+      // El endpoint /player/profile devuelve { player: { ... } }
+      const playerProfile = checkRes.data?.player;
+      if (playerProfile && (playerProfile.discordId || playerProfile.id)) {
+        addDiag(`⚡ Sesión previa válida para ${playerProfile.username}. Autenticación instantánea sin modal.`);
         return {
           discordSdk: discordSdkInstance,
-          user: checkRes.data,
+          user: {
+            id: playerProfile.id,
+            discordId: playerProfile.discordId,
+            username: playerProfile.username,
+          },
           sessionToken: savedToken,
           guildId: currentGuildId,
           instanceId: currentInstanceId,
