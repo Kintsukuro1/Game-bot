@@ -98,6 +98,13 @@ export function App() {
 
   const playerLevel = playerData?.level ?? 1;
 
+  // Compute total HP from bodyParts (each limb is 0-100, 6 parts = 600 max)
+  const bodyParts = playerData?.bodyParts;
+  const currentHp = bodyParts
+    ? (bodyParts.headHp ?? 0) + (bodyParts.torsoHp ?? 0) + (bodyParts.leftArmHp ?? 0) + (bodyParts.rightArmHp ?? 0) + (bodyParts.leftLegHp ?? 0) + (bodyParts.rightLegHp ?? 0)
+    : 600;
+  const maxHp = 600;
+
   const handleTabClick = (tabId: string) => {
     const reqLevel = MODULE_REQUIRED_LEVELS[tabId] || 1;
     if (playerLevel < reqLevel) {
@@ -284,19 +291,14 @@ export function App() {
                       <span className="hidden sm:inline font-semibold">{t('health')}</span>
                     </div>
                     <span className="text-emerald-400 font-bold">
-                      {playerData.stats?.health ?? playerData.health ?? 1000}/{playerData.stats?.maxHealth ?? 1000}
+                      {currentHp}/{maxHp}
                     </span>
                   </div>
                   <div className="w-full h-1.5 bg-slate-900 relative overflow-hidden rounded-full border border-white/5">
                     <div
                       className="absolute inset-0 bg-emerald-500 meter-glow"
                       style={{
-                        width: `${Math.min(
-                          100,
-                          (((playerData.stats?.health ?? playerData.health ?? 1000) /
-                            (playerData.stats?.maxHealth ?? 1000)) *
-                            100)
-                        )}%`,
+                        width: `${Math.min(100, (currentHp / maxHp) * 100)}%`,
                       }}
                     ></div>
                   </div>
@@ -474,9 +476,9 @@ export function App() {
 
       {/* Main Container */}
       <main className="flex-1 pt-3 pb-12 w-full px-3 sm:px-6 max-w-[1920px] mx-auto">
-        <div className="flex flex-col xl:flex-row w-full gap-6 min-h-[calc(100vh-140px)]">
+        <div className="flex flex-col lg:flex-row w-full gap-4 min-h-[calc(100vh-140px)]">
           {/* Persistent Sticky Terminal Sidebar */}
-          <aside className="w-full xl:w-64 shrink-0 xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] self-start flex flex-col gap-4 bg-[#191f31]/60 backdrop-blur-md border border-white/10 rounded-xl p-4 overflow-y-auto custom-scrollbar relative shadow-[inset_0_2px_10px_rgba(0,0,0,0.3)] z-30">
+          <aside className="w-full lg:w-56 shrink-0 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] self-start flex flex-col gap-4 bg-[#191f31]/60 backdrop-blur-md border border-white/10 rounded-xl p-3 overflow-y-auto custom-scrollbar relative shadow-[inset_0_2px_10px_rgba(0,0,0,0.3)] z-30">
             <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.1)_50%)] bg-[length:100%_4px] opacity-20"></div>
 
             <div className="relative z-10 flex flex-col gap-5">
