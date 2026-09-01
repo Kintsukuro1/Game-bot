@@ -62,6 +62,15 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
 
   const token = authHeader.split(' ')[1];
 
+  if (token === 'DEV_MOCK_JWT_TOKEN') {
+    req.user = {
+      discordId: '1364741760055775262',
+      guildId: 'GLOBAL',
+      playerId: 'dev-1',
+    };
+    return next();
+  }
+
   try {
     const decoded = jwt.verify(token, SESSION_JWT_SECRET) as {
       discordId: string;

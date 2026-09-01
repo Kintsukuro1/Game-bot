@@ -451,22 +451,26 @@ export function App() {
               </div>
 
               {(() => {
-                const reqXp = 100 * ((playerData?.level || 1) ** 2);
+                const level = playerData?.level || 1;
                 const currentXp = playerData?.xp || 0;
-                const xpPercent = Math.min(100, Math.max(0, (currentXp / reqXp) * 100));
+                const prevLevelReq = level > 1 ? 100 * ((level - 1) ** 2) : 0;
+                const nextLevelReq = 100 * (level ** 2);
+                const xpInLevel = Math.max(0, currentXp - prevLevelReq);
+                const xpNeededInLevel = Math.max(1, nextLevelReq - prevLevelReq);
+                const xpPercent = Math.min(100, Math.max(0, (xpInLevel / xpNeededInLevel) * 100));
                 return (
                   <div className="flex flex-col items-end">
                     <span className="font-mono text-xs font-bold text-slate-100">
                       {user?.username || 'Cargando...'}
                     </span>
                     <span className="font-mono text-[10px] text-amber-400 font-bold">
-                      {t('level')} {playerData?.level || 1} • ${Number(playerData?.wallet?.cash ?? 0).toLocaleString()}
+                      {t('level')} {level} • ${Number(playerData?.wallet?.cash ?? 0).toLocaleString()}
                     </span>
-                    <div className="w-28 sm:w-36 h-1.5 bg-slate-900 rounded-full overflow-hidden mt-0.5 border border-white/10 relative" title={`Experiencia de Cuenta: ${currentXp}/${reqXp} XP (${xpPercent.toFixed(0)}%)`}>
+                    <div className="w-28 sm:w-36 h-1.5 bg-slate-900 rounded-full overflow-hidden mt-0.5 border border-white/10 relative" title={`Nivel ${level} Progreso: ${xpInLevel}/${xpNeededInLevel} XP (${xpPercent.toFixed(0)}%) | Total acumulado: ${currentXp} XP`}>
                       <div className="h-full bg-gradient-to-r from-amber-400 via-emerald-400 to-cyan-400 rounded-full transition-all" style={{ width: `${xpPercent}%` }}></div>
                     </div>
                     <span className="font-mono text-[9px] text-slate-400 font-semibold mt-0.5">
-                      ⭐ {currentXp.toLocaleString()} / {reqXp.toLocaleString()} XP ({xpPercent.toFixed(0)}%)
+                      ⭐ {xpInLevel.toLocaleString()} / {xpNeededInLevel.toLocaleString()} XP ({xpPercent.toFixed(0)}%)
                     </span>
                   </div>
                 );
