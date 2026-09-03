@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 import { PlayerService } from '../../services/playerService.js';
 import { CompanyService } from '../../services/companyService.js';
 
@@ -28,7 +28,7 @@ export const empresaCommand = {
         if (!ownerPlayer) {
           return interaction.reply({
             content: '❌ Necesitas registrarte primero usando `/empezar`.',
-            ephemeral: true,
+            flags: [MessageFlags.Ephemeral],
           });
         }
 
@@ -36,14 +36,14 @@ export const empresaCommand = {
         if (!targetPlayer) {
           return interaction.reply({
             content: '❌ El jugador objetivo no está registrado en el juego.',
-            ephemeral: true,
+            flags: [MessageFlags.Ephemeral],
           });
         }
 
         if (ownerPlayer.id === targetPlayer.id) {
           return interaction.reply({
             content: '❌ No puedes contratarte a ti mismo como empleado.',
-            ephemeral: true,
+            flags: [MessageFlags.Ephemeral],
           });
         }
 
@@ -56,7 +56,7 @@ export const empresaCommand = {
     } catch (err: any) {
       return interaction.reply({
         content: `❌ ${err.message}`,
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
     }
   },

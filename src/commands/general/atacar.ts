@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
 import { CombatService } from '../../services/combatService.js';
 
 export const atacarCommand = {
@@ -31,7 +31,7 @@ export const atacarCommand = {
       if (interaction.deferred) {
         return interaction.editReply({ content: `❌ ${err.message}` });
       }
-      return interaction.reply({ content: `❌ ${err.message}`, ephemeral: true });
+      return interaction.reply({ content: `❌ ${err.message}`, flags: [MessageFlags.Ephemeral] });
     }
   },
 };

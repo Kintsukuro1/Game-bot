@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
 import { PlayerService } from '../../services/playerService.js';
 
 export const profileCommand = {
@@ -12,7 +12,7 @@ export const profileCommand = {
     if (!player) {
       return interaction.reply({
         content: `❌ Aún no tienes personaje registrado. Usa \`/empezar\` para comenzar a jugar.`,
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
     }
 
@@ -29,6 +29,6 @@ export const profileCommand = {
       )
       .setFooter({ text: 'Sinford Underworld' });
 
-    return interaction.reply({ embeds: [embed], ephemeral: true });
+    return interaction.reply({ embeds: [embed], flags: [MessageFlags.Ephemeral] });
   },
 };

@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageFlags } from 'discord.js';
 import { PlayerService } from '../../services/playerService.js';
 import { prisma } from '../../db/prisma.js';
 
@@ -27,14 +27,14 @@ export const dueloCommand = {
         if (wagerAmount <= 0n) {
           return interaction.reply({
             content: '❌ El monto de la apuesta debe ser mayor a $0.',
-            ephemeral: true,
+            flags: [MessageFlags.Ephemeral],
           });
         }
 
         if (challengerUser.id === challengedUser.id) {
           return interaction.reply({
             content: '❌ No puedes retarte a duelo a ti mismo.',
-            ephemeral: true,
+            flags: [MessageFlags.Ephemeral],
           });
         }
 
@@ -42,7 +42,7 @@ export const dueloCommand = {
         if (!challenger) {
           return interaction.reply({
             content: '❌ Necesitas registrarte primero con `/empezar` para participar en duelos.',
-            ephemeral: true,
+            flags: [MessageFlags.Ephemeral],
           });
         }
 
@@ -50,14 +50,14 @@ export const dueloCommand = {
         if (!challenged) {
           return interaction.reply({
             content: `❌ El usuario <@${challengedUser.id}> aún no está registrado en el juego.`,
-            ephemeral: true,
+            flags: [MessageFlags.Ephemeral],
           });
         }
 
         if (!challenger.wallet || challenger.wallet.cash < wagerAmount) {
           return interaction.reply({
             content: `❌ No tienes suficiente efectivo para cubrir la apuesta de **$${wagerAmount.toLocaleString()}**. (Tu efectivo: **$${(challenger.wallet?.cash || 0n).toLocaleString()}**)`,
-            ephemeral: true,
+            flags: [MessageFlags.Ephemeral],
           });
         }
 
@@ -106,7 +106,7 @@ export const dueloCommand = {
     } catch (err: any) {
       return interaction.reply({
         content: `❌ ${err.message}`,
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
     }
   },

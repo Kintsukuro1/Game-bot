@@ -1,4 +1,4 @@
-import { Interaction } from 'discord.js';
+import { Interaction, MessageFlags } from 'discord.js';
 import { empezarCommand } from '../commands/general/empezar.js';
 import { gameCommand } from '../commands/general/game.js';
 import { atacarCommand } from '../commands/general/atacar.js';
@@ -42,7 +42,7 @@ export async function handleInteraction(interaction: Interaction): Promise<void>
     if (interaction.isButton() || interaction.isStringSelectMenu()) {
       await interaction.reply({
         content: '📱 **Sinford Underworld Web App**: Abre la aplicación Discord Activity desde el botón superior para disfrutar de la experiencia gráfica interactiva completada.',
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       }).catch(() => {});
     }
   } catch (error) {

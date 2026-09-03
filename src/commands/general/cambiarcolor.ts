@@ -13,6 +13,7 @@ import {
   Role,
   GuildMember,
   Routes,
+  MessageFlags,
 } from 'discord.js';
 import { prisma } from '../../db/prisma.js';
 import { PlayerService } from '../../services/playerService.js';
@@ -66,7 +67,7 @@ export const cambiarColorCommand = {
     if (!interaction.guild) {
       return interaction.reply({
         content: '❌ Este comando solo puede ser utilizado dentro de un servidor de Discord.',
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
     }
 
@@ -90,7 +91,7 @@ export const cambiarColorCommand = {
 
       return interaction.reply({
         embeds: [nonBoosterEmbed],
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
     }
 
@@ -152,7 +153,7 @@ export const cambiarColorCommand = {
     return interaction.reply({
       embeds: [mainEmbed],
       components: [row],
-      ephemeral: true,
+      flags: [MessageFlags.Ephemeral],
     });
   },
 
@@ -164,7 +165,7 @@ export const cambiarColorCommand = {
     if (!isMemberBooster(member)) {
       return interaction.reply({
         content: '❌ Necesitas ser Server Booster para usar este menú.',
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
     }
 
@@ -181,7 +182,7 @@ export const cambiarColorCommand = {
         if (existingRole) {
           return interaction.reply({
             content: `❌ Ya has creado tu rol personal (<@&${existingRole.id}>). Solo puedes tener **1 rol personal**. Si deseas modificarlo, usa las opciones de **Editar Nombre e Ícono** o **Cambiar Color**.`,
-            ephemeral: true,
+            flags: [MessageFlags.Ephemeral],
           });
         }
 
@@ -228,7 +229,7 @@ export const cambiarColorCommand = {
         if (!userRole) {
           return interaction.reply({
             content: '❌ Aún no tienes un rol personal creado. Selecciona primero la opción **Crear Rol Personal**.',
-            ephemeral: true,
+            flags: [MessageFlags.Ephemeral],
           });
         }
 
@@ -265,7 +266,7 @@ export const cambiarColorCommand = {
         if (!userRole) {
           return interaction.reply({
             content: '❌ Aún no tienes un rol personal creado. Selecciona primero la opción **Crear Rol Personal**.',
-            ephemeral: true,
+            flags: [MessageFlags.Ephemeral],
           });
         }
 
@@ -308,7 +309,7 @@ export const cambiarColorCommand = {
         return interaction.reply({
           embeds: [colorEmbed],
           components: [row],
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       }
     }
@@ -374,7 +375,7 @@ export const cambiarColorCommand = {
     if (!botMember.permissions.has(PermissionFlagsBits.ManageRoles)) {
       return interaction.reply({
         content: '❌ El bot no tiene permiso de `Gestionar Roles` (`MANAGE_ROLES`).',
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
     }
 
@@ -389,7 +390,7 @@ export const cambiarColorCommand = {
       if (!isValidHex(roleHexRaw)) {
         return interaction.reply({
           content: `❌ El código hexadecimal '${roleHexRaw}' no es válido. Usa formato '#RRGGBB' o '#RGB'.`,
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       }
 
@@ -399,7 +400,7 @@ export const cambiarColorCommand = {
         const targetPosition = Math.max(1, botMember.roles.highest.position - 1);
         const newRole = await interaction.guild.roles.create({
           name: roleName,
-          color: colorInt,
+          colors: { primaryColor: colorInt },
           position: targetPosition,
           reason: `Rol Personal Booster para ${interaction.user.tag}`,
         });
@@ -435,13 +436,13 @@ export const cambiarColorCommand = {
 
         return interaction.reply({
           embeds: [successEmbed],
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       } catch (err: any) {
         console.error('❌ Error creando rol personal:', err);
         return interaction.reply({
           content: `❌ Ocurrió un error al crear el rol: ${err.message || err}`,
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       }
     }
@@ -454,7 +455,7 @@ export const cambiarColorCommand = {
       if (!targetRole) {
         return interaction.reply({
           content: '❌ Tu rol personal no fue encontrado en el servidor.',
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       }
 
@@ -489,13 +490,13 @@ export const cambiarColorCommand = {
 
         return interaction.reply({
           embeds: [editEmbed],
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       } catch (err: any) {
         console.error('❌ Error editando rol:', err);
         return interaction.reply({
           content: `❌ Error al actualizar el rol: ${err.message || err}`,
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       }
     }
@@ -510,7 +511,7 @@ export const cambiarColorCommand = {
       if (!targetRole) {
         return interaction.reply({
           content: '❌ El rol no existe en el servidor.',
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       }
 
@@ -529,21 +530,21 @@ export const cambiarColorCommand = {
       if (!isValidHex(primaryHexRaw)) {
         return interaction.reply({
           content: `❌ El código hexadecimal primario '${primaryHexRaw}' no es válido. Usa formato '#RRGGBB' o '#RGB'.`,
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       }
 
       if (secondaryHexRaw && !isValidHex(secondaryHexRaw)) {
         return interaction.reply({
           content: `❌ El código hexadecimal secundario '${secondaryHexRaw}' no es válido. Usa formato '#RRGGBB' o '#RGB'.`,
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       }
 
       if (tertiaryHexRaw && !isValidHex(tertiaryHexRaw)) {
         return interaction.reply({
           content: `❌ El código hexadecimal terciario '${tertiaryHexRaw}' no es válido. Usa formato '#RRGGBB' o '#RGB'.`,
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       }
 
@@ -612,7 +613,7 @@ export const cambiarColorCommand = {
 
       return interaction.reply({
         embeds: [successEmbed],
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
     }
   },

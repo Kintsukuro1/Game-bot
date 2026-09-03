@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import { PlayerService } from '../../services/playerService.js';
 import { prisma } from '../../db/prisma.js';
 
@@ -34,7 +34,7 @@ export const adminCommand = {
         const target = await PlayerService.getPlayerByDiscordId(targetUser.id, guildId);
 
         if (!target || !target.wallet) {
-          return interaction.reply({ content: '❌ El jugador no existe o no se ha registrado en este servidor.', ephemeral: true });
+          return interaction.reply({ content: '❌ El jugador no existe o no se ha registrado en este servidor.', flags: [MessageFlags.Ephemeral] });
         }
 
         const balanceBefore = target.wallet.cash;
@@ -59,7 +59,7 @@ export const adminCommand = {
 
         return interaction.reply({
           content: `✅ Se otorgaron **+$${amount.toLocaleString()}** a **${target.username}**. Nuevo saldo: **$${balanceAfter.toLocaleString()}**.`,
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       }
 
@@ -68,7 +68,7 @@ export const adminCommand = {
         const target = await PlayerService.getPlayerByDiscordId(targetUser.id, guildId);
 
         if (!target) {
-          return interaction.reply({ content: '❌ El jugador no existe en este servidor.', ephemeral: true });
+          return interaction.reply({ content: '❌ El jugador no existe en este servidor.', flags: [MessageFlags.Ephemeral] });
         }
 
         await prisma.player.update({
@@ -78,7 +78,7 @@ export const adminCommand = {
 
         return interaction.reply({
           content: `✅ **${target.username}** fue liberado del Hospital y de Prisión.`,
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       }
 
@@ -89,11 +89,11 @@ export const adminCommand = {
 
         return interaction.reply({
           content: `🟢 **Estado de la Base de Datos:** OK\n• Jugadores registrados globales: **${playerCount}**\n• Ítems en catálogo: **${itemCount}**\n• Transacciones auditadas: **${txCount}**`,
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       }
     } catch (err: any) {
-      return interaction.reply({ content: `❌ Error de administración: ${err.message}`, ephemeral: true });
+      return interaction.reply({ content: `❌ Error de administración: ${err.message}`, flags: [MessageFlags.Ephemeral] });
     }
   },
 };
