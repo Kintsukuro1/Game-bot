@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { Icon } from '../common/Icon';
+import { useToast } from '../../context/ToastContext';
 
 interface PropertyPanelProps {
   sessionJwt: string | null;
@@ -8,11 +9,11 @@ interface PropertyPanelProps {
 }
 
 export const PropertyPanel: React.FC<PropertyPanelProps> = ({ sessionJwt, onBuySuccess }) => {
+  const { showToast } = useToast();
   const [currentProperty, setCurrentProperty] = useState<any>(null);
   const [availableProperties, setAvailableProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [buyingType, setBuyingType] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   const fetchPropertyData = async () => {
     if (!sessionJwt) return;
@@ -35,7 +36,6 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({ sessionJwt, onBuyS
   }, [sessionJwt]);
 
   const handleBuyProperty = async (propType: string, propName: string) => {
-    setMessage(null);
     setBuyingType(propType);
     try {
       await api.post(
@@ -43,11 +43,19 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({ sessionJwt, onBuyS
         { propertyType: propType },
         { headers: { Authorization: `Bearer ${sessionJwt}` } }
       );
-      setMessage(`🏡 ¡Felicidades! Adquiriste **${propName}**. Tu Felicidad Máxima ha aumentado.`);
+      showToast({
+        type: 'success',
+        title: '🏡 ¡Propiedad Adquirida!',
+        message: `¡Felicidades! Adquiriste **${propName}**. Tu Felicidad Máxima ha aumentado.`,
+      });
       if (onBuySuccess) onBuySuccess();
       fetchPropertyData();
     } catch (err: any) {
-      setMessage(err.response?.data?.error || `❌ Error al comprar ${propName}.`);
+      showToast({
+        type: 'error',
+        title: '❌ Error al Comprar',
+        message: err.response?.data?.error || `Error al comprar **${propName}**.`,
+      });
     } finally {
       setBuyingType(null);
     }
@@ -67,16 +75,6 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({ sessionJwt, onBuyS
           </p>
         </div>
       </div>
-
-      {message && (
-        <div className={`p-4 rounded-xl font-mono text-xs font-bold border shadow-md ${
-          message.includes('Felicidades')
-            ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
-            : 'bg-rose-500/10 text-rose-300 border-rose-500/30'
-        }`}>
-          {message}
-        </div>
-      )}
 
       {/* Current Active Residence */}
       {currentProperty && (

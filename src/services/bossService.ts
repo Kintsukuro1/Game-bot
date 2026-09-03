@@ -14,6 +14,45 @@ export interface BossDefinition {
   abilityDescription: string;
 }
 
+export type BossTargetPart = 'HEAD' | 'TORSO' | 'LEFT_ARM' | 'RIGHT_ARM' | 'LEFT_LEG' | 'RIGHT_LEG';
+
+export interface BossWeakSpot {
+  partKey: BossTargetPart;
+  partName: string;
+  expiresAt: number;
+  multiplier: number;
+}
+
+const activeWeakSpots: Record<string, BossWeakSpot> = {};
+
+export function getOrGenerateWeakSpot(bossId: string): BossWeakSpot {
+  const now = Date.now();
+  const existing = activeWeakSpots[bossId];
+  if (existing && existing.expiresAt > now) {
+    return existing;
+  }
+
+  const parts: { key: BossTargetPart; name: string }[] = [
+    { key: 'HEAD', name: '🧠 Cabeza (Trauma Craneal Expuesto)' },
+    { key: 'TORSO', name: '🫀 Torso (Arteria Principal Expuesta)' },
+    { key: 'LEFT_ARM', name: '💪 Brazo Izquierdo (Articulación Expuesta)' },
+    { key: 'RIGHT_ARM', name: '💪 Brazo Derecho (Articulación Expuesta)' },
+    { key: 'LEFT_LEG', name: '🦵 Pierna Izquierda (Tendón Expuesto)' },
+    { key: 'RIGHT_LEG', name: '🦵 Pierna Derecha (Tendón Expuesto)' },
+  ];
+
+  const selected = parts[Math.floor(Math.random() * parts.length)];
+  const newWeakSpot: BossWeakSpot = {
+    partKey: selected.key,
+    partName: selected.name,
+    expiresAt: now + 45000, // 45s de duración en vivo
+    multiplier: 2.5,
+  };
+
+  activeWeakSpots[bossId] = newWeakSpot;
+  return newWeakSpot;
+}
+
 export type BossPhase = 'NORMAL' | 'ENRAGED' | 'DESPERATE';
 
 export type BossCombatActionType =
@@ -29,6 +68,47 @@ export type BossCombatActionType =
   | 'ITEM'
   | 'TAUNT';
 
+export interface BossBodyParts {
+  headHp: number;
+  maxHeadHp: number;
+  torsoHp: number;
+  maxTorsoHp: number;
+  leftArmHp: number;
+  maxLeftArmHp: number;
+  rightArmHp: number;
+  maxRightArmHp: number;
+  leftLegHp: number;
+  maxLeftLegHp: number;
+  rightLegHp: number;
+  maxRightLegHp: number;
+}
+
+export function calculateBossBodyParts(currentHp: number, maxHp: number): BossBodyParts {
+  const maxHeadHp = Math.floor(maxHp * 0.15);
+  const maxTorsoHp = Math.floor(maxHp * 0.35);
+  const maxLeftArmHp = Math.floor(maxHp * 0.125);
+  const maxRightArmHp = Math.floor(maxHp * 0.125);
+  const maxLeftLegHp = Math.floor(maxHp * 0.125);
+  const maxRightLegHp = Math.floor(maxHp * 0.125);
+
+  const ratio = Math.max(0, currentHp / maxHp);
+
+  return {
+    headHp: Math.floor(maxHeadHp * ratio),
+    maxHeadHp,
+    torsoHp: Math.floor(maxTorsoHp * ratio),
+    maxTorsoHp,
+    leftArmHp: Math.floor(maxLeftArmHp * ratio),
+    maxLeftArmHp,
+    rightArmHp: Math.floor(maxRightArmHp * ratio),
+    maxRightArmHp,
+    leftLegHp: Math.floor(maxLeftLegHp * ratio),
+    maxLeftLegHp,
+    rightLegHp: Math.floor(maxRightLegHp * ratio),
+    maxRightLegHp,
+  };
+}
+
 export interface BossAttackResult {
   bossName: string;
   bossType: string;
@@ -37,8 +117,13 @@ export interface BossAttackResult {
   isHit: boolean;
   damageDealt: number;
   isCrit: boolean;
+  isWeakSpotHit?: boolean;
+  activeWeakSpot?: BossWeakSpot;
+  targetPart: BossTargetPart;
   remainingBossHp: number;
   bossMaxHp: number;
+  bossBodyParts: BossBodyParts;
+  bossPartStruck: string;
   isDefeated: boolean;
   counterDamage: number;
   bodyPartStruck: string;
@@ -334,7 +419,8 @@ export class BossService {
   static async attackBoss(
     playerId: string,
     bossId: string,
-    rawActionType: BossCombatActionType = 'ATK_PRIMARY'
+    rawActionType: BossCombatActionType = 'ATK_PRIMARY',
+    targetPart: BossTargetPart = 'TORSO'
   ): Promise<BossAttackResult> {
     // Mapeo retrocompatible
     let actionType: BossCombatActionType = rawActionType;
@@ -390,6 +476,10 @@ export class BossService {
           throw new Error('🔒 Los Bosses Semanales son exclusivos para miembros de una Facción. ¡Únete a una facción para participar!');
         }
       }
+
+      // Obtener o generar Punto Débil Expuesto en Tiempo Real
+      const activeWeakSpot = getOrGenerateWeakSpot(boss.id);
+      const isWeakSpotHit = targetPart === activeWeakSpot.partKey && Date.now() < activeWeakSpot.expiresAt;
 
       // 1. Procesar acción de ÍTEM MÉDICO si aplica
       let usedMedicalItemName = '';
@@ -471,8 +561,44 @@ export class BossService {
         chosenWeapon = { name: 'Disparo de Cobertura', damage: 12, accuracy: 40.0, weaponType: 'Pistol' };
       }
 
-      // 4. Penalizaciones por extremidades dañadas del jugador
-      let accuracyPenalty = 0.0;
+      // 4. Modificadores de Apuntado Anatómico Objetivo
+      let targetAccuracyPenalty = 0.0;
+      let targetDamageMult = 1.0;
+      let bossPartStruckName = '🫀 Torso del Jefe';
+
+      if (targetPart === 'HEAD') {
+        targetAccuracyPenalty = 0.20; // Disparo a la cabeza es más difícil
+        targetDamageMult = 1.75; // Alto impacto crítico
+        bossPartStruckName = '🧠 Cabeza del Jefe';
+      } else if (targetPart === 'TORSO') {
+        targetAccuracyPenalty = -0.10; // Masa corporal grande (+10% acierto)
+        targetDamageMult = 1.0;
+        bossPartStruckName = '🫀 Torso del Jefe';
+      } else if (targetPart === 'LEFT_ARM') {
+        targetAccuracyPenalty = 0.05;
+        targetDamageMult = 1.0;
+        bossPartStruckName = '💪 Brazo Izquierdo del Jefe';
+      } else if (targetPart === 'RIGHT_ARM') {
+        targetAccuracyPenalty = 0.05;
+        targetDamageMult = 1.0;
+        bossPartStruckName = '💪 Brazo Derecho del Jefe';
+      } else if (targetPart === 'LEFT_LEG') {
+        targetAccuracyPenalty = 0.05;
+        targetDamageMult = 1.0;
+        bossPartStruckName = '🦵 Pierna Izquierda del Jefe';
+      } else if (targetPart === 'RIGHT_LEG') {
+        targetAccuracyPenalty = 0.05;
+        targetDamageMult = 1.0;
+        bossPartStruckName = '🦵 Pierna Derecha del Jefe';
+      }
+
+      // Multiplicador por Punto Débil Expuesto
+      if (isWeakSpotHit) {
+        targetDamageMult *= activeWeakSpot.multiplier; // x2.5
+      }
+
+      // 5. Penalizaciones por extremidades dañadas del jugador
+      let accuracyPenalty = targetAccuracyPenalty;
       let damagePenalty = 0.0;
       if (currentBody.leftArmHp < 40 || currentBody.rightArmHp < 40) {
         accuracyPenalty += 0.10;
@@ -482,17 +608,17 @@ export class BossService {
         damagePenalty += 0.15;
       }
 
-      // 5. Cálculo de Acierto (Hit Chance estilo Torn)
+      // 6. Cálculo de Acierto (Hit Chance estilo Torn)
       const attackerSpeed = player.stats.speed;
       const bossDex = 20.0;
       const weaponAcc = chosenWeapon.accuracy || 50.0;
       const hitChance = Math.min(
-        Math.max(0.5 * (attackerSpeed / bossDex) * (weaponAcc / 50.0) - accuracyPenalty, 0.20),
+        Math.max(0.5 * (attackerSpeed / bossDex) * (weaponAcc / 50.0) - accuracyPenalty, 0.15),
         0.95
       );
       const isHit = actionType === 'TACTICAL_MED' ? false : Math.random() <= hitChance;
 
-      // 6. Cálculo de Daño al Jefe
+      // 7. Cálculo de Daño al Jefe
       let rawDamage = 0;
       let isCrit = false;
       let bossNegatedDamage = false;
@@ -522,7 +648,7 @@ export class BossService {
         const statRatio = Math.sqrt(player.stats.strength / 15.0);
         const randomFactor = 0.85 + Math.random() * 0.3;
         rawDamage = Math.floor(
-          chosenWeapon.damage * statRatio * actionDamageMult * critMult * (1.0 - damagePenalty) * randomFactor
+          chosenWeapon.damage * statRatio * actionDamageMult * targetDamageMult * critMult * (1.0 - damagePenalty) * randomFactor
         );
 
         // Habilidad de Payaso Pepino (Trip)
@@ -536,9 +662,11 @@ export class BossService {
         }
       }
 
-      const damageDealt = isHit && !bossNegatedDamage ? Math.max(rawDamage, 20) : 0;
+      const damageDealt = isHit && !bossNegatedDamage ? Math.max(rawDamage, 25) : 0;
       const newBossHp = Math.max(0, boss.currentHp - damageDealt);
       const isDefeated = newBossHp <= 0;
+
+      const bossBodyParts = calculateBossBodyParts(newBossHp, boss.maxHp);
 
       // Actualizar vida del Boss en DB
       await tx.worldBoss.update({
@@ -696,8 +824,13 @@ export class BossService {
         isHit,
         damageDealt,
         isCrit,
+        isWeakSpotHit,
+        activeWeakSpot,
+        targetPart,
         remainingBossHp: newBossHp,
         bossMaxHp: boss.maxHp,
+        bossBodyParts,
+        bossPartStruck: isHit && damageDealt > 0 ? bossPartStruckName : 'Ninguna (Ataque fallido)',
         isDefeated,
         counterDamage: baseCounter,
         bodyPartStruck: targetPartName,

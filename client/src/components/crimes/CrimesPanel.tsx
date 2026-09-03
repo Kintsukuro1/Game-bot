@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { api } from '../../lib/api';
 import { Icon } from '../common/Icon';
+import { useToast } from '../../context/ToastContext';
 
 interface CrimeLogEntry {
   id: string;
@@ -101,18 +102,21 @@ export const CrimesPanel: React.FC<CrimesPanelProps> = ({
   sessionJwt,
   onCrimeSuccess,
 }) => {
+  const { showToast } = useToast();
   const [isCommitting, setIsCommitting] = useState<string | null>(null);
-  const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [logs, setLogs] = useState<CrimeLogEntry[]>([]);
 
   const handleCommitCrime = async (crime: CrimeItem) => {
     if (nerve < crime.nerveCost) {
-      setActionMessage(`⚠️ Necesitas al menos ${crime.nerveCost} de Nerve para cometer este crimen.`);
+      showToast({
+        type: 'warning',
+        title: '⚠️ Nerve Insuficiente',
+        message: `Necesitas al menos **${crime.nerveCost}⚡** de Nerve para cometer este crimen.`,
+      });
       return;
     }
 
     setIsCommitting(crime.id);
-    setActionMessage(null);
 
     try {
       const response = await api.post(
@@ -124,7 +128,19 @@ export const CrimesPanel: React.FC<CrimesPanelProps> = ({
       const data = response.data;
       const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      setActionMessage(data.message || (data.success ? `🎉 ¡Crimen Exitoso en ${crime.name}!` : `❌ Crimen Fallido en ${crime.name}`));
+      if (data.success) {
+        showToast({
+          type: 'success',
+          title: '🎉 ¡Crimen Exitoso!',
+          message: data.message || `Completaste **${crime.name}** y obtuviste **+$${data.rewardAmount?.toLocaleString()}** y **+10 Crime XP**.`,
+        });
+      } else {
+        showToast({
+          type: 'error',
+          title: '❌ Crimen Fallido',
+          message: data.message || `Fallaste al intentar **${crime.name}**.`,
+        });
+      }
 
       const newLog: CrimeLogEntry = {
         id: Date.now().toString(),
@@ -140,7 +156,11 @@ export const CrimesPanel: React.FC<CrimesPanelProps> = ({
         onCrimeSuccess(data);
       }
     } catch (err: any) {
-      setActionMessage(err.response?.data?.error || '❌ Error al intentar ejecutar el crimen.');
+      showToast({
+        type: 'error',
+        title: '❌ Error de Operación',
+        message: err.response?.data?.error || 'Error al intentar ejecutar el crimen.',
+      });
     } finally {
       setIsCommitting(null);
     }
@@ -178,16 +198,6 @@ export const CrimesPanel: React.FC<CrimesPanelProps> = ({
           </div>
         </div>
       </div>
-
-      {actionMessage && (
-        <div className={`p-4 rounded-xl text-xs font-mono font-bold shadow-md ${
-          actionMessage.includes('Exitoso') || actionMessage.startsWith('🎉')
-            ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
-            : 'bg-rose-500/10 text-rose-300 border border-rose-500/30'
-        }`}>
-          {actionMessage}
-        </div>
-      )}
 
       {/* Main Content Layout */}
       <div className="flex flex-col lg:flex-row gap-6 w-full">

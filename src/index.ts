@@ -10,6 +10,7 @@ import { adminCommand } from './commands/general/admin.js';
 import { profileCommand } from './commands/general/profile.js';
 import { empresaCommand } from './commands/general/empresa.js';
 import { dueloCommand } from './commands/general/duelo.js';
+import { cambiarColorCommand } from './commands/general/cambiarcolor.js';
 
 dotenv.config();
 
@@ -50,6 +51,7 @@ client.once(Events.ClientReady, async () => {
         profileCommand.data.toJSON(),
         empresaCommand.data.toJSON(),
         dueloCommand.data.toJSON(),
+        cambiarColorCommand.data.toJSON(),
       ];
 
       console.log(`🔄 [Global Sync] Sincronizando ${commandList.length} comandos Slash globales...`);

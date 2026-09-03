@@ -33,11 +33,22 @@ export const MISSION_POOL: MissionTemplate[] = [
 ];
 
 export class MissionService {
-  // Inicializar o consultar misiones activas
+  // Obtener fecha del próximo reinicio diario (00:00:00 UTC)
+  static getNextDailyReset(): Date {
+    const now = new Date();
+    const nextReset = new Date(now);
+    nextReset.setUTCHours(24, 0, 0, 0); // 00:00:00 UTC del día siguiente
+    return nextReset;
+  }
+
+  // Inicializar o consultar misiones activas del ciclo diario actual
   static async getMissions(playerId: string) {
     const now = new Date();
+    const nextReset = MissionService.getNextDailyReset();
+
     let missions = await prisma.playerMission.findMany({
-      where: { playerId, isCompleted: false, expiresAt: { gt: now } },
+      where: { playerId, expiresAt: { gt: now } },
+      orderBy: { createdAt: 'asc' },
     });
 
     if (missions.length === 0) {
@@ -50,7 +61,6 @@ export class MissionService {
         return poolForType[Math.floor(Math.random() * poolForType.length)];
       });
 
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
       await prisma.playerMission.createMany({
         data: selectedMissions.map((m) => ({
           playerId,
@@ -60,16 +70,22 @@ export class MissionService {
           requirement: m.requirement,
           rewardCash: m.rewardCash,
           rewardXp: m.rewardXp,
-          expiresAt,
+          expiresAt: nextReset,
         })),
       });
 
       missions = await prisma.playerMission.findMany({
-        where: { playerId, isCompleted: false, expiresAt: { gt: now } },
+        where: { playerId, expiresAt: { gt: now } },
+        orderBy: { createdAt: 'asc' },
       });
     }
 
-    return missions;
+    const resetTime = missions[0]?.expiresAt || nextReset;
+
+    return {
+      missions,
+      nextResetAt: resetTime.toISOString(),
+    };
   }
 
   // Avanzar progreso de misión

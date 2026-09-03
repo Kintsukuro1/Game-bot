@@ -4,6 +4,8 @@ import { useDiscordSdk } from './hooks/useDiscordSdk';
 import { useSocket } from './hooks/useSocket';
 import { AnatomicalBody } from './components/health/AnatomicalBody';
 import { CityHub } from './components/hub/CityHub';
+import type { ActivityFeedItem } from './types/activity';
+import { useToast } from './context/ToastContext';
 import { GymPanel } from './components/gym/GymPanel';
 import { InventoryGrid } from './components/inventory/InventoryGrid';
 import { CrimesPanel } from './components/crimes/CrimesPanel';
@@ -89,12 +91,13 @@ export function App() {
   } = useDiscordSdk();
   const { t, language, setLanguage } = useLanguage();
   const { socket } = useSocket(sessionToken, instanceId);
+  const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState<string>('hub');
   const [playerData, setPlayerData] = useState<any>(null);
   const [inventoryData, setInventoryData] = useState<any[]>([]);
   const [manualLoading, setManualLoading] = useState<boolean>(false);
-  const [actionNotification, setActionNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [activities, setActivities] = useState<ActivityFeedItem[]>([]);
 
   const playerLevel = playerData?.level ?? 1;
 
@@ -108,9 +111,10 @@ export function App() {
   const handleTabClick = (tabId: string) => {
     const reqLevel = MODULE_REQUIRED_LEVELS[tabId] || 1;
     if (playerLevel < reqLevel) {
-      setActionNotification({
-        type: 'error',
-        message: `🔒 ${t('module_locked')}: ${t(tabId as any) || tabId} requiere Nivel ${reqLevel} (Tu nivel actual: Nivel ${playerLevel}).`,
+      showToast({
+        type: 'warning',
+        title: '🔒 Módulo Bloqueado',
+        message: `${t(tabId as any) || tabId} requiere **Nivel ${reqLevel}** (Tu nivel actual: Nivel ${playerLevel}).`,
       });
       return;
     }
@@ -184,10 +188,22 @@ export function App() {
     }
   };
 
+  const fetchActivities = async () => {
+    try {
+      const res = await api.get('/activity/recent');
+      if (res.data?.activities) {
+        setActivities(res.data.activities);
+      }
+    } catch (err) {
+      console.error('❌ Error fetching activities:', err);
+    }
+  };
+
   useEffect(() => {
     if (isAuthenticated && sessionToken) {
       fetchProfile();
       fetchInventory();
+      fetchActivities();
     }
   }, [isAuthenticated, sessionToken]);
 
@@ -196,9 +212,16 @@ export function App() {
     const handleStatsUpdated = () => {
       fetchProfile();
     };
+    const handleGlobalActivity = (activity: ActivityFeedItem) => {
+      setActivities((prev) => [activity, ...prev].slice(0, 30));
+    };
+
     socket.on('player_stats_updated', handleStatsUpdated);
+    socket.on('global_activity', handleGlobalActivity);
+
     return () => {
       socket.off('player_stats_updated', handleStatsUpdated);
+      socket.off('global_activity', handleGlobalActivity);
     };
   }, [socket]);
 
@@ -499,25 +522,6 @@ export function App() {
             <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.1)_50%)] bg-[length:100%_4px] opacity-20"></div>
 
             <div className="relative z-10 flex flex-col gap-5">
-              {/* Notification Banner */}
-              {actionNotification && (
-                <div
-                  className={`p-3 rounded-lg border text-xs font-mono font-bold flex items-center justify-between animate-fadeIn ${
-                    actionNotification.type === 'error'
-                      ? 'bg-rose-950/80 border-rose-600/50 text-rose-300'
-                      : 'bg-emerald-950/80 border-emerald-600/50 text-emerald-300'
-                  }`}
-                >
-                  <span>{actionNotification.message}</span>
-                  <button
-                    onClick={() => setActionNotification(null)}
-                    className="ml-2 text-slate-400 hover:text-slate-100 text-sm font-bold cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-
               {/* Category 1: Información */}
               <div className="flex flex-col gap-1.5">
                 <h3 className="font-mono text-[10px] text-slate-400 uppercase tracking-[0.2em] border-b border-white/5 pb-1 font-bold">
@@ -642,7 +646,12 @@ export function App() {
               }
             >
               {activeTab === 'hub' && (
-                <CityHub onSelectTab={(tab) => setActiveTab(tab)} />
+                <CityHub
+                  onSelectTab={(tab) => handleTabClick(tab)}
+                  playerLevel={playerLevel}
+                  MODULE_REQUIRED_LEVELS={MODULE_REQUIRED_LEVELS}
+                  activities={activities}
+                />
               )}
 
               {activeTab === 'profile' && (
@@ -723,6 +732,7 @@ export function App() {
               {activeTab === 'boss' && (
                 <BossPanel
                   sessionJwt={sessionToken}
+                  socket={socket}
                   onAttackSuccess={() => fetchProfile()}
                 />
               )}
@@ -898,10 +908,19 @@ export function App() {
           </span>
           <div className="flex-1 overflow-hidden whitespace-nowrap relative">
             <div className="inline-block animate-marquee font-mono text-slate-400 text-[11px] uppercase tracking-wider">
-              <span className="mx-8">[SYSTEM] USER 'X_GHOST_X' INFILTRATED SINFORD BANK</span>
-              <span className="mx-8 text-amber-400">[REWARD] $50,000 BOUNTY PLACED ON 'JACK_RIPPER'</span>
-              <span className="mx-8 text-rose-400">[ALERT] POLICE RAID IN SECTOR 7 - EVACUATE IMMEDIATELY</span>
-              <span className="mx-8 text-emerald-400">[TRADE] WEAPON CACHE REFRESHED AT THE DOCKS</span>
+              {Array.isArray(activities) && activities.length > 0 ? (
+                activities.map((act, idx) => (
+                  <span key={act?.id || idx} className={`mx-6 ${act?.color || 'text-slate-300'}`}>
+                    <span className="opacity-70 font-bold">{act?.tag || '[INFO]'}</span> {act?.message || ''}
+                  </span>
+                ))
+              ) : (
+                <>
+                  <span className="mx-8 text-cyan-400">[SISTEMA] RED SINFORD UNDERWORLD CONECTADA</span>
+                  <span className="mx-8 text-amber-400">[ALERTA] PATRULLAJES POLICIALES ACTIVOS EN SECTOR CENTRAL</span>
+                  <span className="mx-8 text-emerald-400">[MERCADO] OPERACIONES DE CONTRABANDO ACTIVAS</span>
+                </>
+              )}
             </div>
           </div>
         </div>

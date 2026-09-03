@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { Icon } from '../common/Icon';
+import { useToast } from '../../context/ToastContext';
 
 interface ProfessionPanelProps {
   sessionJwt: string | null;
@@ -15,10 +16,10 @@ export const ProfessionPanel: React.FC<ProfessionPanelProps> = ({
   currentProfession,
   onChooseSuccess,
 }) => {
+  const { showToast } = useToast();
   const [professions, setProfessions] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [choosingId, setChoosingId] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   const fetchProfessions = async () => {
     if (!sessionJwt) return;
@@ -41,11 +42,14 @@ export const ProfessionPanel: React.FC<ProfessionPanelProps> = ({
 
   const handleChoose = async (professionId: string, profName: string) => {
     if (playerLevel < 10) {
-      setMessage('🔒 Requieres Nivel 10 para desbloquear la selección de carrera profesional.');
+      showToast({
+        type: 'warning',
+        title: '🔒 Nivel Insuficiente',
+        message: 'Requieres **Nivel 10** para desbloquear la selección de carrera profesional.',
+      });
       return;
     }
 
-    setMessage(null);
     setChoosingId(professionId);
 
     try {
@@ -54,11 +58,19 @@ export const ProfessionPanel: React.FC<ProfessionPanelProps> = ({
         { profession: professionId },
         { headers: { Authorization: `Bearer ${sessionJwt}` } }
       );
-      setMessage(`🎭 ¡Felicidades! Has asumido la profesión de **${profName}**.`);
+      showToast({
+        type: 'success',
+        title: '🎭 ¡Especialización Profesional!',
+        message: `¡Felicidades! Has asumido la profesión de **${profName}**.`,
+      });
       if (onChooseSuccess) onChooseSuccess();
       fetchProfessions();
     } catch (err: any) {
-      setMessage(err.response?.data?.error || `❌ Error al seleccionar la profesión de ${profName}.`);
+      showToast({
+        type: 'error',
+        title: '❌ Error de Selección',
+        message: err.response?.data?.error || `Error al seleccionar la profesión de **${profName}**.`,
+      });
     } finally {
       setChoosingId(null);
     }
@@ -84,16 +96,6 @@ export const ProfessionPanel: React.FC<ProfessionPanelProps> = ({
           </span>
         )}
       </div>
-
-      {message && (
-        <div className={`p-4 rounded-xl font-mono text-xs font-bold border shadow-md ${
-          message.includes('Felicidades')
-            ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
-            : 'bg-rose-500/10 text-rose-300 border-rose-500/30'
-        }`}>
-          {message}
-        </div>
-      )}
 
       {/* Professions List */}
       {loading ? (

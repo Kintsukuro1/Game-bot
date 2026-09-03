@@ -59,10 +59,19 @@ export class PlayerService {
     }
 
     // Auto-nivelar si el jugador ya acumuló XP suficiente para el siguiente nivel
-    if (player && player.xp >= this.getRequiredXpForNextLevel(player.level)) {
-      const levelUpRes = await this.addXp(player.id, 0);
-      if (levelUpRes?.updated) {
-        player = levelUpRes.updated;
+    if (player) {
+      const reqXp = this.getRequiredXpForNextLevel(player.level);
+      console.log(`[AUTO-LEVELUP CHECK] Player ${player.discordId} | Level: ${player.level} | XP: ${player.xp} | Required: ${reqXp} | ShouldLevelUp: ${player.xp >= reqXp}`);
+      if (player.xp >= reqXp) {
+        try {
+          const levelUpRes = await this.addXp(player.id, 0);
+          console.log(`[AUTO-LEVELUP RESULT] leveledUp: ${levelUpRes?.leveledUp} | newLevel: ${levelUpRes?.newLevel} | updated.level: ${levelUpRes?.updated?.level}`);
+          if (levelUpRes?.updated) {
+            player = levelUpRes.updated;
+          }
+        } catch (err) {
+          console.error(`[AUTO-LEVELUP ERROR]`, err);
+        }
       }
     }
 

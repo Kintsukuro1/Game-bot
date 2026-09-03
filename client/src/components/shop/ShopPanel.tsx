@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { Icon } from '../common/Icon';
+import { useToast } from '../../context/ToastContext';
 
 interface ShopPanelProps {
   sessionJwt: string | null;
@@ -8,13 +9,13 @@ interface ShopPanelProps {
 }
 
 export const ShopPanel: React.FC<ShopPanelProps> = ({ sessionJwt, onBuySuccess }) => {
+  const { showToast } = useToast();
   const [catIndex, setCatIndex] = useState<number>(0);
   const [items, setItems] = useState<any[]>([]);
   const [subFilter, setSubFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [buyingId, setBuyingId] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   const fetchShopCatalog = async () => {
     if (!sessionJwt) return;
@@ -36,7 +37,6 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ sessionJwt, onBuySuccess }
   }, [sessionJwt, catIndex]);
 
   const handleBuy = async (itemId: string, itemName: string, price: number) => {
-    setMessage(null);
     setBuyingId(itemId);
 
     try {
@@ -46,11 +46,20 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ sessionJwt, onBuySuccess }
         { headers: { Authorization: `Bearer ${sessionJwt}` } }
       );
 
-      setMessage(`🛍️ ¡Compraste **${itemName}** por **$${price.toLocaleString()}**! Objeto añadido a tu inventario.`);
+      showToast({
+        type: 'success',
+        title: '🛍️ ¡Compra Realizada!',
+        message: `¡Compraste **${itemName}** por **$${price.toLocaleString()}**! Objeto añadido a tu inventario.`,
+      });
+
       if (onBuySuccess) onBuySuccess();
       fetchShopCatalog();
     } catch (err: any) {
-      setMessage(err.response?.data?.error || `❌ Error al comprar ${itemName}.`);
+      showToast({
+        type: 'error',
+        title: '❌ Error al Comprar',
+        message: err.response?.data?.error || `Error al comprar **${itemName}**.`,
+      });
     } finally {
       setBuyingId(null);
     }
@@ -167,16 +176,6 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ sessionJwt, onBuySuccess }
               {sub.label}
             </button>
           ))}
-        </div>
-      )}
-
-      {message && (
-        <div className={`p-4 rounded-xl font-mono text-xs font-bold border shadow-md ${
-          message.includes('Compraste')
-            ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
-            : 'bg-rose-500/10 text-rose-300 border-rose-500/30'
-        }`}>
-          {message}
         </div>
       )}
 

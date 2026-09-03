@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { api } from '../../lib/api';
 import { Icon } from '../common/Icon';
 import { useEnergyRegen } from '../../hooks/useEnergyRegen';
+import { useToast } from '../../context/ToastContext';
 
 export interface GymInfo {
   tier: number;
@@ -50,10 +51,10 @@ export const GymPanel: React.FC<GymPanelProps> = ({
   sessionJwt,
   onTrainSuccess,
 }) => {
+  const { showToast } = useToast();
   const [energyToUse, setEnergyToUse] = useState<number>(25);
   const [isTraining, setIsTraining] = useState<boolean>(false);
   const [isUpgrading, setIsUpgrading] = useState<boolean>(false);
-  const [trainMessage, setTrainMessage] = useState<string | null>(null);
 
   const currentGym = GYMS.find((g) => g.tier === gymTier) || GYMS[0];
   const nextGym = GYMS.find((g) => g.tier === gymTier + 1) || null;
@@ -83,12 +84,15 @@ export const GymPanel: React.FC<GymPanelProps> = ({
 
   const handleTrain = async (stat: 'strength' | 'defense' | 'speed' | 'dexterity') => {
     if (currentEnergy < energyToUse) {
-      setTrainMessage(`⚠️ No tienes suficiente Energía disponible (${currentEnergy}⚡ / ${energyToUse}⚡ requeridos).`);
+      showToast({
+        type: 'warning',
+        title: '⚠️ Energía Insuficiente',
+        message: `No tienes suficiente Energía disponible (**${currentEnergy}⚡** / **${energyToUse}⚡** requeridos).`,
+      });
       return;
     }
 
     setIsTraining(true);
-    setTrainMessage(null);
 
     try {
       const response = await api.post(
@@ -99,13 +103,23 @@ export const GymPanel: React.FC<GymPanelProps> = ({
 
       const gain = response.data?.gains;
       const statDisplay = stat.toUpperCase();
-      setTrainMessage(`⚡ ¡Entrenamiento completado en ${currentGym.name}! Aumentaste +${gain ? Number(gain).toFixed(3) : estimatedGainForStat()} de ${statDisplay}`);
-      
+      const gainAmount = gain ? Number(gain).toFixed(3) : estimatedGainForStat();
+
+      showToast({
+        type: 'success',
+        title: '⚡ ¡Entrenamiento Completado!',
+        message: `¡Entrenamiento completado en **${currentGym.name}**! Aumentaste **+${gainAmount}** de **${statDisplay}**.`,
+      });
+
       if (onTrainSuccess) {
         onTrainSuccess(response.data);
       }
     } catch (err: any) {
-      setTrainMessage(err.response?.data?.error || '❌ Error al intentar entrenar en el gimnasio.');
+      showToast({
+        type: 'error',
+        title: '❌ Error de Entrenamiento',
+        message: err.response?.data?.error || 'Error al intentar entrenar en el gimnasio.',
+      });
     } finally {
       setIsTraining(false);
     }
@@ -114,16 +128,23 @@ export const GymPanel: React.FC<GymPanelProps> = ({
   const handleUpgradeGym = async () => {
     if (!nextGym) return;
     if (gymExp < nextGym.requiredExp) {
-      setTrainMessage(`⚠️ Requiere ${nextGym.requiredExp} Exp de Gimnasio (tienes ${gymExp} Exp).`);
+      showToast({
+        type: 'warning',
+        title: '⚠️ Experiencia Insuficiente',
+        message: `Requieres **${nextGym.requiredExp} Exp** de Gimnasio (tienes **${gymExp} Exp**).`,
+      });
       return;
     }
     if (cash < nextGym.cost) {
-      setTrainMessage(`⚠️ Efectivo insuficiente ($${cash.toLocaleString()} / $${nextGym.cost.toLocaleString()}).`);
+      showToast({
+        type: 'warning',
+        title: '⚠️ Dinero Insuficiente',
+        message: `Efectivo insuficiente (**$${cash.toLocaleString()}** / **$${nextGym.cost.toLocaleString()}**).`,
+      });
       return;
     }
 
     setIsUpgrading(true);
-    setTrainMessage(null);
 
     try {
       const response = await api.post(
@@ -132,13 +153,21 @@ export const GymPanel: React.FC<GymPanelProps> = ({
         { headers: { Authorization: `Bearer ${sessionJwt}` } }
       );
 
-      setTrainMessage(`🎉 ¡Membresía Mejorada con éxito! Bienvenido a ${response.data?.newGym?.name || nextGym.name} (Tier ${response.data?.newGym?.tier || nextGym.tier}).`);
+      showToast({
+        type: 'success',
+        title: '🎉 ¡Membresía Mejorada!',
+        message: `¡Membresía Mejorada con éxito! Bienvenido a **${response.data?.newGym?.name || nextGym.name}** (Tier ${response.data?.newGym?.tier || nextGym.tier}).`,
+      });
 
       if (onTrainSuccess) {
         onTrainSuccess();
       }
     } catch (err: any) {
-      setTrainMessage(err.response?.data?.error || '❌ Error al intentar mejorar la membresía.');
+      showToast({
+        type: 'error',
+        title: '❌ Error al Mejorar',
+        message: err.response?.data?.error || 'Error al intentar mejorar la membresía.',
+      });
     } finally {
       setIsUpgrading(false);
     }
@@ -337,16 +366,6 @@ export const GymPanel: React.FC<GymPanelProps> = ({
           </div>
         </div>
       </div>
-
-      {trainMessage && (
-        <div className={`p-4 rounded-xl text-xs font-mono font-bold shadow-md ${
-          trainMessage.startsWith('⚡') || trainMessage.startsWith('🎉')
-            ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
-            : 'bg-rose-500/10 text-rose-300 border border-rose-500/30'
-        }`}>
-          {trainMessage}
-        </div>
-      )}
 
       {/* 4 Attribute Training Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">

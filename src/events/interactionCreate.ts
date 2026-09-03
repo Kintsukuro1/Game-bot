@@ -6,6 +6,7 @@ import { adminCommand } from '../commands/general/admin.js';
 import { profileCommand } from '../commands/general/profile.js';
 import { empresaCommand } from '../commands/general/empresa.js';
 import { dueloCommand } from '../commands/general/duelo.js';
+import { cambiarColorCommand } from '../commands/general/cambiarcolor.js';
 
 const commands = new Map<string, any>([
   [empezarCommand.data.name, empezarCommand],
@@ -15,6 +16,7 @@ const commands = new Map<string, any>([
   [profileCommand.data.name, profileCommand],
   [empresaCommand.data.name, empresaCommand],
   [dueloCommand.data.name, dueloCommand],
+  [cambiarColorCommand.data.name, cambiarColorCommand],
 ]);
 
 export async function handleInteraction(interaction: Interaction): Promise<void> {
@@ -24,6 +26,16 @@ export async function handleInteraction(interaction: Interaction): Promise<void>
       if (command) {
         await command.execute(interaction);
       }
+      return;
+    }
+
+    if (interaction.isStringSelectMenu() && interaction.customId.startsWith('cambiarcolor_')) {
+      await cambiarColorCommand.handleSelectMenu(interaction);
+      return;
+    }
+
+    if (interaction.isModalSubmit() && interaction.customId.startsWith('cambiarcolor_')) {
+      await cambiarColorCommand.handleModalSubmit(interaction);
       return;
     }
 

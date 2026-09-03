@@ -14,7 +14,7 @@ import { FactionService } from './services/factionService.js';
 import { BountyService } from './services/bountyService.js';
 import { CasinoService } from './services/casinoService.js';
 import { InvestmentService } from './services/investmentService.js';
-import { BossService } from './services/bossService.js';
+import { BossService, calculateBossBodyParts, getOrGenerateWeakSpot } from './services/bossService.js';
 import { ShopService, SHOP_CATEGORIES } from './services/shopService.js';
 import { EducationService } from './services/educationService.js';
 import { PropertyService } from './services/propertyService.js';
@@ -38,6 +38,7 @@ import {
   INITIAL_STOCKS,
   PERKS,
 } from './config/gameData.js';
+import { activityFeedService } from './services/activityFeedService.js';
 
 dotenv.config();
 
@@ -97,6 +98,8 @@ export function createServer() {
     cors: { origin: '*' },
     path: '/socket.io',
   });
+
+  activityFeedService.setSocketServer(io);
 
   // Middleware de Auth para Socket.io
   io.use((socket, next) => {
@@ -343,6 +346,11 @@ export function createServer() {
   // RUTAS PROTEGIDAS DEL JUEGO (REST API)
   // -------------------------------------------------------------
 
+  // Feed de Actividad del Distrito
+  apiRouter.get('/activity/recent', (_req: Request, res: Response) => {
+    return res.json({ activities: activityFeedService.getRecentActivities(25) });
+  });
+
   // Perfil del jugador y Salud Corporal
   apiRouter.get('/player/profile', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -544,6 +552,23 @@ export function createServer() {
 
       io.to(`user:${discordId}`).emit('player_stats_updated', serialized);
 
+      // Log de Actividad en vivo
+      const crimeInfo = CRIMES.find((c) => c.id === crimeId);
+      if (result.success) {
+        activityFeedService.logActivity(
+          'CRIME',
+          '[CRIMEN]',
+          `${player.username} ejecutó con éxito '${crimeInfo?.name || crimeId}'`
+        );
+      } else {
+        activityFeedService.logActivity(
+          'CRIME',
+          '[ALERTA]',
+          `${player.username} falló la operación '${crimeInfo?.name || crimeId}'`,
+          'text-rose-400'
+        );
+      }
+
       return res.json({ ...result, player: serialized });
     } catch (error: any) {
       return res.status(400).json({ error: error?.message || 'Error al ejecutar crimen.' });
@@ -663,6 +688,11 @@ export function createServer() {
       if (!player) return res.status(404).json({ error: 'Jugador no encontrado.' });
 
       const result = await BountyService.placeBounty(player.id, targetDiscordId, BigInt(rewardCash || 5000));
+      activityFeedService.logActivity(
+        'BOUNTY',
+        '[RECOMPENSA]',
+        `${player.username} colocó una recompensa de $${Number(rewardCash || 5000).toLocaleString()} sobre un objetivo.`
+      );
       return res.json({ success: true, result });
     } catch (error: any) {
       return res.status(400).json({ error: error?.message || 'Error al publicar la recompensa.' });
@@ -681,6 +711,13 @@ export function createServer() {
       const serialized = JSON.parse(
         JSON.stringify(result, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
       );
+      if (result.isWin) {
+        activityFeedService.logActivity(
+          'CASINO',
+          '[CASINO]',
+          `${player.username} ganó $${Number(result.netGain).toLocaleString()} en Tragamonedas!`
+        );
+      }
       return res.json(serialized);
     } catch (error: any) {
       return res.status(400).json({ error: error?.message || 'Error en las tragamonedas del casino.' });
@@ -864,10 +901,12 @@ export function createServer() {
     try {
       const { guildId } = req.user!;
       const boss = await BossService.getOrCreateActiveBoss(guildId, 'DAILY');
+      const bodyParts = calculateBossBodyParts(boss.currentHp, boss.maxHp);
+      const activeWeakSpot = getOrGenerateWeakSpot(boss.id);
       const serialized = JSON.parse(
         JSON.stringify(boss, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
       );
-      return res.json({ boss: serialized });
+      return res.json({ boss: { ...serialized, bodyParts, activeWeakSpot } });
     } catch (error: any) {
       return res.status(500).json({ error: 'Error al obtener Boss activo.' });
     }
@@ -876,11 +915,11 @@ export function createServer() {
   apiRouter.post('/boss/attack', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { discordId, guildId } = req.user!;
-      const { bossId, actionType = 'ATK_PRIMARY' } = req.body;
+      const { bossId, actionType = 'ATK_PRIMARY', targetPart = 'TORSO' } = req.body;
       const player = await PlayerService.getPlayerByDiscordId(discordId, guildId);
       if (!player) return res.status(404).json({ error: 'Jugador no encontrado.' });
 
-      const result = await BossService.attackBoss(player.id, bossId, actionType);
+      const result = await BossService.attackBoss(player.id, bossId, actionType, targetPart);
 
       // Avanzar misión diaria de ataques
       await MissionService.progressMission(player.id, 'ATTACKS', 1);
@@ -891,9 +930,60 @@ export function createServer() {
       );
       io.to(`user:${discordId}`).emit('player_stats_updated', playerSerialized);
 
+      // Emitir evento público a toda la ciudad de combate contra World Boss en vivo
+      io.emit('world_boss_attack_event', {
+        playerName: player.username,
+        bossName: result.bossName,
+        damageDealt: result.damageDealt,
+        bossPartStruck: result.bossPartStruck,
+        isCrit: result.isCrit,
+        isWeakSpotHit: result.isWeakSpotHit,
+        remainingBossHp: result.remainingBossHp,
+        bossMaxHp: result.bossMaxHp,
+        timestamp: new Date().toISOString(),
+      });
+
       return res.json({ result, player: playerSerialized });
     } catch (error: any) {
       return res.status(400).json({ error: error?.message || 'Error al atacar al Jefe de Ciudad.' });
+    }
+  });
+
+  apiRouter.post('/boss/quick-heal', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { discordId, guildId } = req.user!;
+      const player = await PlayerService.getPlayerByDiscordId(discordId, guildId);
+      if (!player) return res.status(404).json({ error: 'Jugador no encontrado.' });
+
+      const result = await BossService.quickMedicalHeal(player.id);
+      const updatedPlayer = await PlayerService.getPlayerByDiscordId(discordId, guildId);
+      const playerSerialized = JSON.parse(
+        JSON.stringify(updatedPlayer, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
+      );
+      io.to(`user:${discordId}`).emit('player_stats_updated', playerSerialized);
+
+      return res.json({ result, player: playerSerialized });
+    } catch (error: any) {
+      return res.status(400).json({ error: error?.message || 'Error al usar botiquín rápido.' });
+    }
+  });
+
+  apiRouter.post('/boss/quick-energy', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { discordId, guildId } = req.user!;
+      const player = await PlayerService.getPlayerByDiscordId(discordId, guildId);
+      if (!player) return res.status(404).json({ error: 'Jugador no encontrado.' });
+
+      const result = await BossService.quickEnergyDrink(player.id);
+      const updatedPlayer = await PlayerService.getPlayerByDiscordId(discordId, guildId);
+      const playerSerialized = JSON.parse(
+        JSON.stringify(updatedPlayer, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
+      );
+      io.to(`user:${discordId}`).emit('player_stats_updated', playerSerialized);
+
+      return res.json({ result, player: playerSerialized });
+    } catch (error: any) {
+      return res.status(400).json({ error: error?.message || 'Error al consumir energizante.' });
     }
   });
 
@@ -1032,11 +1122,11 @@ export function createServer() {
       const player = await PlayerService.getPlayerByDiscordId(discordId, guildId);
       if (!player) return res.status(404).json({ error: 'Jugador no encontrado.' });
 
-      const rawMissions = await MissionService.getMissions(player.id);
+      const { missions: rawMissions, nextResetAt } = await MissionService.getMissions(player.id);
       const missions = JSON.parse(
         JSON.stringify(rawMissions, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
       );
-      return res.json({ missions });
+      return res.json({ missions, nextResetAt });
     } catch (error: any) {
       return res.status(500).json({ error: 'Error al obtener misiones diarias.' });
     }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { Icon } from '../common/Icon';
+import { useToast } from '../../context/ToastContext';
 
 interface JailPanelProps {
   sessionJwt: string | null;
@@ -8,9 +9,9 @@ interface JailPanelProps {
 }
 
 export const JailPanel: React.FC<JailPanelProps> = ({ sessionJwt, onActionSuccess }) => {
+  const { showToast } = useToast();
   const [prisoners, setPrisoners] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [message, setMessage] = useState<string | null>(null);
 
   const fetchJailList = async () => {
     if (!sessionJwt) return;
@@ -32,50 +33,71 @@ export const JailPanel: React.FC<JailPanelProps> = ({ sessionJwt, onActionSucces
   }, [sessionJwt]);
 
   const handleBail = async (jailedPlayerId: string, username: string) => {
-    setMessage(null);
     try {
       await api.post(
         '/jail/bail',
         { jailedPlayerId },
         { headers: { Authorization: `Bearer ${sessionJwt}` } }
       );
-      setMessage(`🔓 ¡Fianza pagada! Liberaste a **${username}** de prisión.`);
+      showToast({
+        type: 'success',
+        title: '🔓 Fianza Pagada',
+        message: `¡Fianza pagada! Liberaste a **${username}** de prisión.`,
+      });
       if (onActionSuccess) onActionSuccess();
       fetchJailList();
     } catch (err: any) {
-      setMessage(err.response?.data?.error || `❌ Error al pagar la fianza de ${username}.`);
+      showToast({
+        type: 'error',
+        title: '❌ Error de Fianza',
+        message: err.response?.data?.error || `Error al pagar la fianza de **${username}**.`,
+      });
     }
   };
 
   const handleBust = async (jailedPlayerId: string, username: string) => {
-    setMessage(null);
     try {
       const res = await api.post(
         '/jail/bust',
         { jailedPlayerId },
         { headers: { Authorization: `Bearer ${sessionJwt}` } }
       );
-      setMessage(res.data?.message || `🔓 Rescate intentado a ${username}.`);
+      showToast({
+        type: res.data?.success ? 'success' : 'error',
+        title: '🔓 Operación de Rescate',
+        message: res.data?.message || `Intento de rescate a **${username}**.`,
+      });
       if (onActionSuccess) onActionSuccess();
       fetchJailList();
     } catch (err: any) {
-      setMessage(err.response?.data?.error || `❌ Error al intentar rescatar a ${username}.`);
+      showToast({
+        type: 'error',
+        title: '❌ Error de Rescate',
+        message: err.response?.data?.error || `Error al intentar rescatar a **${username}**.`,
+      });
     }
   };
 
   const handleSelfBust = async () => {
-    setMessage(null);
     try {
       const res = await api.post(
         '/jail/self-bust',
         {},
         { headers: { Authorization: `Bearer ${sessionJwt}` } }
       );
-      setMessage(res.data?.message || '🔓 Intento de fuga ejecutado.');
+      showToast({
+        type: res.data?.success ? 'success' : 'error',
+        title: '🚨 Fuga de Prisión',
+        message: res.data?.message || 'Intento de fuga ejecutado.',
+      });
       if (onActionSuccess) onActionSuccess();
       fetchJailList();
     } catch (err: any) {
-      setMessage(err.response?.data?.error || '❌ Error al intentar fuga.');
+      showToast({
+        type: 'error',
+        title: '❌ Error de Fuga',
+        message: err.response?.data?.error || 'Error al intentar la fuga.',
+      });
     }
   };
 
@@ -100,16 +122,6 @@ export const JailPanel: React.FC<JailPanelProps> = ({ sessionJwt, onActionSucces
           🚨 Intentar Fuga Propia (50% Nerve)
         </button>
       </div>
-
-      {message && (
-        <div className={`p-4 rounded-xl font-mono text-xs font-bold border shadow-md ${
-          message.includes('éxito') || message.includes('Liberaste') || message.includes('Fuga espectacular')
-            ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
-            : 'bg-rose-500/10 text-rose-300 border-rose-500/30'
-        }`}>
-          {message}
-        </div>
-      )}
 
       {/* Prisoner List */}
       <div className="bg-[#191f31]/60 backdrop-blur-md p-6 rounded-xl border border-white/10 flex flex-col gap-4">

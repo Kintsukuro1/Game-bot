@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Icon } from '../common/Icon';
 import { api } from '../../lib/api';
+import { useToast } from '../../context/ToastContext';
 
 export interface BodyPartsHp {
   headHp: number;
@@ -65,8 +66,8 @@ export const AnatomicalBody: React.FC<AnatomicalBodyProps> = ({
   sessionJwt,
   onHealSuccess,
 }) => {
+  const { showToast } = useToast();
   const [isHealing, setIsHealing] = useState(false);
-  const [healMessage, setHealMessage] = useState<string | null>(null);
 
   const parts = bodyParts || {
     headHp: 100,
@@ -98,14 +99,21 @@ export const AnatomicalBody: React.FC<AnatomicalBodyProps> = ({
     if (!sessionJwt || totalDamage === 0) return;
     try {
       setIsHealing(true);
-      setHealMessage(null);
       const res = await api.post('/player/heal', {}, {
         headers: { Authorization: `Bearer ${sessionJwt}` },
       });
-      setHealMessage(res.data?.message || 'Tratamiento médico aplicado con éxito.');
+      showToast({
+        type: 'success',
+        title: '🏥 Tratamiento Médico',
+        message: res.data?.message || 'Tratamiento médico aplicado con éxito. Salud restablecida.',
+      });
       if (onHealSuccess) onHealSuccess();
     } catch (err: any) {
-      setHealMessage(err.response?.data?.error || 'No se pudo completar el tratamiento médico.');
+      showToast({
+        type: 'error',
+        title: '❌ Error de Tratamiento',
+        message: err.response?.data?.error || 'No se pudo completar el tratamiento médico.',
+      });
     } finally {
       setIsHealing(false);
     }
@@ -401,13 +409,6 @@ export const AnatomicalBody: React.FC<AnatomicalBodyProps> = ({
               ></div>
             </div>
           </div>
-
-          {/* Action Message / Feedback */}
-          {healMessage && (
-            <div className="text-xs font-mono text-cyan-300 bg-cyan-950/70 border border-cyan-500/40 p-2.5 rounded-lg text-center">
-              {healMessage}
-            </div>
-          )}
 
           {/* Action Button */}
           <div className="mt-2 flex justify-end">
