@@ -193,7 +193,7 @@ export const BossPanel: React.FC<BossPanelProps> = ({ sessionJwt, socket, onAtta
   const handleQuickEnergy = async () => {
     setUsingConsumable(true);
     try {
-      const res = await api.post('/boss/quick-energy', {}, { headers: { Authorization: `Bearer ${sessionJwt}` } });
+      await api.post('/boss/quick-energy', {}, { headers: { Authorization: `Bearer ${sessionJwt}` } });
       showToast({
         type: 'success',
         title: '🧪 Energizante Consumido',

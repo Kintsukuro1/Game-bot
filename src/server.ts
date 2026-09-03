@@ -1,6 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import http from 'http';
+import path from 'path';
+import fs from 'fs';
 import { Server as SocketIOServer } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
@@ -1713,6 +1715,22 @@ export function createServer() {
   // Registrar sub-router con soporte tanto para /api como /.proxy/api
   app.use('/api', apiRouter);
   app.use('/.proxy/api', apiRouter);
+
+  // Servir el cliente Web / Discord Activity (client/dist)
+  const clientDistPath = path.join(process.cwd(), 'client', 'dist');
+  if (fs.existsSync(clientDistPath)) {
+    app.use(express.static(clientDistPath));
+    app.use('/.proxy', express.static(clientDistPath));
+    app.get('*', (req: Request, res: Response) => {
+      if (!req.path.startsWith('/api') && !req.path.startsWith('/.proxy/api')) {
+        res.sendFile(path.join(clientDistPath, 'index.html'));
+      }
+    });
+  } else {
+    app.get('/', (_req: Request, res: Response) => {
+      res.send('⚡ Servidor de Discord Activity & Bot activo. El frontend client/dist aún no ha sido compilado.');
+    });
+  }
 
   return { app, server, io };
 }
