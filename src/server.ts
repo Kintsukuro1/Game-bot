@@ -1721,10 +1721,11 @@ export function createServer() {
   if (fs.existsSync(clientDistPath)) {
     app.use(express.static(clientDistPath));
     app.use('/.proxy', express.static(clientDistPath));
-    app.get('*', (req: Request, res: Response) => {
-      if (!req.path.startsWith('/api') && !req.path.startsWith('/.proxy/api')) {
-        res.sendFile(path.join(clientDistPath, 'index.html'));
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/.proxy/api')) {
+        return res.sendFile(path.join(clientDistPath, 'index.html'));
       }
+      next();
     });
   } else {
     app.get('/', (_req: Request, res: Response) => {
