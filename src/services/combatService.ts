@@ -1,6 +1,7 @@
 import { prisma } from '../db/prisma.js';
 import { PlayerService } from './playerService.js';
 import { MasteryService } from './masteryService.js';
+import { EducationService } from './educationService.js';
 import { COMBAT_ENERGY_COST, NEWBIE_LEVEL_PROTECTION } from '../config/constants.js';
 
 export interface CombatTurn {
@@ -124,6 +125,10 @@ export class CombatService {
       rightLegHp: '🦵 Pierna Derecha',
     };
 
+    // Obtener modificadores pasivos de educación de ambos combatientes
+    const attackerEduMods = await EducationService.getEducationModifiers(attacker.id);
+    const defenderEduMods = await EducationService.getEducationModifiers(defender.id);
+
     let turnCount = 1;
     let totalDamageDealtByAttacker = 0;
 
@@ -134,7 +139,8 @@ export class CombatService {
       const defDex = defender.stats!.dexterity;
       const atkWeaponAcc = attackerWeapon.accuracy || 50.0;
 
-      const atkHitChance = Math.min(Math.max(0.5 * (atkSpeed / Math.max(defDex, 0.1)) * (atkWeaponAcc / 50), 0.1), 0.95);
+      const rawAtkHitChance = Math.min(Math.max(0.5 * (atkSpeed / Math.max(defDex, 0.1)) * (atkWeaponAcc / 50), 0.1), 0.95);
+      const atkHitChance = Math.min(rawAtkHitChance + attackerEduMods.combatAccuracyBoost, 0.98);
       const isAtkHit = Math.random() <= atkHitChance;
 
       if (!isAtkHit) {
@@ -152,7 +158,7 @@ export class CombatService {
         const targetPart = bodyPartList[Math.floor(Math.random() * bodyPartList.length)];
         const partMultiplier = targetPart === 'headHp' ? 1.5 : targetPart === 'torsoHp' ? 1.0 : 0.8;
         const statRatio = Math.sqrt(attacker.stats!.strength / Math.max(defender.stats!.defense, 0.1));
-        const isCrit = Math.random() < 0.15;
+        const isCrit = Math.random() < (0.15 + attackerEduMods.combatCritBoost);
         const critMultiplier = isCrit ? 1.75 : 1.0;
         const randomFactor = 0.85 + Math.random() * 0.3;
 

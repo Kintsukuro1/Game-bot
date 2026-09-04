@@ -724,6 +724,7 @@ export function App() {
               {activeTab === 'bounties' && (
                 <BountyTerminal
                   playerLevel={playerData?.level}
+                  userCash={Number(playerData?.wallet?.cash ?? playerData?.cash ?? 0)}
                   sessionJwt={sessionToken}
                   onClaimSuccess={() => fetchProfile()}
                 />
@@ -827,13 +828,6 @@ export function App() {
                 <FactionPanel
                   sessionJwt={sessionToken}
                   onActionSuccess={() => fetchProfile()}
-                />
-              )}
-
-              {activeTab === 'bounties' && (
-                <BountyTerminal
-                  sessionJwt={sessionToken}
-                  onAttackTarget={() => fetchProfile()}
                 />
               )}
 

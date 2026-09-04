@@ -35,6 +35,8 @@ model Player {
   bossDamages   WorldBossDamage[]
   mastery       PlayerMastery?
   addiction     PlayerAddiction?
+  bountiesPlaced Bounty[] @relation("BountiesPlaced")
+  bountiesTarget Bounty[] @relation("BountiesTargeted")
 
   @@unique([guildId, discordId])
 }
@@ -156,10 +158,14 @@ model AuditLog {
 
 model Bounty {
   id             String   @id @default(uuid())
-  placedById     String
+  placedById     String?
+  placedBy       Player?  @relation("BountiesPlaced", fields: [placedById], references: [id], onDelete: SetNull)
   targetPlayerId String
+  targetPlayer   Player   @relation("BountiesTargeted", fields: [targetPlayerId], references: [id], onDelete: Cascade)
   reward         BigInt
-  fee            BigInt
+  fee            BigInt   @default(0)
+  reason         String?
+  isAnonymous    Boolean  @default(false)
   status         String   @default("ACTIVE") // ACTIVE, CLAIMED, EXPIRED
   claimedById    String?
   expiresAt      DateTime
@@ -173,12 +179,13 @@ model PlayerMission {
   playerId    String
   title       String
   description String
-  type        String   // ATTACKS, CRIMES, ITEMS, TRAINING
+  type        String   // ATTACKS, CRIMES, ITEMS, TRAINING, BANK, STOCKS, BOUNTY, RACING, TRAVEL, EDUCATION, BOSS, MARKET
   requirement Int
   progress    Int      @default(0)
   rewardCash  BigInt   @default(0)
   rewardXp    Int      @default(0)
   isCompleted Boolean  @default(false)
+  isClaimed   Boolean  @default(false)
   expiresAt   DateTime
   createdAt   DateTime @default(now())
 

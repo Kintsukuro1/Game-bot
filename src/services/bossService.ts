@@ -1,5 +1,6 @@
 import { prisma } from '../db/prisma.js';
 import { PlayerService } from './playerService.js';
+import { EducationService } from './educationService.js';
 import { DEFAULT_GUILD_ID } from '../config/constants.js';
 import { InsufficientFundsError } from '../errors/gameErrors.js';
 
@@ -642,13 +643,15 @@ export class BossService {
           actionDamageMult -= 0.20;
         }
 
-        isCrit = Math.random() < (0.12 + playerCritBonus);
+        const eduMods = await EducationService.getEducationModifiers(playerId);
+        isCrit = Math.random() < (0.12 + playerCritBonus + eduMods.combatCritBoost);
         const critMult = isCrit ? 1.65 : 1.0;
 
         const statRatio = Math.sqrt(player.stats.strength / 15.0);
         const randomFactor = 0.85 + Math.random() * 0.3;
+        const eduDamageMult = 1.0 + eduMods.bossDamageBoost;
         rawDamage = Math.floor(
-          chosenWeapon.damage * statRatio * actionDamageMult * targetDamageMult * critMult * (1.0 - damagePenalty) * randomFactor
+          chosenWeapon.damage * statRatio * actionDamageMult * targetDamageMult * critMult * eduDamageMult * (1.0 - damagePenalty) * randomFactor
         );
 
         // Habilidad de Payaso Pepino (Trip)

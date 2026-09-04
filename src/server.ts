@@ -780,6 +780,7 @@ export function createServer() {
       if (!player) return res.status(404).json({ error: 'Jugador no encontrado.' });
 
       const result = await InvestmentService.createBankInvestment(player.id, BigInt(amount), Number(durationDays));
+      await MissionService.progressMission(player.id, 'BANK', 1);
       const serialized = JSON.parse(
         JSON.stringify(result, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
       );
@@ -1032,7 +1033,15 @@ export function createServer() {
       if (!player) return res.status(404).json({ error: 'Jugador no encontrado.' });
 
       const activeCourse = await EducationService.getActiveCourse(player.id);
-      return res.json({ courses: COURSES, activeCourse });
+      const completedCourses = await EducationService.getCompletedCourses(player.id);
+      const activeModifiers = await EducationService.getEducationModifiers(player.id);
+
+      return res.json({
+        courses: COURSES,
+        activeCourse,
+        completedCourses,
+        activeModifiers,
+      });
     } catch (error: any) {
       return res.status(500).json({ error: 'Error al obtener cursos universitarios.' });
     }
@@ -1046,6 +1055,7 @@ export function createServer() {
       if (!player) return res.status(404).json({ error: 'Jugador no encontrado.' });
 
       const result = await EducationService.enrollCourse(player.id, courseId);
+      await MissionService.progressMission(player.id, 'EDUCATION', 1);
       const updatedPlayer = await PlayerService.getPlayerByDiscordId(discordId, guildId);
       const playerSerialized = JSON.parse(
         JSON.stringify(updatedPlayer, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
@@ -1124,24 +1134,73 @@ export function createServer() {
       const player = await PlayerService.getPlayerByDiscordId(discordId, guildId);
       if (!player) return res.status(404).json({ error: 'Jugador no encontrado.' });
 
-      const { missions: rawMissions, nextResetAt } = await MissionService.getMissions(player.id);
+      const { missions: rawMissions, canClaimChest, isChestClaimed, nextResetAt } = await MissionService.getMissions(player.id);
       const missions = JSON.parse(
         JSON.stringify(rawMissions, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
       );
-      return res.json({ missions, nextResetAt });
+      return res.json({ missions, canClaimChest, isChestClaimed, nextResetAt });
     } catch (error: any) {
       return res.status(500).json({ error: 'Error al obtener misiones diarias.' });
     }
   });
 
-  // Recompensas / Bounties
-  apiRouter.get('/bounty/list', requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
+  apiRouter.post('/missions/claim', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const { discordId, guildId } = req.user!;
+      const { missionId } = req.body;
+      const player = await PlayerService.getPlayerByDiscordId(discordId, guildId);
+      if (!player) return res.status(404).json({ error: 'Jugador no encontrado.' });
+
+      const result = await MissionService.claimMissionReward(player.id, missionId);
+      const serialized = JSON.parse(
+        JSON.stringify(result, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
+      );
+
+      const updatedPlayer = await PlayerService.getPlayerByDiscordId(discordId, guildId);
+      const playerSerialized = JSON.parse(
+        JSON.stringify(updatedPlayer, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
+      );
+      io.to(`user:${discordId}`).emit('player_stats_updated', playerSerialized);
+
+      return res.json({ ...serialized, player: playerSerialized });
+    } catch (error: any) {
+      return res.status(400).json({ error: error?.message || 'Error al reclamar asignación.' });
+    }
+  });
+
+  apiRouter.post('/missions/claim-chest', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { discordId, guildId } = req.user!;
+      const player = await PlayerService.getPlayerByDiscordId(discordId, guildId);
+      if (!player) return res.status(404).json({ error: 'Jugador no encontrado.' });
+
+      const result = await MissionService.claimDailyChest(player.id);
+      const serialized = JSON.parse(
+        JSON.stringify(result, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
+      );
+
+      const updatedPlayer = await PlayerService.getPlayerByDiscordId(discordId, guildId);
+      const playerSerialized = JSON.parse(
+        JSON.stringify(updatedPlayer, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
+      );
+      io.to(`user:${discordId}`).emit('player_stats_updated', playerSerialized);
+
+      return res.json({ ...serialized, player: playerSerialized });
+    } catch (error: any) {
+      return res.status(400).json({ error: error?.message || 'Error al reclamar el Cofre Diario.' });
+    }
+  });
+
+  // Recompensas / Bounties
+  apiRouter.get('/bounty/list', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { discordId, guildId } = req.user!;
+      const player = await PlayerService.getPlayerByDiscordId(discordId, guildId);
       const bounties = await BountyService.getActiveBounties();
       const serialized = JSON.parse(
         JSON.stringify(bounties, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
       );
-      return res.json({ bounties: serialized });
+      return res.json({ bounties: serialized, isHitman: player?.profession === 'SICARIO' });
     } catch (error: any) {
       return res.status(500).json({ error: 'Error al obtener lista de recompensas.' });
     }
@@ -1150,21 +1209,58 @@ export function createServer() {
   apiRouter.post('/bounty/place', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { discordId, guildId } = req.user!;
-      const { targetDiscordId, rewardCash } = req.body;
+      const { targetDiscordId, targetPlayerId, targetUsername, rewardCash, reason, isAnonymous } = req.body;
       const player = await PlayerService.getPlayerByDiscordId(discordId, guildId);
       if (!player) return res.status(404).json({ error: 'Jugador no encontrado.' });
       if (!checkModuleLevel(res, player.level, 3, 'Caza de Recompensas')) return;
 
-      const result = await BountyService.placeBounty(player.id, targetDiscordId, BigInt(rewardCash));
+      const targetIdentifier = targetPlayerId || targetDiscordId || targetUsername;
+      if (!targetIdentifier) {
+        return res.status(400).json({ error: 'Debes especificar un objetivo válido.' });
+      }
+
+      const result = await BountyService.placeBounty(
+        player.id,
+        targetIdentifier,
+        BigInt(rewardCash),
+        reason,
+        Boolean(isAnonymous)
+      );
+
+      const serializedResult = JSON.parse(
+        JSON.stringify(result, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
+      );
+
       const updatedPlayer = await PlayerService.getPlayerByDiscordId(discordId, guildId);
       const playerSerialized = JSON.parse(
         JSON.stringify(updatedPlayer, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
       );
       io.to(`user:${discordId}`).emit('player_stats_updated', playerSerialized);
 
-      return res.json({ ...result, player: playerSerialized });
+      // Log activity feed
+      await ActivityFeedService.addActivity(
+        player.id,
+        'BOUNTY',
+        `🎯 Colocó un bounty de $${BigInt(rewardCash).toLocaleString()} sobre ${result.targetUsername}${isAnonymous ? ' (Anónimo)' : ''}.`
+      );
+
+      return res.json({ ...serializedResult, player: playerSerialized });
     } catch (error: any) {
       return res.status(400).json({ error: error?.message || 'Error al colocar recompensa sobre el objetivo.' });
+    }
+  });
+
+  apiRouter.get('/bounty/search-targets', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { discordId, guildId } = req.user!;
+      const query = String(req.query.q || '');
+      const player = await PlayerService.getPlayerByDiscordId(discordId, guildId);
+      if (!player) return res.status(404).json({ error: 'Jugador no encontrado.' });
+
+      const targets = await BountyService.searchTargets(query, player.id);
+      return res.json({ targets });
+    } catch (error: any) {
+      return res.status(500).json({ error: 'Error al buscar objetivos.' });
     }
   });
 
@@ -1190,6 +1286,7 @@ export function createServer() {
       if (!player) return res.status(404).json({ error: 'Jugador no encontrado.' });
 
       const result = await InvestmentService.buyStockShares(player.id, symbol, Number(shares));
+      await MissionService.progressMission(player.id, 'STOCKS', 1);
       const updatedPlayer = await PlayerService.getPlayerByDiscordId(discordId, guildId);
       const playerSerialized = JSON.parse(
         JSON.stringify(updatedPlayer, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
@@ -1279,6 +1376,7 @@ export function createServer() {
       if (!player) return res.status(404).json({ error: 'Jugador no encontrado.' });
 
       const travelState = await TravelService.startTravel(player.id, destinationId);
+      await MissionService.progressMission(player.id, 'TRAVEL', 1);
       const updatedPlayer = await PlayerService.getPlayerByDiscordId(discordId, guildId);
       const playerSerialized = JSON.parse(
         JSON.stringify(updatedPlayer, (_, value) => (typeof value === 'bigint' ? value.toString() : value))
@@ -1447,6 +1545,7 @@ export function createServer() {
       if (!player) return res.status(404).json({ error: 'Jugador no encontrado.' });
 
       const raceResult = await RacingService.startRace(player.id, trackId);
+      await MissionService.progressMission(player.id, 'RACING', 1);
       const updatedPlayer = await PlayerService.getPlayerByDiscordId(discordId, guildId);
       const playerSerialized = JSON.parse(
         JSON.stringify(updatedPlayer, (_, value) => (typeof value === 'bigint' ? value.toString() : value))

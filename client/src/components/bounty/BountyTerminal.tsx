@@ -1,64 +1,98 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Icon } from '../common/Icon';
+import { PlaceBountyModal } from './PlaceBountyModal';
 
-interface BountyTarget {
+interface ApiBounty {
   id: string;
-  name: string;
-  level: number;
+  placedById: string | null;
+  targetPlayerId: string;
   reward: string;
-  isHighValue?: boolean;
-  statusTag: string;
-  reason: string;
-  publishedBy: string;
-  avatarUrl?: string;
+  fee: string;
+  reason?: string | null;
+  isAnonymous: boolean;
+  status: string;
+  expiresAt: string;
+  createdAt: string;
+  targetPlayer: {
+    id: string;
+    username: string;
+    level: number;
+    hospitalUntil?: string | null;
+    jailUntil?: string | null;
+    profession?: string | null;
+  };
+  placedBy?: {
+    id: string;
+    username: string;
+  } | null;
 }
-
-const DEFAULT_TARGETS: BountyTarget[] = [
-  {
-    id: 'target-1',
-    name: 'X_GHOST_X',
-    level: 64,
-    reward: '$250,000',
-    isHighValue: true,
-    statusTag: 'Buscado Vivo o Muerto',
-    reason: 'Traicionó al Sindicato Night-Stalkers en el sector 7.',
-    publishedBy: 'Ghost Master',
-  },
-  {
-    id: 'target-2',
-    name: 'Viper_99',
-    level: 42,
-    reward: '$85,000',
-    isHighValue: false,
-    statusTag: 'Buscado por Asalto',
-    reason: 'Robo de cargamento de armas corporativas.',
-    publishedBy: 'Syndicate_Op',
-  },
-  {
-    id: 'target-3',
-    name: 'Null_Pointer',
-    level: 38,
-    reward: '$60,000',
-    isHighValue: false,
-    statusTag: 'Buscado por Hackeo',
-    reason: 'Infiltración en servidores del banco central.',
-    publishedBy: 'Iron_Bank_Sec',
-  },
-];
 
 interface BountyTerminalProps {
   sessionJwt: string | null;
   playerLevel?: number;
+  userCash?: number;
   onClaimSuccess?: () => void;
   onAttackTarget?: (targetName: string) => void;
 }
 
-export const BountyTerminal: React.FC<BountyTerminalProps> = ({ onAttackTarget }) => {
+export const BountyTerminal: React.FC<BountyTerminalProps> = ({
+  sessionJwt,
+  userCash = 0,
+  onClaimSuccess,
+  onAttackTarget,
+}) => {
+  const [bounties, setBounties] = useState<ApiBounty[]>([]);
+  const [isHitman, setIsHitman] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  const fetchBounties = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/bounty/list', {
+        headers: {
+          Authorization: `Bearer ${sessionJwt}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setBounties(data.bounties || []);
+        if (typeof data.isHitman === 'boolean') {
+          setIsHitman(data.isHitman);
+        }
+      }
+    } catch (err) {
+      console.error('Error al cargar bounties:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBounties();
+  }, [sessionJwt]);
 
   const handleHunt = (targetName: string) => {
     setMessage(`🎯 Iniciando rastreo y combate contra el objetivo: ${targetName}...`);
     if (onAttackTarget) onAttackTarget(targetName);
+  };
+
+  const getTargetStatus = (target: ApiBounty['targetPlayer']) => {
+    const now = new Date();
+    if (target.hospitalUntil && new Date(target.hospitalUntil) > now) {
+      return { tag: 'En Hospital', color: 'bg-rose-500/20 text-rose-400 border-rose-500/40', isAvailable: false };
+    }
+    if (target.jailUntil && new Date(target.jailUntil) > now) {
+      return { tag: 'En Cárcel', color: 'bg-amber-500/20 text-amber-400 border-amber-500/40', isAvailable: false };
+    }
+    return { tag: 'Buscado Vivo o Muerto', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40', isAvailable: true };
+  };
+
+  const getPublisherName = (bounty: ApiBounty) => {
+    if (bounty.isAnonymous) return 'Patrón Anónimo';
+    if (bounty.placedBy?.username) return bounty.placedBy.username;
+    return 'Sindicato (Sistema)';
   };
 
   return (
@@ -86,23 +120,58 @@ export const BountyTerminal: React.FC<BountyTerminalProps> = ({ onAttackTarget }
           </p>
         </div>
 
-        {/* Active Count Widget */}
-        <div className="flex items-center gap-4 bg-[#191f31]/80 backdrop-blur-md p-4 rounded-xl relative overflow-hidden shadow-lg border border-white/10">
-          <div className="flex flex-col items-end">
-            <span className="font-mono text-[10px] text-slate-400 uppercase tracking-wider">
-              Contratos Activos
-            </span>
-            <span className="font-mono text-2xl font-bold text-slate-100">{DEFAULT_TARGETS.length}</span>
-          </div>
-          <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center relative border border-rose-500/30">
-            <Icon name="radar" size={24} className="text-rose-400 animate-pulse" />
+        {/* Action Button & Active Count Widget */}
+        <div className="flex items-center gap-4 flex-wrap sm:flex-nowrap">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-5 py-3 bg-rose-500 hover:bg-rose-400 text-slate-950 font-mono text-xs font-bold uppercase tracking-wider rounded-xl shadow-[0_0_20px_rgba(244,63,94,0.4)] transition-all cursor-pointer flex items-center gap-2"
+          >
+            <Icon name="crosshair" size={18} />
+            <span>Publicar Contrato</span>
+          </button>
+
+          <div className="flex items-center gap-4 bg-[#191f31]/80 backdrop-blur-md p-3.5 rounded-xl relative overflow-hidden shadow-lg border border-white/10">
+            <div className="flex flex-col items-end">
+              <span className="font-mono text-[10px] text-slate-400 uppercase tracking-wider">
+                Contratos Activos
+              </span>
+              <span className="font-mono text-2xl font-bold text-slate-100">{bounties.length}</span>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center relative border border-rose-500/30">
+              <Icon name="radar" size={20} className="text-rose-400 animate-pulse" />
+            </div>
           </div>
         </div>
       </section>
 
+      {/* Profession Bonus Banner if SICARIO */}
+      {isHitman && (
+        <div className="relative z-10 p-4 rounded-xl bg-gradient-to-r from-amber-500/20 via-rose-500/10 to-amber-500/20 border border-amber-500/40 text-amber-300 font-mono text-xs font-bold shadow-lg flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400">
+              <Icon name="swords" size={20} />
+            </div>
+            <div>
+              <span className="uppercase tracking-widest text-amber-400 font-extrabold block">
+                Bonus de Profesión: Sicario Activo
+              </span>
+              <span className="text-slate-300 font-normal font-caption">
+                Recibirás el **2x de dinero** en cada bounty reclamado con éxito.
+              </span>
+            </div>
+          </div>
+          <span className="px-3 py-1 bg-amber-500 text-slate-950 rounded-lg text-[10px] font-extrabold uppercase tracking-wider">
+            2X Payout
+          </span>
+        </div>
+      )}
+
       {message && (
-        <div className="p-4 rounded-xl font-mono text-xs font-bold bg-slate-900 border border-rose-500/30 text-rose-300 shadow-md">
-          {message}
+        <div className="relative z-10 p-4 rounded-xl font-mono text-xs font-bold bg-slate-900 border border-rose-500/30 text-rose-300 shadow-md flex items-center justify-between">
+          <span>{message}</span>
+          <button onClick={() => setMessage(null)} className="text-slate-400 hover:text-slate-200">
+            <Icon name="close" size={16} />
+          </button>
         </div>
       )}
 
@@ -110,106 +179,151 @@ export const BountyTerminal: React.FC<BountyTerminalProps> = ({ onAttackTarget }
       <section className="relative z-10 w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Main Bounty Feed (Left Column - 8/12) */}
         <div className="lg:col-span-8 flex flex-col gap-6">
-          {DEFAULT_TARGETS.map((target) => {
-            if (target.isHighValue) {
+          {isLoading ? (
+            <div className="p-12 flex flex-col items-center justify-center text-slate-400 font-mono text-xs space-y-3">
+              <Icon name="loader" size={32} className="animate-spin text-rose-400" />
+              <span>Cargando contratos activos del Sindicato...</span>
+            </div>
+          ) : bounties.length === 0 ? (
+            <div className="p-12 bg-[#191f31]/40 border border-white/5 rounded-2xl flex flex-col items-center justify-center text-center space-y-3">
+              <Icon name="person_search" size={48} className="text-slate-600" />
+              <h3 className="font-headline-lg text-lg text-slate-300 uppercase">Sin Contratos Activos</h3>
+              <p className="font-caption text-xs text-slate-400 max-w-sm">
+                No hay recompensas sobre ningún objetivo en este momento. ¡Publica la primera!
+              </p>
+            </div>
+          ) : (
+            bounties.map((bounty) => {
+              const target = bounty.targetPlayer;
+              const rewardNumber = Number(bounty.reward);
+              const isHighValue = rewardNumber >= 100000;
+              const statusInfo = getTargetStatus(target);
+              const publisherName = getPublisherName(bounty);
+              const formattedReward = `$${rewardNumber.toLocaleString()}`;
+
+              if (isHighValue) {
+                return (
+                  <article
+                    key={bounty.id}
+                    className="group relative w-full bg-[#191f31]/60 backdrop-blur-lg rounded-xl overflow-hidden border border-rose-500/30 shadow-xl p-6 transition-all hover:-translate-y-1 hover:shadow-2xl hover:border-rose-500/60"
+                  >
+                    <div className="flex flex-col md:flex-row gap-6 items-center">
+                      {/* Avatar Box */}
+                      <div className="relative w-32 h-32 shrink-0">
+                        <div className="w-full h-full rounded-xl bg-slate-950 border border-rose-500/40 flex items-center justify-center shadow-inner overflow-hidden">
+                          <Icon name="person_search" size={56} className="text-rose-400 drop-shadow-[0_0_15px_rgba(244,63,94,0.8)]" />
+                        </div>
+                        <div className="absolute -top-3 -right-3 bg-rose-500 text-slate-950 font-mono text-[9px] font-bold px-2 py-1 rounded shadow-md uppercase tracking-wider rotate-12">
+                          Alto Valor
+                        </div>
+                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-slate-900 border border-white/10 px-3 py-0.5 rounded text-cyan-400 font-mono text-[10px] font-bold tracking-widest whitespace-nowrap shadow-md">
+                          NIVEL {target.level}
+                        </div>
+                      </div>
+
+                      {/* Target Details */}
+                      <div className="flex-1 flex flex-col w-full space-y-3">
+                        <div className="flex justify-between items-start flex-wrap gap-2">
+                          <div>
+                            <h3 className="font-headline-lg text-xl font-bold text-slate-100 uppercase tracking-tight">
+                              {target.username}
+                            </h3>
+                            <span className={`font-mono text-[10px] px-2 py-0.5 rounded uppercase tracking-wider inline-block mt-1 border font-bold ${statusInfo.color}`}>
+                              {statusInfo.tag}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-mono text-[10px] text-slate-400 uppercase block">Recompensa</span>
+                            <span className="font-mono text-2xl font-extrabold text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.4)]">
+                              {formattedReward}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="h-[1px] w-full bg-white/5"></div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="flex flex-col">
+                            <span className="font-mono text-[10px] text-slate-400 uppercase">Motivo</span>
+                            <span className="font-caption text-xs text-slate-300">
+                              {bounty.reason || 'Marcado por el Sindicato.'}
+                            </span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-mono text-[10px] text-slate-400 uppercase">Publicado Por</span>
+                            <span className={`font-caption text-xs font-bold ${bounty.isAnonymous ? 'text-amber-400' : 'text-cyan-400'}`}>
+                              {publisherName}
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => handleHunt(target.username)}
+                          disabled={!statusInfo.isAvailable}
+                          className={`w-full mt-2 py-3 font-mono text-xs font-bold uppercase tracking-widest rounded-lg transition-all flex items-center justify-center gap-2 ${
+                            statusInfo.isAvailable
+                              ? 'bg-rose-500 hover:bg-rose-400 text-slate-950 shadow-[0_0_15px_rgba(244,63,94,0.4)] cursor-pointer'
+                              : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5'
+                          }`}
+                        >
+                          <Icon name="crosshair" size={16} />
+                          <span>{statusInfo.isAvailable ? 'Atacar Objetivo' : 'Objetivo Inaccesible'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                );
+              }
+
               return (
                 <article
-                  key={target.id}
-                  className="group relative w-full bg-[#191f31]/60 backdrop-blur-lg rounded-xl overflow-hidden border border-rose-500/30 shadow-xl p-6 transition-all hover:-translate-y-1 hover:shadow-2xl hover:border-rose-500/60"
+                  key={bounty.id}
+                  className="group relative w-full bg-[#191f31]/40 backdrop-blur-sm rounded-xl p-4 border border-white/5 hover:border-slate-600 transition-all flex flex-col sm:flex-row gap-4 items-center justify-between shadow-md"
                 >
-                  <div className="flex flex-col md:flex-row gap-6 items-center">
-                    {/* Avatar Box */}
-                    <div className="relative w-32 h-32 shrink-0">
-                      <div className="w-full h-full rounded-xl bg-slate-950 border border-rose-500/40 flex items-center justify-center shadow-inner overflow-hidden">
-                        <Icon name="person_search" size={56} className="text-rose-400 drop-shadow-[0_0_15px_rgba(244,63,94,0.8)]" />
-                      </div>
-                      <div className="absolute -top-3 -right-3 bg-rose-500 text-slate-950 font-mono text-[9px] font-bold px-2 py-1 rounded shadow-md uppercase tracking-wider rotate-12">
-                        Alto Valor
-                      </div>
-                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-slate-900 border border-white/10 px-3 py-0.5 rounded text-cyan-400 font-mono text-[10px] font-bold tracking-widest whitespace-nowrap shadow-md">
-                        NIVEL {target.level}
-                      </div>
+                  <div className="flex gap-4 items-center flex-1 w-full sm:w-auto">
+                    <div className="relative w-16 h-16 shrink-0 rounded-lg bg-slate-950 border border-white/10 flex items-center justify-center shadow-inner">
+                      <Icon name="user" size={28} className="text-slate-400 group-hover:text-cyan-400 transition-colors" />
+                      <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-slate-900 text-cyan-400 font-mono text-[9px] font-bold px-1.5 py-0.5 rounded border border-white/5 whitespace-nowrap">
+                        NVL {target.level}
+                      </span>
                     </div>
 
-                    {/* Target Details */}
-                    <div className="flex-1 flex flex-col w-full space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-headline-lg text-xl font-bold text-slate-100 uppercase tracking-tight">
-                            {target.name}
-                          </h3>
-                          <span className="font-mono text-[10px] text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded uppercase tracking-wider inline-block mt-1 border border-rose-500/20 font-bold">
-                            {target.statusTag}
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <span className="font-mono text-[10px] text-slate-400 uppercase block">Recompensa</span>
-                          <span className="font-mono text-2xl font-extrabold text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.4)]">
-                            {target.reward}
-                          </span>
-                        </div>
+                    <div className="flex flex-col flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-headline-lg text-base font-bold text-slate-100 uppercase tracking-tight">
+                          {target.username}
+                        </h3>
+                        <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border ${statusInfo.color}`}>
+                          {statusInfo.tag}
+                        </span>
                       </div>
-
-                      <div className="h-[1px] w-full bg-white/5"></div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="flex flex-col">
-                          <span className="font-mono text-[10px] text-slate-400 uppercase">Motivo</span>
-                          <span className="font-caption text-xs text-slate-300">{target.reason}</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-mono text-[10px] text-slate-400 uppercase">Publicado Por</span>
-                          <span className="font-caption text-xs text-cyan-400 font-bold">{target.publishedBy}</span>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleHunt(target.name)}
-                        className="w-full mt-2 py-3 bg-rose-500 hover:bg-rose-400 text-slate-950 font-mono text-xs font-bold uppercase tracking-widest rounded-lg shadow-[0_0_15px_rgba(244,63,94,0.4)] transition-all cursor-pointer flex items-center justify-center gap-2"
-                      >
-                        <Icon name="crosshair" size={16} />
-                        <span>Atacar Objetivo</span>
-                      </button>
+                      <p className="font-caption text-xs text-slate-400 truncate mt-0.5">
+                        {bounty.reason || 'Marcado por el Sindicato.'}
+                      </p>
+                      <span className={`font-mono text-[10px] mt-1 ${bounty.isAnonymous ? 'text-amber-400' : 'text-slate-500'}`}>
+                        Por: {publisherName}
+                      </span>
                     </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-2 w-full sm:w-auto min-w-[140px]">
+                    <span className="font-mono text-lg font-bold text-rose-400">{formattedReward}</span>
+                    <button
+                      onClick={() => handleHunt(target.username)}
+                      disabled={!statusInfo.isAvailable}
+                      className={`px-5 py-2 rounded-lg font-mono text-xs font-bold uppercase tracking-wider transition-all w-full sm:w-auto ${
+                        statusInfo.isAvailable
+                          ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 cursor-pointer'
+                          : 'bg-slate-800 text-slate-500 border border-white/5 cursor-not-allowed'
+                      }`}
+                    >
+                      Cazar
+                    </button>
                   </div>
                 </article>
               );
-            }
-
-            return (
-              <article
-                key={target.id}
-                className="group relative w-full bg-[#191f31]/40 backdrop-blur-sm rounded-xl p-4 border border-white/5 hover:border-slate-600 transition-all flex flex-col sm:flex-row gap-4 items-center justify-between shadow-md"
-              >
-                <div className="flex gap-4 items-center flex-1">
-                  <div className="relative w-16 h-16 shrink-0 rounded-lg bg-slate-950 border border-white/10 flex items-center justify-center shadow-inner">
-                    <Icon name="user" size={28} className="text-slate-400 group-hover:text-cyan-400 transition-colors" />
-                    <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-slate-900 text-cyan-400 font-mono text-[9px] font-bold px-1.5 py-0.5 rounded border border-white/5 whitespace-nowrap">
-                      NVL {target.level}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col">
-                    <h3 className="font-headline-lg text-base font-bold text-slate-100 uppercase tracking-tight">
-                      {target.name}
-                    </h3>
-                    <p className="font-caption text-xs text-slate-400 truncate mt-0.5">{target.reason}</p>
-                    <span className="font-mono text-[10px] text-slate-500 mt-1">Por: {target.publishedBy}</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-end gap-2 min-w-[140px]">
-                  <span className="font-mono text-lg font-bold text-rose-400">{target.reward}</span>
-                  <button
-                    onClick={() => handleHunt(target.name)}
-                    className="px-5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer w-full sm:w-auto font-bold"
-                  >
-                    Cazar
-                  </button>
-                </div>
-              </article>
-            );
-          })}
+            })
+          )}
         </div>
 
         {/* Sidebar (Right Column - 4/12) */}
@@ -226,28 +340,29 @@ export const BountyTerminal: React.FC<BountyTerminalProps> = ({ onAttackTarget }
               </div>
               <div className="flex flex-col">
                 <span className="font-mono text-[10px] text-slate-400 uppercase">Rango Actual</span>
-                <span className="font-headline-lg text-base font-bold text-slate-100">Cazador Activo</span>
+                <span className="font-headline-lg text-base font-bold text-slate-100">
+                  {isHitman ? 'Sicario Profesional' : 'Cazador Activo'}
+                </span>
               </div>
             </div>
 
             <div className="space-y-2 font-mono text-xs">
               <div className="flex justify-between items-center bg-slate-950/60 p-2 rounded border border-white/5">
-                <span className="text-slate-400">Contratos Disponibles</span>
-                <span className="text-emerald-400 font-bold">{DEFAULT_TARGETS.length}</span>
+                <span className="text-slate-400">Contratos Activos</span>
+                <span className="text-emerald-400 font-bold">{bounties.length}</span>
               </div>
               <div className="flex justify-between items-center bg-slate-950/60 p-2 rounded border border-white/5">
-                <span className="text-slate-400">Penalización Fracaso</span>
-                <span className="text-rose-400 font-bold">-15% EXP</span>
+                <span className="text-slate-400">Bonus Recompensa</span>
+                <span className={isHitman ? 'text-amber-400 font-bold' : 'text-slate-400'}>
+                  {isHitman ? '200% (Sicario)' : '100%'}
+                </span>
               </div>
             </div>
 
             <div className="pt-2 border-t border-white/5">
               <div className="flex justify-between font-mono text-[10px] text-slate-400 uppercase mb-1">
-                <span>Progreso de Rango</span>
-                <span className="text-cyan-400 font-bold">65%</span>
-              </div>
-              <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-white/5">
-                <div className="h-full bg-cyan-400 rounded-full w-[65%] shadow-[0_0_8px_#06b6d4]"></div>
+                <span>Tu Efectivo</span>
+                <span className="text-emerald-400 font-bold">${userCash.toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -277,11 +392,24 @@ export const BountyTerminal: React.FC<BountyTerminalProps> = ({ onAttackTarget }
 
             <div className="font-mono text-[10px] text-slate-400 uppercase tracking-wider text-center">
               <span>Escaneando sectores... </span>
-              <span className="text-cyan-400 font-bold animate-pulse">{DEFAULT_TARGETS.length} objetivos detectados</span>
+              <span className="text-cyan-400 font-bold animate-pulse">{bounties.length} objetivos detectados</span>
             </div>
           </div>
         </aside>
       </section>
+
+      {/* Place Bounty Modal */}
+      {isModalOpen && (
+        <PlaceBountyModal
+          sessionJwt={sessionJwt}
+          userCash={userCash}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={() => {
+            fetchBounties();
+            if (onClaimSuccess) onClaimSuccess();
+          }}
+        />
+      )}
     </div>
   );
 };

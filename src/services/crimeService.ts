@@ -1,6 +1,7 @@
 import { prisma } from '../db/prisma.js';
 import { MasteryService } from './masteryService.js';
 import { PlayerService } from './playerService.js';
+import { EducationService } from './educationService.js';
 import { CrimeDefinition, CRIMES } from '../config/gameData.js';
 export { CrimeDefinition, CRIMES };
 
@@ -149,7 +150,15 @@ export class CrimeService {
 
       const remainingMin = Math.ceil((jailedPlayer.jailUntil.getTime() - now.getTime()) / 60000);
       // Fórmula oficial de Torn Wiki: BailCost = $100 * remainingJailMinutes * playerLevel
-      const bailCostAmount = BigInt(100 * remainingMin * jailedPlayer.level);
+      const rawBailCostAmount = BigInt(100 * remainingMin * jailedPlayer.level);
+
+      // Aplicar descuento por pasiva de Educación si aplica
+      const eduMods = await EducationService.getEducationModifiers(payerId);
+      let bailCostAmount = rawBailCostAmount;
+      if (eduMods.bailDiscount > 0) {
+        const discountFactor = Math.max(0, 1 - eduMods.bailDiscount);
+        bailCostAmount = BigInt(Math.floor(Number(rawBailCostAmount) * discountFactor));
+      }
 
       if (payerWallet.cash < bailCostAmount) {
         throw new Error(`Efectivo insuficiente. Pagar la fianza cuesta **$${bailCostAmount.toLocaleString()}**.`);
@@ -215,7 +224,9 @@ export class CrimeService {
         data: { nerve: buster.stats.nerve - 5 },
       });
 
-      const isSuccess = Math.random() <= 0.65;
+      const eduMods = await EducationService.getEducationModifiers(busterId);
+      const baseRate = Math.min(0.65 + eduMods.bustSuccessBoost, 0.90);
+      const isSuccess = Math.random() <= baseRate;
 
       if (isSuccess) {
         await tx.player.update({

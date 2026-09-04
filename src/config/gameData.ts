@@ -114,47 +114,213 @@ export const CRIMES: CrimeDefinition[] = [
 ];
 
 // ── 3. Cursos Universitarios (Educación) ──
+export type FacultyCategory = 'Biology' | 'Law' | 'Business' | 'Combat' | 'ComputerScience';
+
 export interface CourseDefinition {
   id: string;
   name: string;
-  category: string;
+  category: FacultyCategory;
+  prerequisiteId?: string;
   cost: number;
   durationHours: number;
   bonusDescription: string;
+  statBonus?: {
+    intelligence?: number;
+    endurance?: number;
+    manualLabor?: number;
+    crimeSkill?: number;
+    strength?: number;
+  };
+  passivePerk?: {
+    type:
+      | 'HEALING_BOOST'
+      | 'HOSPITAL_REDUCTION'
+      | 'HEALTH_CAP'
+      | 'BAIL_DISCOUNT'
+      | 'BUST_SUCCESS'
+      | 'AUTO_BUST'
+      | 'SALARY_BOOST'
+      | 'STOCK_DIVIDEND'
+      | 'BANK_INTEREST_BOOST'
+      | 'COMBAT_ACCURACY'
+      | 'COMBAT_CRIT'
+      | 'BOSS_DAMAGE'
+      | 'CYBER_EXP'
+      | 'CYBER_STEAL'
+      | 'HACK_NERVE_REDUCTION';
+    value: number;
+  };
 }
 
 export const COURSES: CourseDefinition[] = [
+  // ── 1. Facultad de Medicina & Bioquímica ──
   {
     id: 'BIO101',
     name: 'Introducción a la Biología',
     category: 'Biology',
     cost: 500,
     durationHours: 1,
-    bonusDescription: '+10% curación de botiquines médicos y menor tiempo de hospital.',
+    bonusDescription: '+10% curación con botiquines médicos.',
+    statBonus: { intelligence: 5 },
+    passivePerk: { type: 'HEALING_BOOST', value: 0.10 },
   },
+  {
+    id: 'BIO201',
+    name: 'Farmacología Clandestina',
+    category: 'Biology',
+    prerequisiteId: 'BIO101',
+    cost: 2500,
+    durationHours: 3,
+    bonusDescription: '-20% tiempo de convalecencia en Hospital.',
+    statBonus: { endurance: 10 },
+    passivePerk: { type: 'HOSPITAL_REDUCTION', value: 0.20 },
+  },
+  {
+    id: 'BIO301',
+    name: 'Licenciatura en Medicina & Genética',
+    category: 'Biology',
+    prerequisiteId: 'BIO201',
+    cost: 10000,
+    durationHours: 8,
+    bonusDescription: '+15% HP Máximo permanente.',
+    statBonus: { intelligence: 20, endurance: 15 },
+    passivePerk: { type: 'HEALTH_CAP', value: 0.15 },
+  },
+
+  // ── 2. Facultad de Derecho & Criminología ──
   {
     id: 'LAW101',
     name: 'Derecho Comunitario (Common Law)',
     category: 'Law',
     cost: 1000,
     durationHours: 2,
-    bonusDescription: 'Descuento del 20% en costos de fianza (Bail) y permiso para comprar libertad.',
+    bonusDescription: '-20% descuento en costo de fianza (Bail) en cárcel.',
+    statBonus: { intelligence: 5 },
+    passivePerk: { type: 'BAIL_DISCOUNT', value: 0.20 },
   },
+  {
+    id: 'LAW201',
+    name: 'Procedimientos Penales & Fugas',
+    category: 'Law',
+    prerequisiteId: 'LAW101',
+    cost: 5000,
+    durationHours: 4,
+    bonusDescription: '+15% éxito al rescatar aliados prisioneros (Bust).',
+    statBonus: { crimeSkill: 10 },
+    passivePerk: { type: 'BUST_SUCCESS', value: 0.15 },
+  },
+  {
+    id: 'LAW301',
+    name: 'Licenciatura en Criminología & Litigio',
+    category: 'Law',
+    prerequisiteId: 'LAW201',
+    cost: 15000,
+    durationHours: 10,
+    bonusDescription: '-35% descuento acumulado en fianzas de prisión.',
+    statBonus: { intelligence: 20, crimeSkill: 15 },
+    passivePerk: { type: 'BAIL_DISCOUNT', value: 0.35 },
+  },
+
+  // ── 3. Facultad de Economía & Finanzas ──
   {
     id: 'BUS101',
     name: 'Gestión Comercial (Business Mgmt)',
     category: 'Business',
     cost: 1500,
     durationHours: 3,
-    bonusDescription: '+10% ganancias en salario de trabajo e interés bancario.',
+    bonusDescription: '+10% ganancias en salario de empleos.',
+    statBonus: { intelligence: 5, manualLabor: 5 },
+    passivePerk: { type: 'SALARY_BOOST', value: 0.10 },
   },
+  {
+    id: 'BUS201',
+    name: 'Mercado de Capitales & Inversiones',
+    category: 'Business',
+    prerequisiteId: 'BUS101',
+    cost: 6000,
+    durationHours: 5,
+    bonusDescription: '+15% dividendos cobrados en la Bolsa de Valores.',
+    statBonus: { intelligence: 10 },
+    passivePerk: { type: 'STOCK_DIVIDEND', value: 0.15 },
+  },
+  {
+    id: 'BUS301',
+    name: 'Licenciatura en Alta Dirección (MBA)',
+    category: 'Business',
+    prerequisiteId: 'BUS201',
+    cost: 20000,
+    durationHours: 12,
+    bonusDescription: '+2% adicional en tasa de interés de inversiones bancarias.',
+    statBonus: { intelligence: 25, manualLabor: 15 },
+    passivePerk: { type: 'BANK_INTEREST_BOOST', value: 0.02 },
+  },
+
+  // ── 4. Facultad de Ciencias Militares & Tácticas ──
   {
     id: 'COMBAT101',
     name: 'Tácticas de Combate Urbano',
     category: 'Combat',
     cost: 2000,
     durationHours: 4,
-    bonusDescription: '+5% precisión permanente en combates PvP y World Bosses.',
+    bonusDescription: '+5% precisión permanente en combates PvP y Bosses.',
+    statBonus: { strength: 5 },
+    passivePerk: { type: 'COMBAT_ACCURACY', value: 0.05 },
+  },
+  {
+    id: 'COMBAT201',
+    name: 'Balística & Operaciones de Asalto',
+    category: 'Combat',
+    prerequisiteId: 'COMBAT101',
+    cost: 8000,
+    durationHours: 6,
+    bonusDescription: '+8% daño crítico en duelos PvP.',
+    statBonus: { strength: 10 },
+    passivePerk: { type: 'COMBAT_CRIT', value: 0.08 },
+  },
+  {
+    id: 'COMBAT301',
+    name: 'Licenciatura en Estrategia Bélica',
+    category: 'Combat',
+    prerequisiteId: 'COMBAT201',
+    cost: 25000,
+    durationHours: 14,
+    bonusDescription: '+10% daño extra contra World Bosses y Guerras.',
+    statBonus: { strength: 20, endurance: 15 },
+    passivePerk: { type: 'BOSS_DAMAGE', value: 0.10 },
+  },
+
+  // ── 5. Facultad de Ciberseguridad e Informática ──
+  {
+    id: 'COMP101',
+    name: 'Algoritmos & Programación Inicial',
+    category: 'ComputerScience',
+    cost: 1800,
+    durationHours: 3,
+    bonusDescription: '+15% EXP obtenida en crímenes cibernéticos.',
+    statBonus: { intelligence: 5 },
+    passivePerk: { type: 'CYBER_EXP', value: 0.15 },
+  },
+  {
+    id: 'COMP201',
+    name: 'Ciberseguridad & Scripting Ofensivo',
+    category: 'ComputerScience',
+    prerequisiteId: 'COMP101',
+    cost: 7500,
+    durationHours: 6,
+    bonusDescription: '+15% dinero robado al hackear cuentas bancarias.',
+    statBonus: { intelligence: 10 },
+    passivePerk: { type: 'CYBER_STEAL', value: 0.15 },
+  },
+  {
+    id: 'COMP301',
+    name: 'Licenciatura en Ingeniería de Sistemas',
+    category: 'ComputerScience',
+    prerequisiteId: 'COMP201',
+    cost: 22000,
+    durationHours: 12,
+    bonusDescription: '-50% costo de Nerve en Hacking cibernético.',
+    statBonus: { intelligence: 25, crimeSkill: 10 },
+    passivePerk: { type: 'HACK_NERVE_REDUCTION', value: 0.50 },
   },
 ];
 

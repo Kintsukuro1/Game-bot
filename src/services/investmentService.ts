@@ -1,6 +1,7 @@
 import { prisma } from '../db/prisma.js';
 import { MAX_INVESTMENT_CAP, INVESTMENT_INTEREST_RATE_28_DAYS } from '../config/constants.js';
 import { InsufficientFundsError, InvalidAmountError } from '../errors/gameErrors.js';
+import { EducationService } from './educationService.js';
 import { StockDefinition, INITIAL_STOCKS } from '../config/gameData.js';
 export { StockDefinition, INITIAL_STOCKS };
 
@@ -16,6 +17,11 @@ export class InvestmentService {
     let interestRate = 0.015; // 1.5% por 7 días
     if (durationDays === 14) interestRate = 0.035; // 3.5% por 14 días
     if (durationDays === 28) interestRate = INVESTMENT_INTEREST_RATE_28_DAYS; // 6% por 28 días (rebalanceado)
+
+    const eduMods = await EducationService.getEducationModifiers(playerId);
+    if (eduMods.bankInterestBoost > 0) {
+      interestRate += eduMods.bankInterestBoost;
+    }
 
     return prisma.$transaction(async (tx) => {
       const wallet = await tx.wallet.findUnique({ where: { playerId } });
