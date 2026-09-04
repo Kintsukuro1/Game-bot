@@ -1238,10 +1238,10 @@ export function createServer() {
       io.to(`user:${discordId}`).emit('player_stats_updated', playerSerialized);
 
       // Log activity feed
-      await ActivityFeedService.addActivity(
-        player.id,
+      activityFeedService.logActivity(
         'BOUNTY',
-        `🎯 Colocó un bounty de $${BigInt(rewardCash).toLocaleString()} sobre ${result.targetUsername}${isAnonymous ? ' (Anónimo)' : ''}.`
+        '[RECOMPENSA]',
+        `🎯 ${player.username} colocó un bounty de $${BigInt(rewardCash).toLocaleString()} sobre ${result.targetUsername}${isAnonymous ? ' (Anónimo)' : ''}.`
       );
 
       return res.json({ ...serializedResult, player: playerSerialized });
