@@ -19,7 +19,7 @@ const clientId = process.env.DISCORD_CLIENT_ID;
 const PORT = process.env.PORT || 3000;
 
 // Iniciar Servidor Express API + WebSockets para la Discord Activity
-const { server } = createServer();
+const { server, io } = createServer();
 server.listen(PORT, () => {
   console.log(`🌐 [Activity API] Servidor Express & WebSockets escuchando en el puerto ${PORT}`);
   console.log(`📡 API Endpoints listos en http://localhost:${PORT}/api/ e en /.proxy/api/`);
@@ -65,26 +65,26 @@ client.once(Events.ClientReady, async () => {
         await rest.put(Routes.applicationCommands(botClientId), { body: commandList }).catch(() => {});
       }
 
-      // Sincronización INSTANTÁNEA en los servidores donde está presente el bot
-      for (const [guildId, guild] of client.guilds.cache) {
-        console.log(`⚡ [Instant Guild Sync] Sincronizando comandos en el servidor: ${guild.name} (${guildId})...`);
+      const devGuildId = process.env.DEV_GUILD_ID;
+      if (devGuildId) {
+        console.log(`⚡ [Dev Guild Sync] Sincronizando comandos instantáneamente en el servidor de desarrollo (${devGuildId})...`);
         try {
-          const existingGuild = (await rest.get(Routes.applicationGuildCommands(botClientId, guildId))) as any[];
+          const existingGuild = (await rest.get(Routes.applicationGuildCommands(botClientId, devGuildId))) as any[];
           const guildEntryPoints = existingGuild.filter((cmd) => cmd.type === 4);
           const fullGuildList = [...commandList, ...guildEntryPoints];
-          await rest.put(Routes.applicationGuildCommands(botClientId, guildId), { body: fullGuildList });
+          await rest.put(Routes.applicationGuildCommands(botClientId, devGuildId), { body: fullGuildList });
+          console.log(`✅ [Dev Guild Sync] ¡Comandos desplegados en el servidor de desarrollo!`);
         } catch (err: any) {
-          await rest.put(Routes.applicationGuildCommands(botClientId, guildId), { body: commandList }).catch(() => {});
+          await rest.put(Routes.applicationGuildCommands(botClientId, devGuildId), { body: commandList }).catch(() => {});
         }
       }
-      console.log(`✅ [Instant Guild Sync] ¡Comandos desplegados al instante!`);
     } catch (error: any) {
       console.error('❌ Error en la sincronización de comandos Slash:', error?.message || error);
     }
   }
 
   // Iniciar temporizadores de fondo (Regeneración de energía, etc.)
-  startScheduler();
+  startScheduler(io);
 });
 
 client.on('interactionCreate', handleInteraction);

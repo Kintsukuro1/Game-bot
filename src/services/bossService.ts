@@ -3,6 +3,7 @@ import { PlayerService } from './playerService.js';
 import { EducationService } from './educationService.js';
 import { DEFAULT_GUILD_ID } from '../config/constants.js';
 import { InsufficientFundsError } from '../errors/gameErrors.js';
+import { BOSS_QUOTES } from '../config/gameData.js';
 
 export interface BossDefinition {
   type: string;
@@ -256,98 +257,13 @@ export const BOSS_DEFINITIONS: Record<string, BossDefinition> = {
 export class BossService {
   // Citas cómicas y dramáticas de los World Bosses ajustadas a la fase
   static getRandomBossQuote(type: string, phase: BossPhase = 'NORMAL'): string {
-    if (type === 'CHEN_CARNICERO') {
-      if (phase === 'DESPERATE') {
-        return '🥩 Chen "El Fileteador": "¡Aiyaaaa! ¡Mi delantal está destrozado y chorreando! ¡LOS VOY A FILETEAR A TODOS, HIJOS DE PUTA!"';
-      }
-      if (phase === 'ENRAGED') {
-        return '🥩 Chen "El Fileteador": "¡Basta de charrasca suave! ¡Mis dos hachas tienen hambre de tu puta columna!"';
-      }
-      return '🥩 Chen "El Fileteador": "¡Nǐ hǎo, pendejo! ¿Tú vienes a comprar corte de primera o vienes a ser la carne del caldo de hoy?"';
+    const bossQuotes = BOSS_QUOTES[type];
+    if (bossQuotes && bossQuotes[phase]) {
+      return bossQuotes[phase];
     }
-
-    if (type === 'PAYASO_SINFORD') {
-      if (phase === 'DESPERATE') {
-        return '🤡 "Pepino": "¡JAJAJAJA! ¿Crees que me duele, pedazo de mierda? ¡HE TRABAJADO EN 500 CUMPLEAÑOS INFANTILES, ESTO ES UN PASEO!"';
-      }
-      if (phase === 'ENRAGED') {
-        return '🤡 "Pepino": "¡HONK HONK! ¡Se acabó la magia, imbécil! ¡Ahora te tragas la bomba de confeti en los pulmones!"';
-      }
-      return '🤡 "Pepino": "¡Sorpresa, hijo de puta! ¿Creíste que la fiesta terminaba con pastel? ¡Termina con tus dientes en el piso!"';
-    }
-
-    if (type === 'QUIMICA_REYES') {
-      if (phase === 'DESPERATE') {
-        return '🧪 Dra. Reyes: "¡No toques esa probeta, imbecil! Si yo caigo, ¡NOS VAMOS A DESINTEGRAR JUNTOS EN ÁCIDO FLUORHÍDRICO!"';
-      }
-      if (phase === 'ENRAGED') {
-        return '🧪 Dra. Reyes: "Aumentando la dosis de neurotoxina... ¡Averigüemos cuántos segundos aguantas antes de convulsionar!"';
-      }
-      return '🧪 Dra. Reyes: "Relájate, esto no va a doler... mentira, va a doler como la puta madre. Pero anota la hora, me sirve de dato."';
-    }
-
-    if (type === 'SAL_GRASA_MORETTI') {
-      if (phase === 'DESPERATE') {
-        return '🍔 Sal "Grasa": "¡ME VAN A CERRAR EL LOCAL! ¡Voy a meter la cabeza de todos ustedes en la freidora a 200 grados!"';
-      }
-      if (phase === 'ENRAGED') {
-        return '🍔 Sal "Grasa": "¡Aceite hirviendo para la mesa cuatro! ¡Preparen las papas con salsa de tus propias vísceras!"';
-      }
-      return '🍔 Sal "Grasa": "¿Preguntas qué mierda lleva la hamburguesa especial? Hoy TÚ eres el puto ingrediente sorpresa, campeón."';
-    }
-
-    if (type === 'CAPITANA_IBARRA') {
-      if (phase === 'DESPERATE') {
-        return '👮‍♀️ Capitana Ibarra: "¡Llamen al escuadrón antimotines! ¡A estos criminales de mierda no los saca vivos nadie de mi jurisdicción!"';
-      }
-      if (phase === 'ENRAGED') {
-        return '👮‍♀️ Capitana Ibarra: "¡Resistencia a la autoridad de grado tres! ¡Te voy a moler a macanazos hasta que no te reconozca tu madre!"';
-      }
-      return '👮‍♀️ Capitana Ibarra: "Tienes derecho a guardar silencio, imbécil. Yo tengo derecho a no escucharte una mierda de todas formas."';
-    }
-
-    if (type === 'ALCAIDE_VOSS') {
-      if (phase === 'DESPERATE') {
-        return '⛓️ Alcaide Voss: "¡Cierren el pabellón de máxima seguridad! ¡Si este motín no para, disparo a matar a todo lo que se mueva!"';
-      }
-      if (phase === 'ENRAGED') {
-        return '⛓️ Alcaide Voss: "¡Doble guardia a las celdas! ¡Hoy nadie sale con vida de esta arena de combate!"';
-      }
-      return '⛓️ Alcaide Voss: "Bienvenido a mi puta prisión. Las reglas son simples: yo gano las apuestas, tú pagas con lo que te quede de cuerpo."';
-    }
-
-    if (type === 'PRESIDENTE_HARRISON') {
-      if (phase === 'DESPERATE') {
-        return '🏛️ Presidente Harrison: "¡ACTIVACIÓN DEL PROTOCOLO CERO! ¡Tiren la bomba táctica si es necesario, pero elimínenlos!"';
-      }
-      if (phase === 'ENRAGED') {
-        return '🏛️ Presidente Harrison: "¡Francotiradores en los tejados! ¡No permitan que esta escoria dañe mi imagen pública!"';
-      }
-      return '🏛️ Presidente Harrison: "Tienen a toda la ciudad en su contra, pandilleros. Mi Servicio Secreto los convertirá en polvo."';
-    }
-
-    if (type === 'GENERAL_VANCE') {
-      if (phase === 'DESPERATE') {
-        return '🪖 General Vance: "¡BÚNKER EN PELIGRO! ¡FUEGO DE ARTILLERÍA PESADA A MI PROPIA POSICIÓN! ¡QUE NO QUEDE NADA!"';
-      }
-      if (phase === 'ENRAGED') {
-        return '🪖 General Vance: "¡Cargadores incendiarios listos! ¡Barran este callejón con napalm!"';
-      }
-      return '🪖 General Vance: "Esto no es una pelea de callejones, es una guerra abierta. ¡Preparen el bombardeo de morteros!"';
-    }
-
-    if (type === 'DON_CARBONE') {
-      if (phase === 'DESPERATE') {
-        return '🎩 Don Ernesto Carbone: "¡Cosa Nostra no se rinde ante ratas de alcantarilla! ¡Traigan las ametralladoras Thompson y acábennos!"';
-      }
-      if (phase === 'ENRAGED') {
-        return '🎩 Don Ernesto Carbone: "¡Envien a los sicarios de la familia! ¡Que sus cuerpos floten en la bahía al amanecer!"';
-      }
-      return '🎩 Don Ernesto Carbone: "Ustedes creen que dominan las calles, pero yo soy dueño de cada juez, policía y callejón de esta ciudad."';
-    }
-
     return '⚔️ ¡Prepara tus armas para el combate!';
   }
+
 
   // Obtener o inicializar el Boss activo para la categoría indicada
   static async getOrCreateActiveBoss(guildId: string = DEFAULT_GUILD_ID, category: 'DAILY' | 'WEEKLY_FACTION') {

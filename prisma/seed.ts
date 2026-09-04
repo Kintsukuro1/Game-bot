@@ -284,6 +284,13 @@ async function main() {
     { name: 'Melatonin', description: 'Inyección de Melatonina: +500% Velocidad por 120s.', type: 'WEAPON', slot: 'TEMPORARY', weaponType: 'Buff', damage: 0, accuracy: 0.0, stealth: 10.0, price: 4000, effect: JSON.stringify({ buff: 'HASTENED', stat: 'speed', boostPercent: 500, durationSec: 120 }) },
     { name: 'Serotonin', description: 'Inyección de Serotonina: +300% Defensa por 120s y regenera 25% de vida.', type: 'WEAPON', slot: 'TEMPORARY', weaponType: 'Buff', damage: 0, accuracy: 0.0, stealth: 10.0, price: 4500, effect: JSON.stringify({ buff: 'HARDENED', stat: 'defense', boostPercent: 300, durationSec: 120, healPercent: 25 }) },
     { name: 'Tyrosine', description: 'Inyección de Tirosina: +500% Destreza por 120s.', type: 'WEAPON', slot: 'TEMPORARY', weaponType: 'Buff', damage: 0, accuracy: 0.0, stealth: 10.0, price: 4000, effect: JSON.stringify({ buff: 'SHARPENED', stat: 'dexterity', boostPercent: 500, durationSec: 120 }) },
+
+    // ==========================================
+    // 12. CHESTS & REWARD BOXES (Cofres de Misiones)
+    // ==========================================
+    { name: 'Cofre Diario del Sindicato', description: 'Cofre de suministros diarios del Sindicato. Ábrelo desde tu inventario para recibir $50,000 cash, 1,000 XP y un ítem especial.', type: 'CONSUMABLE', slot: null, weaponType: 'Chest', damage: 0, accuracy: 0, stealth: 0, price: 0, effect: JSON.stringify({ chestType: 'DAILY' }) },
+    { name: 'Cofre Semanal de la Sombra', description: 'Cofre semanal de alta prioridad. Ábrelo desde tu inventario para recibir $250,000 cash, 5,000 XP, 5 Puntos de Maestría y un ítem táctico.', type: 'CONSUMABLE', slot: null, weaponType: 'Chest', damage: 0, accuracy: 0, stealth: 0, price: 0, effect: JSON.stringify({ chestType: 'WEEKLY' }) },
+    { name: 'Cofre Mensual del Padrino', description: 'Cofre legendario mensual del Padrino. Ábrelo desde tu inventario para recibir $1,000,000 cash, 20,000 XP, 15 Puntos de Maestría y un armamento raro.', type: 'CONSUMABLE', slot: null, weaponType: 'Chest', damage: 0, accuracy: 0, stealth: 0, price: 0, effect: JSON.stringify({ chestType: 'MONTHLY' }) },
   ];
 
   console.log(`📦 Cargando ${items.length} ítems de Torn Wiki en la base de datos...`);

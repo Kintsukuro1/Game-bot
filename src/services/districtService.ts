@@ -43,20 +43,23 @@ export class DistrictService {
       where: { guildId },
     });
 
+    const factionIds = districts
+      .map((d) => d.controllingFactionId)
+      .filter((id): id is string => Boolean(id));
+
+    const factions = factionIds.length > 0
+      ? await prisma.faction.findMany({ where: { id: { in: factionIds } } })
+      : [];
+
+    const factionMap = new Map(factions.map((f) => [f.id, f.name]));
+
     const result = [];
     for (const key of Object.keys(DISTRICT_DEFINITIONS)) {
       const def = DISTRICT_DEFINITIONS[key];
       const existing = districts.find((d) => d.districtId === key);
-
-      let controllingFactionName = 'Ninguna (Territorio Neutral)';
-      if (existing?.controllingFactionId) {
-        const faction = await prisma.faction.findUnique({
-          where: { id: existing.controllingFactionId },
-        });
-        if (faction) {
-          controllingFactionName = faction.name;
-        }
-      }
+      const controllingFactionName = existing?.controllingFactionId
+        ? factionMap.get(existing.controllingFactionId) || 'Ninguna (Territorio Neutral)'
+        : 'Ninguna (Territorio Neutral)';
 
       result.push({
         ...def,
@@ -68,6 +71,7 @@ export class DistrictService {
 
     return result;
   }
+
 
   /**
    * Añade Puntos de Dominio a una facción en un distrito específico.

@@ -204,6 +204,13 @@ export function App() {
       fetchProfile();
       fetchInventory();
       fetchActivities();
+
+      // Polling de seguridad cada 15 segundos para refrescar Energía, Nerve y Stats en tiempo real
+      const profileInterval = setInterval(() => {
+        fetchProfile();
+      }, 15000);
+
+      return () => clearInterval(profileInterval);
     }
   }, [isAuthenticated, sessionToken]);
 

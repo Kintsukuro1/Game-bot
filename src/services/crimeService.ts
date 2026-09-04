@@ -41,17 +41,17 @@ export class CrimeService {
 
       // Consumir Nerve
       const newNerve = player.stats.nerve - crime.nerveCost;
-      await tx.stats.update({
-        where: { playerId },
-        data: { nerve: newNerve },
-      });
+      const currentHeat = player.stats.heat || 0;
 
-      // Cálculo de éxito: BaseRate + (CrimeSkill * 0.05)
-      const effectiveRate = Math.min(crime.baseSuccessRate + (player.stats.crimeSkill * 0.05), 0.95);
+      // Penalización por Heat en la tasa de éxito (hasta -20% si Heat está al 100%)
+      const heatPenalty = (currentHeat / 100) * 0.20;
+
+      // Cálculo de éxito: BaseRate + (CrimeSkill * 0.05) - heatPenalty
+      const effectiveRate = Math.max(0.10, Math.min(crime.baseSuccessRate + (player.stats.crimeSkill * 0.05) - heatPenalty, 0.95));
       const isSuccess = Math.random() <= effectiveRate;
 
       if (isSuccess) {
-        // Éxito: Recompensa de dinero y Crime XP
+        // Éxito: Recompensa de dinero, Crime XP y ganancia de Heat
         const rewardAmount = Math.floor(crime.minReward + Math.random() * (crime.maxReward - crime.minReward + 1));
         const rewardBigInt = BigInt(rewardAmount);
 
@@ -76,15 +76,22 @@ export class CrimeService {
           },
         });
 
-        // Incrementar Crime Skill y Crime XP
+        // Incrementar Crime Skill, Crime XP y Heat
         const newCrimeExp = player.stats.crimeExp + crime.crimeExpReward;
         const newCrimeSkill = player.stats.crimeSkill + 0.02;
+
+        let heatGain = 5;
+        if (crime.category === 'Theft') heatGain = 10;
+        if (crime.category === 'Felony') heatGain = 15;
+        const newHeat = Math.min(100, currentHeat + heatGain);
 
         await tx.stats.update({
           where: { playerId },
           data: {
+            nerve: newNerve,
             crimeExp: newCrimeExp,
             crimeSkill: newCrimeSkill,
+            heat: newHeat,
           },
         });
 
@@ -97,26 +104,43 @@ export class CrimeService {
           rewardAmount,
           nerveRemaining: newNerve,
           newCrimeSkill,
-          message: `🎉 **¡Crimen Exitoso!** Completaste **${crime.name}** y obtuviste **+$${rewardAmount.toLocaleString()}** y **+${crime.crimeExpReward} Crime XP**.`,
+          heat: newHeat,
+          message: `🎉 **¡Crimen Exitoso!** Completaste **${crime.name}** y obtuviste **+$${rewardAmount.toLocaleString()}** (+${heatGain}% Heat).`,
         };
       } else {
-        // Fallo: Si el crimen tiene tiempo de prisión, enviar a Jail
+        // Fallo: Incrementar Heat +25% y calcular condena policial
+        let newHeat = Math.min(100, currentHeat + 25);
         let failMessage = `❌ **¡Crimen Fallido!** Fuiste descubierto al intentar **${crime.name}**.`;
 
         if (crime.failJailMinutes > 0) {
-          const jailUntil = new Date(Date.now() + crime.failJailMinutes * 60 * 1000);
+          const extraJailMult = 1 + (newHeat / 100);
+          const effectiveJailMinutes = Math.floor(crime.failJailMinutes * extraJailMult);
+          const jailUntil = new Date(Date.now() + effectiveJailMinutes * 60 * 1000);
+
+          // Al ser procesado e ingresado a prisión, el Heat se resetea a 0%
+          newHeat = 0;
+
           await tx.player.update({
             where: { id: playerId },
             data: { jailUntil },
           });
-          failMessage += ` 🚨 La policía te arrestó y fuiste enviado a prisión por **${crime.failJailMinutes} minutos**.`;
+          failMessage += ` 🚨 La policía te arrestó (Heat elevado) y fuiste enviado a prisión por **${effectiveJailMinutes} minutos**.`;
         }
+
+        await tx.stats.update({
+          where: { playerId },
+          data: {
+            nerve: newNerve,
+            heat: newHeat,
+          },
+        });
 
         return {
           success: false,
           crimeName: crime.name,
           rewardAmount: 0,
           nerveRemaining: newNerve,
+          heat: newHeat,
           message: failMessage,
         };
       }

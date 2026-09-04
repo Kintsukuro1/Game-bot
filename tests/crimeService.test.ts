@@ -27,8 +27,8 @@ async function testCrimeServiceFase6() {
     throw new Error('El crimen no devolvió un nombre válido.');
   }
 
-  if (res.nerveRemaining !== 98) {
-    throw new Error(`El Nerve restante debió ser 98. Actual: ${res.nerveRemaining}`);
+  if (res.nerveRemaining !== 8) {
+    throw new Error(`El Nerve restante debió ser 8. Actual: ${res.nerveRemaining}`);
   }
   console.log(`✅ Resultado de crimen: ${res.message}`);
 
@@ -44,6 +44,7 @@ async function testCrimeServiceFase6() {
   console.log(`✅ Jugador en lista de prisión verificado (Encarcelados: ${jailedList.length}).`);
 
   // Pagar Fianza
+  await prisma.wallet.update({ where: { playerId: helper.id }, data: { cash: 10000n } });
   const bailRes = await CrimeService.payBail(helper.id, player.id);
   if (!bailRes.freedUsername) {
     throw new Error('La fianza no se procesó correctamente.');

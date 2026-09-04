@@ -69,6 +69,7 @@ model Stats {
   endurance    Float    @default(1.0)
   crimeSkill   Float    @default(1.0)
   crimeExp     Int      @default(0)
+  heat         Int      @default(0)
   adrenalinaUses Int    @default(0)
   sueroUses    Int      @default(0)
   updatedAt    DateTime @updatedAt
@@ -180,6 +181,8 @@ model PlayerMission {
   title       String
   description String
   type        String   // ATTACKS, CRIMES, ITEMS, TRAINING, BANK, STOCKS, BOUNTY, RACING, TRAVEL, EDUCATION, BOSS, MARKET
+  periodicity String   @default("DAILY") // DAILY, WEEKLY, MONTHLY
+  minLevel    Int      @default(1)
   requirement Int
   progress    Int      @default(0)
   rewardCash  BigInt   @default(0)
@@ -189,6 +192,7 @@ model PlayerMission {
   expiresAt   DateTime
   createdAt   DateTime @default(now())
 
+  @@index([playerId, periodicity, expiresAt])
   @@index([playerId, isCompleted])
 }
 

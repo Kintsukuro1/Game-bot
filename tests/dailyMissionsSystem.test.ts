@@ -1,9 +1,10 @@
 import { PlayerService } from '../src/services/playerService.js';
 import { MissionService } from '../src/services/missionService.js';
+import { InventoryService } from '../src/services/inventoryService.js';
 import { prisma } from '../src/db/prisma.js';
 
-async function testDailyMissionsSystem() {
-  console.log('🧪 Probando Nuevo Sistema de Misiones Diarias & Cofre del Sindicato...');
+async function testMissionsSystem() {
+  console.log('🧪 Probando Nuevo Sistema de Misiones (Diarias, Semanales, Mensuales), Level Filter & Cofres al Inventario...');
 
   const testDiscordId = '777666555444333222';
 
@@ -12,46 +13,66 @@ async function testDailyMissionsSystem() {
     where: { discordId: testDiscordId },
   });
 
-  // 1. Registrar Jugador de Prueba
-  const player = await PlayerService.registerPlayer(testDiscordId, 'DailyAgent');
-  console.log('✅ Jugador registrado.');
+  // 1. Registrar Jugador Nivel 1 de Prueba
+  const player = await PlayerService.registerPlayer(testDiscordId, 'MissionsTester');
+  console.log(`✅ Jugador ${player.username} registrado (Nivel ${player.level}).`);
 
-  // 2. Obtener misiones iniciales
-  console.log('🔹 Consultando misiones diarias de jugador (debe generar 5 misiones)...');
-  const { missions, canClaimChest, isChestClaimed } = await MissionService.getMissions(player.id);
+  // 2. Probar filtrado por minLevel para Nivel 1
+  console.log('🔹 Consultando misiones diarias de jugador Nivel 1...');
+  const { missions: dailyMissions } = await MissionService.getMissions(player.id, 'DAILY');
+  console.log(`✅ ${dailyMissions.length} misiones diarias asignadas.`);
 
-  console.log(`✅ ${missions.length} misiones asignadas (Cofre disponible: ${canClaimChest}, Reclamado: ${isChestClaimed}).`);
-  if (missions.length !== 5) {
-    throw new Error(`Se esperaban 5 misiones diarias, pero se generaron ${missions.length}.`);
+  const invalidLevelMission = dailyMissions.find((m) => m.minLevel > player.level);
+  if (invalidLevelMission) {
+    throw new Error(`El jugador Nivel 1 recibió la misión "${invalidLevelMission.title}" que requiere Nivel ${invalidLevelMission.minLevel}.`);
   }
+  console.log('✅ Filtrado por minLevel verificado (Ninguna misión superó el nivel del jugador).');
 
-  // 3. Simular progreso en las 5 misiones
-  console.log('🔹 Avanzando progreso en todas las asignaciones del día...');
-  for (const m of missions) {
+  // 3. Probar Misiones Semanales (3 misiones) y Mensuales (2 misiones)
+  const { missions: weeklyMissions } = await MissionService.getMissions(player.id, 'WEEKLY');
+  const { missions: monthlyMissions } = await MissionService.getMissions(player.id, 'MONTHLY');
+
+  if (weeklyMissions.length !== 3) {
+    throw new Error(`Se esperaban 3 misiones semanales, pero se generaron ${weeklyMissions.length}.`);
+  }
+  if (monthlyMissions.length !== 2) {
+    throw new Error(`Se esperaban 2 misiones mensuales, pero se generaron ${monthlyMissions.length}.`);
+  }
+  console.log('✅ Secciones Diarias (5), Semanales (3) y Mensuales (2) validadas correctamente.');
+
+  // 4. Completar las 5 misiones diarias y reclamar el cofre al inventario
+  console.log('🔹 Avanzando progreso en todas las asignaciones diarias...');
+  for (const m of dailyMissions) {
     await MissionService.progressMission(player.id, m.type as any, m.requirement);
   }
 
-  // Verificar progreso completado
-  const { missions: updatedMissions, canClaimChest: canClaimNow } = await MissionService.getMissions(player.id);
-  const allCompleted = updatedMissions.every((m) => m.isCompleted);
-  console.log(`✅ Todas las misiones completadas: ${allCompleted}. Cofre desbloqueado: ${canClaimNow}.`);
-  if (!allCompleted || !canClaimNow) {
-    throw new Error('Todas las misiones debieron estar completas y el cofre disponible.');
+  const { canClaimChest } = await MissionService.getMissions(player.id, 'DAILY');
+  if (!canClaimChest) {
+    throw new Error('El Cofre Diario debió estar disponible para reclamar.');
   }
 
-  // 4. Probar reclamo manual de recompensa individual
-  const firstMission = updatedMissions[0];
-  console.log(`🔹 Reclamando recompensa individual de asignación: ${firstMission.title}...`);
-  const claimRes = await MissionService.claimMissionReward(player.id, firstMission.id);
-  console.log(`✅ Recompensa de misión reclamada: +$${claimRes.rewardCash.toLocaleString()} y +${claimRes.rewardXp} XP.`);
+  console.log('🔹 Reclamando Cofre Diario al Inventario...');
+  const chestClaimRes = await MissionService.claimChestToInventory(player.id, 'DAILY');
+  console.log(`✅ ${chestClaimRes.message}`);
 
-  // 5. Probar reclamo del Gran Cofre Diario del Sindicato
-  console.log('🔹 Reclamando Gran Cofre Diario del Sindicato ($50,000 + 1,000 XP + 1x First Aid Kit)...');
-  const chestRes = await MissionService.claimDailyChest(player.id);
-  console.log(`✅ Cofre reclamado con éxito: +$${chestRes.rewardCash.toLocaleString()}, +${chestRes.rewardXp} XP y 1x ${chestRes.rewardItemName}.`);
+  // Verificar que el ítem del Cofre está en el inventario del jugador
+  const invChestItem = await prisma.inventoryItem.findFirst({
+    where: { playerId: player.id },
+    include: { item: true },
+  });
 
-  if (chestRes.rewardCash !== 50000n || chestRes.rewardXp !== 1000) {
-    throw new Error('Las recompensas del Cofre Diario no coinciden.');
+  if (!invChestItem || invChestItem.item.name !== 'Cofre Diario del Sindicato') {
+    throw new Error('El Cofre Diario del Sindicato no fue encontrado en el inventario del jugador.');
+  }
+  console.log('✅ Cofre verificado exitosamente en el Inventario.');
+
+  // 5. Abrir el Cofre desde el inventario usando InventoryService.useItem
+  console.log('🔹 Abriendo Cofre Diario del Sindicato desde el inventario...');
+  const openRes = await InventoryService.useItem(player.id, invChestItem.id);
+  console.log(`✅ Resultado de abrir cofre: ${openRes}`);
+
+  if (!openRes.includes('ABIERTO')) {
+    throw new Error('Falló la apertura del cofre desde el inventario.');
   }
 
   // Limpieza
@@ -60,12 +81,12 @@ async function testDailyMissionsSystem() {
   });
 
   console.log('🧹 Limpieza completada.');
-  console.log('🎉 ¡Todas las pruebas de Misiones Diarias y Cofre del Sindicato pasaron exitosamente!');
+  console.log('🎉 ¡Todas las pruebas del Sistema de Misiones pasaron exitosamente!');
 }
 
-testDailyMissionsSystem()
+testMissionsSystem()
   .catch((err) => {
-    console.error('❌ Error en prueba de Misiones Diarias:', err);
+    console.error('❌ Error en prueba del Sistema de Misiones:', err);
     process.exit(1);
   })
   .finally(async () => {

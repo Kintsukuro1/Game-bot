@@ -1,5 +1,6 @@
 import { prisma } from '../db/prisma.js';
 import { AchievementService } from './achievementService.js';
+import { serializeBigInt } from '../utils/serializer.js';
 
 export class PlayerService {
   static async getPlayerByDiscordId(discordId: string, _guildId: string = 'GLOBAL') {
@@ -280,7 +281,7 @@ export class PlayerService {
   }
 
   // Regeneración periódica completa (Energía, Nerve, Happy, Partes Corporales y Hospital/Cárcel)
-  static async regenerateStats() {
+  static async regenerateStats(io?: any) {
     const now = new Date();
     const players = await prisma.player.findMany({
       include: { stats: true, bodyParts: true },
@@ -288,21 +289,31 @@ export class PlayerService {
 
     for (const player of players) {
       if (!player.stats || !player.bodyParts) continue;
+      let hasUpdated = false;
 
-      // 1. Regenerar Energía, Nerve y Happy
+      // 1. Regenerar Energía, Nerve, Happy y Reducir Nivel de Alerta (Heat)
       const newEnergy = Math.min(player.stats.energy + 5, player.stats.maxEnergy);
       const newNerve = Math.min(player.stats.nerve + 1, player.stats.maxNerve);
       const newHappy = Math.min(player.stats.happy + 5, player.stats.maxHappy);
+      const currentHeat = player.stats.heat || 0;
+      const newHeat = Math.max(0, currentHeat - 5);
 
-      if (newEnergy !== player.stats.energy || newNerve !== player.stats.nerve || newHappy !== player.stats.happy) {
+      if (
+        newEnergy !== player.stats.energy ||
+        newNerve !== player.stats.nerve ||
+        newHappy !== player.stats.happy ||
+        newHeat !== currentHeat
+      ) {
         await prisma.stats.update({
           where: { playerId: player.id },
           data: {
             energy: newEnergy,
             nerve: newNerve,
             happy: newHappy,
+            heat: newHeat,
           },
         });
+        hasUpdated = true;
       }
 
       // 2. Regeneración gradual de Partes Corporales (+5 HP por tick hasta 100)
@@ -333,6 +344,7 @@ export class PlayerService {
             rightLegHp: newRLeg,
           },
         });
+        hasUpdated = true;
       }
 
       // 3. Limpieza de temporizadores de Hospital y Cárcel vencidos
@@ -349,6 +361,17 @@ export class PlayerService {
           where: { id: player.id },
           data: playerUpdates,
         });
+        hasUpdated = true;
+      }
+
+      // Notificar cliente vía WebSocket si hubo cambios en sus estadísticas
+      if (hasUpdated && io) {
+        try {
+          const updatedPlayer = await this.getPlayerByDiscordId(player.discordId, player.guildId);
+          if (updatedPlayer) {
+            io.to(`user:${player.discordId}`).emit('player_stats_updated', serializeBigInt(updatedPlayer));
+          }
+        } catch {}
       }
     }
   }

@@ -452,3 +452,53 @@ export const PERKS: PerkDefinition[] = [
   { id: 'PERK_CRIME_SKILL', name: 'Gato Callejero', branch: 'crime', cost: 1, description: '+10 a Habilidad de Crimen', emoji: '🕵️' },
   { id: 'PERK_WORK_STATS', name: 'Ética Laboral', branch: 'business', cost: 1, description: '+15 a Trabajo Manual e Inteligencia', emoji: '💼' },
 ];
+
+// ── 10. Diálogos y Frases Dramáticas de World Bosses ──
+export const BOSS_QUOTES: Record<string, Record<string, string>> = {
+  CHEN_CARNICERO: {
+    NORMAL: '🥩 Chen "El Fileteador": "¡Nǐ hǎo, pendejo! ¿Tú vienes a comprar corte de primera o vienes a ser la carne del caldo de hoy?"',
+    ENRAGED: '🥩 Chen "El Fileteador": "¡Basta de charrasca suave! ¡Mis dos hachas tienen hambre de tu puta columna!"',
+    DESPERATE: '🥩 Chen "El Fileteador": "¡Aiyaaaa! ¡Mi delantal está destrozado y chorreando! ¡LOS VOY A FILETEAR A TODOS, HIJOS DE PUTA!"',
+  },
+  PAYASO_SINFORD: {
+    NORMAL: '🤡 "Pepino": "¡Sorpresa, hijo de puta! ¿Creíste que la fiesta terminaba con pastel? ¡Termina con tus dientes en el piso!"',
+    ENRAGED: '🤡 "Pepino": "¡HONK HONK! ¡Se acabó la magia, imbécil! ¡Ahora te tragas la bomba de confeti en los pulmones!"',
+    DESPERATE: '🤡 "Pepino": "¡JAJAJAJA! ¿Crees que me duele, pedazo de mierda? ¡HE TRABAJADO EN 500 CUMPLEAÑOS INFANTILES, ESTO ES UN PASEO!"',
+  },
+  QUIMICA_REYES: {
+    NORMAL: '🧪 Dra. Reyes: "Relájate, esto no va a doler... mentira, va a doler como la puta madre. Pero anota la hora, me sirve de dato."',
+    ENRAGED: '🧪 Dra. Reyes: "Aumentando la dosis de neurotoxina... ¡Averigüemos cuántos segundos aguantas antes de convulsionar!"',
+    DESPERATE: '🧪 Dra. Reyes: "¡No toques esa probeta, imbecil! Si yo caigo, ¡NOS VAMOS A DESINTEGRAR JUNTOS EN ÁCIDO FLUORHÍDRICO!"',
+  },
+  SAL_GRASA_MORETTI: {
+    NORMAL: '🍔 Sal "Grasa": "¿Preguntas qué mierda lleva la hamburguesa especial? Hoy TÚ eres el puto ingrediente sorpresa, campeón."',
+    ENRAGED: '🍔 Sal "Grasa": "¡Aceite hirviendo para la mesa cuatro! ¡Preparen las papas con salsa de tus propias vísceras!"',
+    DESPERATE: '🍔 Sal "Grasa": "¡ME VAN A CERRAR EL LOCAL! ¡Voy a meter la cabeza de todos ustedes en la freidora a 200 grados!"',
+  },
+  CAPITANA_IBARRA: {
+    NORMAL: '👮‍♀️ Capitana Ibarra: "Tienes derecho a guardar silencio, imbécil. Yo tengo derecho a no escucharte una mierda de todas formas."',
+    ENRAGED: '👮‍♀️ Capitana Ibarra: "¡Resistencia a la autoridad de grado tres! ¡Te voy a moler a macanazos hasta que no te reconozca tu madre!"',
+    DESPERATE: '👮‍♀️ Capitana Ibarra: "¡Llamen al escuadrón antimotines! ¡A estos criminales de mierda no los saca vivos nadie de mi jurisdicción!"',
+  },
+  ALCAIDE_VOSS: {
+    NORMAL: '⛓️ Alcaide Voss: "Bienvenido a mi puta prisión. Las reglas son simples: yo gano las apuestas, tú pagas con lo que te quede de cuerpo."',
+    ENRAGED: '⛓️ Alcaide Voss: "¡Doble guardia a las celdas! ¡Hoy nadie sale con vida de esta arena de combate!"',
+    DESPERATE: '⛓️ Alcaide Voss: "¡Cierren el pabellón de máxima seguridad! ¡Si este motín no para, disparo a matar a todo lo que se mueva!"',
+  },
+  PRESIDENTE_HARRISON: {
+    NORMAL: '🏛️ Presidente Harrison: "Tienen a toda la ciudad en su contra, pandilleros. Mi Servicio Secreto los convertirá en polvo."',
+    ENRAGED: '🏛️ Presidente Harrison: "¡Francotiradores en los tejados! ¡No permitan que esta escoria dañe mi imagen pública!"',
+    DESPERATE: '🏛️ Presidente Harrison: "¡ACTIVACIÓN DEL PROTOCOLO CERO! ¡Tiren la bomba táctica si es necesario, pero elimínenlos!"',
+  },
+  GENERAL_VANCE: {
+    NORMAL: '🪖 General Vance: "Esto no es una pelea de callejones, es una guerra abierta. ¡Preparen el bombardeo de morteros!"',
+    ENRAGED: '🪖 General Vance: "¡Cargadores incendiarios listos! ¡Barran este callejón con napalm!"',
+    DESPERATE: '🪖 General Vance: "¡BÚNKER EN PELIGRO! ¡FUEGO DE ARTILLERÍA PESADA A MI PROPIA POSICIÓN! ¡QUE NO QUEDE NADA!"',
+  },
+  DON_CARBONE: {
+    NORMAL: '🎩 Don Ernesto Carbone: "Ustedes creen que dominan las calles, pero yo soy dueño de cada juez, policía y callejón de esta ciudad."',
+    ENRAGED: '🎩 Don Ernesto Carbone: "¡Envien a los sicarios de la familia! ¡Que sus cuerpos floten en la bahía al amanecer!"',
+    DESPERATE: '🎩 Don Ernesto Carbone: "¡Cosa Nostra no se rinde ante ratas de alcantarilla! ¡Traigan las ametralladoras Thompson y acábennos!"',
+  },
+};
+

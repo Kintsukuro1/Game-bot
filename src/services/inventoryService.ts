@@ -1,4 +1,5 @@
 import { prisma } from '../db/prisma.js';
+import { PlayerService } from './playerService.js';
 
 export class InventoryService {
   // Añadir ítem al inventario con apilamiento (Stacking)
@@ -65,6 +66,108 @@ export class InventoryService {
       if (!stats || !body) throw new Error('Estadísticas del jugador no encontradas.');
 
       let message = `Consumiste **${item.name}**. `;
+
+      // Manejador de Apertura de Cofres (DAILY, WEEKLY, MONTHLY)
+      if (effect.chestType) {
+        let cashReward = 0n;
+        let xpReward = 0;
+        let masteryReward = 0;
+        let giftItemName = '';
+
+        if (effect.chestType === 'DAILY') {
+          cashReward = 50000n;
+          xpReward = 1000;
+          giftItemName = 'First Aid Kit';
+        } else if (effect.chestType === 'WEEKLY') {
+          cashReward = 250000n;
+          xpReward = 5000;
+          masteryReward = 5;
+          giftItemName = 'Xanax';
+        } else if (effect.chestType === 'MONTHLY') {
+          cashReward = 1000000n;
+          xpReward = 20000;
+          masteryReward = 15;
+          giftItemName = 'Feathery Hotel Coupon';
+        }
+
+        // 1. Acreditar efectivo
+        if (cashReward > 0n) {
+          const wallet = await tx.wallet.findUnique({ where: { playerId } });
+          if (wallet) {
+            const balanceBefore = wallet.cash;
+            const balanceAfter = wallet.cash + cashReward;
+
+            await tx.wallet.update({
+              where: { playerId },
+              data: { cash: balanceAfter },
+            });
+
+            await tx.transaction.create({
+              data: {
+                playerId,
+                amount: cashReward,
+                balanceBefore,
+                balanceAfter,
+                type: 'CHEST_OPEN_REWARD',
+                source: item.name,
+                metadata: JSON.stringify({ chestType: effect.chestType }),
+              },
+            });
+          }
+        }
+
+        // 2. Acreditar XP
+        if (xpReward > 0) {
+          await PlayerService.addXp(playerId, xpReward, tx);
+        }
+
+        // 3. Acreditar Puntos de Maestría si aplica
+        if (masteryReward > 0) {
+          const mastery = await tx.playerMastery.findUnique({ where: { playerId } });
+          if (mastery) {
+            await tx.playerMastery.update({
+              where: { playerId },
+              data: { perkPoints: mastery.perkPoints + masteryReward },
+            });
+          } else {
+            await tx.playerMastery.create({
+              data: { playerId, perkPoints: masteryReward },
+            });
+          }
+        }
+
+        // 4. Entregar Ítem de Regalo si existe
+        if (giftItemName) {
+          const giftItem = await tx.item.findFirst({ where: { name: giftItemName } });
+          if (giftItem) {
+            const existingInv = await tx.inventoryItem.findFirst({
+              where: { playerId, itemId: giftItem.id, slot: null },
+            });
+            if (existingInv) {
+              await tx.inventoryItem.update({
+                where: { id: existingInv.id },
+                data: { quantity: existingInv.quantity + 1 },
+              });
+            } else {
+              await tx.inventoryItem.create({
+                data: { playerId, itemId: giftItem.id, quantity: 1 },
+              });
+            }
+          }
+        }
+
+        // Consumir 1 unidad del cofre
+        if (invItem.quantity <= 1) {
+          await tx.inventoryItem.delete({ where: { id: inventoryItemId } });
+        } else {
+          await tx.inventoryItem.update({
+            where: { id: inventoryItemId },
+            data: { quantity: invItem.quantity - 1 },
+          });
+        }
+
+        return `🎁 **¡${item.name.toUpperCase()} ABIERTO!** Obtuviste **+$${cashReward.toLocaleString()}**, **+${xpReward.toLocaleString()} XP**${masteryReward > 0 ? `, **+${masteryReward} Puntos de Maestría**` : ''}${giftItemName ? ` y 1 **${giftItemName}**` : ''}.`;
+      }
 
       // Si es una Droga, procesar adicción y riesgo de sobredosis
       const isDrug = item.weaponType === 'Drug' || effect.drugCooldownMin;
